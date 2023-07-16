@@ -1,0 +1,30 @@
+{
+	"name": "salient-lang",
+	"version": "0.0.0",
+	"description": "",
+	"main": "bin/compiler/index.js",
+	"files": [
+		"bin/*"
+	],
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"bin": {
+		"salient": "bin/compiler/index.js"
+	},
+	"preferGlobal": true,
+	"engineStrict": true,
+	"engines": {
+		"node": ">=15"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ajanibilby/salient.git"
+	},
+	"author": "Ajani James Bilby",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ajanibilby/salient/issues"
+	},
+	"homepage": "https://salient.moe"
+}
