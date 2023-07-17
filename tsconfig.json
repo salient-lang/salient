@@ -3,10 +3,11 @@
 		/* Visit https://aka.ms/tsconfig to read more about this file */
 
 		/* Language and Environment */
-		"target": "es2016",
+		"target": "ES2018",
 
 		/* Modules */
-		"module": "commonjs",
+		"module": "CommonJS",
+		"moduleResolution": "Node",
 		"esModuleInterop": true,
 
 		/* Type Checking */
