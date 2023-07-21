@@ -36,7 +36,10 @@ describe('EncodeU32', () => {
 	});
 
 	it('small integer', () => {
+		expect(toHex(EncodeU32(1))).to.deep.equal("01");
 		expect(toHex(EncodeU32(8))).to.deep.equal("08");
+		expect(toHex(EncodeU32(127))).to.deep.equal("7f");
+		expect(toHex(EncodeU32(128))).to.deep.equal("8001");
 		expect(toHex(EncodeU32(624485))).to.deep.equal("e58e26");
 	});
 

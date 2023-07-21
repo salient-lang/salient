@@ -64,44 +64,48 @@ export function EncodeI32(val: number): Byte[] {
 	if (val % 1 !== 0)
 		throw new Error(`Requested i32 encode for non integer value ${val}`);
 
-	// LEB128 encoding from
-	// https://gitlab.com/mjbecze/leb128/-/blob/master/signed.js
+	// LEB128 encoding: https://en.wikipedia.org/wiki/LEB128#Encode_unsigned_integer
 	const result = [];
 	let more = true;
 	while (more) {
-		let byte_ = val & 0x7f;
+		let byte_ = val & 0b01111111;
 		val >>= 7;
 
 		// if val is negative then fill the rest with 1s, else with 0s
 		if (val === 0 && (byte_ & 0x40) === 0 || val === -1 && (byte_ & 0x40) !== 0) {
 			more = false;
 		} else {
-			byte_ |= 0x80;
+			byte_ |= 0b10000000;
 		}
 		result.push(byte_);
 	}
 	return result;
 }
 
-export function EncodeU32(val: number): Byte[] {
+function EncodeUnsignedLEB(val: number): Byte[] {
 	if (val % 1 !== 0)
 		throw new Error(`Requested u32 encode for non integer value ${val}`);
 	if (val < 0)
 		throw new Error(`Requested u32 encode for signed integer value ${val}`);
 
 	// LEB128 encoding: https://en.wikipedia.org/wiki/LEB128#Encode_signed_32-bit_integer
-	val |= 0;
-	const result = [];
-	while (true) {
-		const byte_ = val & 0x7f;
+	const result: Byte[] = [];
+	do {
+		let byte = val & 0b01111111;
 		val >>= 7;
-		if (
-			(val === 0 && (byte_ & 0x40) === 0) ||
-			(val === -1 && (byte_ & 0x40) !== 0)
-		) {
-			result.push(byte_);
-			return result;
+
+		// Mark leading continuation bit
+		if (val != 0) {
+			byte |= 0b10000000;
 		}
-		result.push(byte_ | 0x80);
-	}
+		result.push(byte);
+	} while(val !== 0);
+	return result;
+}
+
+export function EncodeU32(val: number): Byte[] {
+	return EncodeUnsignedLEB(val);
+}
+export function EncodeU64(val: number): Byte[] {
+	return EncodeUnsignedLEB(val);
 }
