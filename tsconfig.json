@@ -26,5 +26,7 @@
 		"skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
 
 		"outDir": "./bin"
-	}
+	},
+	"include": ["source"],
+	"exclude": ["node_modules"]
 }
