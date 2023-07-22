@@ -1,17 +1,20 @@
 // https://webassembly.github.io/spec/core/binary/modules.html
 
-import * as Type from "./type";
+import * as Section from "./section/index";
+import { Intrinsic } from "./type";
 
 
 
 
 export default class Module {
+	typeSec: Section.Type;
 
+	constructor() {
+		this.typeSec = new Section.Type();
+	}
 
-	constructor() {}
-
-	makeType(types: Type.Intrinsic[]) {
-
+	makeType(input: Intrinsic[], output: Intrinsic[]) {
+		return this.typeSec.makeType(input, output);
 	}
 
 	toBinary() {
@@ -19,6 +22,7 @@ export default class Module {
 
 		buffer.push(...[0x00, 0x61, 0x73, 0x6d]); // PREAMBLE
 		buffer.push(...[0x01, 0x00, 0x00, 0x00]); // WASM_BINARY_VERSION
+		buffer.push(...this.typeSec.toBinary());
 
 		// functype* : typesec
 		// imports*  : importsec

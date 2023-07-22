@@ -11,4 +11,7 @@ export {
 
 
 let mod = new Module();
+mod.makeType([Type.Intrinsic.i32], [Type.Intrinsic.i32]);
+mod.makeType([Type.Intrinsic.i32, Type.Intrinsic.i32, Type.Intrinsic.i32, Type.Intrinsic.i32], [Type.Intrinsic.i32]);
+mod.makeType([], []);
 fs.writeFileSync("./dump.wasm", mod.toBinary());

@@ -15,15 +15,6 @@ export enum Intrinsic {
 	externref = 0x6f,
 }
 
-
-export function EncodeFuncType(input: Intrinsic[], output: Intrinsic[]): Byte[] {
-	return [ 0x60, ...EncodeResultType(input), ...EncodeResultType(output) ];
-}
-
-export function EncodeResultType(types: Intrinsic[]): Byte[] {
-	return [ ...EncodeU32(types.length), ...types ];
-}
-
 export function EncodeLimitType(min: number, max?: number): Byte[] {
 	if (!isFinite(min) || min < 0 || min % 1 !== 0)
 		throw new Error(`Limit minimum must be a real unsigned integer not ${min}`);
