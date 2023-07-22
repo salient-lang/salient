@@ -31,13 +31,14 @@ export default class TypeSection {
 
 	toBinary () {
 		const buffer = this._entries.flatMap(x => x);
-		const length = this._entries.length;
-		const size = buffer.length;
+		const length = EncodeU32(this._entries.length);
+		const size = length.length + buffer.length;
 		return [
 			TypeSection.typeID,
 			...EncodeU32(size),
-			...EncodeU32(length),
-			...buffer];
+			...length,
+			...buffer
+		];
 	}
 
 	static typeID = 1;
