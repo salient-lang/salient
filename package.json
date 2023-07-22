@@ -21,7 +21,7 @@
 	"preferGlobal": true,
 	"engineStrict": true,
 	"engines": {
-		"node": ">=15"
+		"node": ">=18"
 	},
 	"repository": {
 		"type": "git",
