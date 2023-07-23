@@ -1,6 +1,7 @@
 import { FuncRef } from "./funcRef";
 import { Byte } from "./helper";
 import { EncodeU32, Intrinsic } from "./type";
+import * as Instruction from "./instruction/index";
 
 
 export class Function {
@@ -8,7 +9,7 @@ export class Function {
 	outputs : number;
 	type  : number;
 	ref   : FuncRef;
-	block : null;
+	code  : Instruction.Any[];
 
 	locals: Intrinsic[];
 
@@ -19,7 +20,7 @@ export class Function {
 		this.type   = typeIdx;
 		this.ref    = new FuncRef(false);
 		this.locals = [];
-		this.block  = null;
+		this.code   = [];
 	}
 
 	addLocal(type: Intrinsic): number {
@@ -47,7 +48,11 @@ export class Function {
 			buf.push(local);
 		}
 
-		buf.push(0);
+		buf.push(...EncodeU32(this.code.length));
+		for (const line of this.code) {
+			buf.push(...line.toBinary());
+		}
+		buf.push(0); // end marker
 
 		return [
 			...EncodeU32(buf.length),

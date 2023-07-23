@@ -4,6 +4,8 @@ import Module from "./module";
 import * as Type from "./type";
 import { Function } from "./function";
 
+import Instruction from "./instruction";
+
 
 export {
 	Module,
@@ -15,13 +17,16 @@ let mod = new Module();
 const type0 = mod.makeType([Type.Intrinsic.i32], [Type.Intrinsic.i32]);
 const type1 = mod.makeType([Type.Intrinsic.i32, Type.Intrinsic.i32, Type.Intrinsic.i32, Type.Intrinsic.i32], [Type.Intrinsic.i32]);
 
-mod.importFunction("wasix_32v1", "tty_get", type0);
-mod.importFunction("wasi_snapshot_preview1", "fd_write", type1);
+const tty_get  = mod.importFunction("wasix_32v1", "tty_get", type0);
+const fd_write = mod.importFunction("wasi_snapshot_preview1", "fd_write", type1);
 
 const mem = mod.addMemory(1);
 
-const main  = mod.makeFunction([], []);
+const main = mod.makeFunction([], []);
+main.code.push(new Instruction.call(fd_write));
+
 const extra = mod.makeFunction([Type.Intrinsic.i32], [Type.Intrinsic.i32]);
+extra.code.push(new Instruction.local.get(0));
 
 mod.exportMemory("memory", mem);
 mod.exportFunction("_start", main.ref);
