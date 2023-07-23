@@ -1,6 +1,6 @@
 // https://webassembly.github.io/spec/core/binary/modules.html
 
-import type { Function } from "./function";
+import { Function } from "./function";
 import { FuncRef } from "./funcRef";
 import * as Section from "./section/index";
 import { Intrinsic } from "./type";
@@ -15,6 +15,7 @@ export default class Module {
 	importSect : Section.Import;
 	memorySect : Section.Memory;
 	exportSect : Section.Export;
+	dataSect   : Section.Data;
 
 	entryFunc : null | FuncRef;
 
@@ -25,6 +26,7 @@ export default class Module {
 		this.importSect = new Section.Import();
 		this.memorySect = new Section.Memory();
 		this.exportSect = new Section.Export();
+		this.dataSect   = new Section.Data();
 		this.entryFunc = null;
 		this.funcs = [];
 	}
@@ -51,6 +53,18 @@ export default class Module {
 		this.memorySect.addMemory(ref, minPages, maxPages);
 
 		return ref;
+	}
+
+	setData(offset: number, data: string | BufferSource) {
+		return this.dataSect.setData(offset, data);
+	}
+
+	makeFunction(input: Intrinsic[], output: Intrinsic[]): Function {
+		const type = this.makeType(input, output);
+		const func = new Function(type, input.length, output.length);
+		this.bindFunction(func);
+
+		return func;
 	}
 
 	bindFunction(func: Function) {
@@ -88,7 +102,7 @@ export default class Module {
 			)
 		);
 		// table*    : tablesec
-		buffer.push(...this.memorySect.toBinary(0))   // mem*      : memsec
+		buffer.push(...this.memorySect.toBinary(0))  // mem*      : memsec
 		// global*   : globalsec
 		buffer.push(...this.exportSect.toBinary())   // export*   : exportsec
 
@@ -98,10 +112,16 @@ export default class Module {
 			)
 		}
 		// elm*      : elmsec
-		// m?        : datacountsec
-		// code^n    : codesec
-		// data^m    : datasec
-		// customsec*:
+		// buffer.push(                                 // m?        : datacountsec
+		// 	...Section.DataCount.toBinary(this.dataSect)
+		// )
+
+		buffer.push(                                 // code^n    : codesec
+			...Section.Code.toBinary(this.funcs)
+		);
+
+		// buffer.push(...this.dataSect.toBinary())      // data^m    : datasec
+		// dataCount
 
 		return new Uint8Array(buffer);
 	}
