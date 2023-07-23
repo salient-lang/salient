@@ -1,24 +1,47 @@
 // https://webassembly.github.io/spec/core/binary/modules.html
 
+import type { Function } from "./function";
+import { FuncRef } from "./funcRef";
 import * as Section from "./section/index";
 import { Intrinsic } from "./type";
+import { Byte } from "./helper";
 
 
 
 
 export default class Module {
-	typeSect  : Section.Type;
-	importSect: Section.Import;
-	funcSect  : Section.Function;
+	typeSect   : Section.Type;
+	importSect : Section.Import;
+
+	funcs: Function[];
 
 	constructor() {
 		this.typeSect   = new Section.Type();
 		this.importSect = new Section.Import();
-		this.funcSect   = new Section.Function();
+		this.funcs = [];
 	}
 
 	importFunction(mod: string, name: string, typeIdx: number) {
-		return this.importSect.registerFunction(mod, name, typeIdx);
+		const idx = this.importSect.registerFunction(mod, name, typeIdx);
+
+		const ref = new FuncRef(true);
+		ref.resolve(idx);
+
+		return ref;
+	}
+
+	bindFunction(func: Function) {
+		if (this.funcs.includes(func))
+			return;
+
+		this.funcs.push(func);
+	}
+
+	unbindFunction(func: Function) {
+		const index = this.funcs.indexOf(func);
+		if (index == -1) return;
+
+		this.funcs.splice(index, 1);
 	}
 
 	makeType(input: Intrinsic[], output: Intrinsic[]): number {
@@ -26,13 +49,18 @@ export default class Module {
 	}
 
 	toBinary() {
-		const buffer = [];
+		const buffer: Byte[] = [];
 
 		buffer.push(...[0x00, 0x61, 0x73, 0x6d]);    // PREAMBLE
 		buffer.push(...[0x01, 0x00, 0x00, 0x00]);    // WASM_BINARY_VERSION
 		buffer.push(...this.typeSect.toBinary());    // functype* : typesec
 		buffer.push(...this.importSect.toBinary());  // imports*  : importsec
-		buffer.push(...this.funcSect.toBinary());    // typeidx^n : funcsec
+		buffer.push(                                 // typeidx^n : funcsec
+			...Section.Function.toBinary(
+				this.importSect.getFuncs(),
+				this.funcs
+			)
+		);
 		// table*    : tablesec
 		// mem*      : memsec
 		// global*   : globalsec
