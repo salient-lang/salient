@@ -16,6 +16,8 @@ export default class Module {
 	memorySect : Section.Memory;
 	exportSect : Section.Export;
 
+	entryFunc : null | FuncRef;
+
 	funcs: Function[];
 
 	constructor() {
@@ -23,6 +25,7 @@ export default class Module {
 		this.importSect = new Section.Import();
 		this.memorySect = new Section.Memory();
 		this.exportSect = new Section.Export();
+		this.entryFunc = null;
 		this.funcs = [];
 	}
 
@@ -35,12 +38,12 @@ export default class Module {
 		return ref;
 	}
 
-	exportFunction(name: string, func: Function) {
-		this.exportSect.bind(name, func.ref);
+	exportFunction(name: string, func: FuncRef) {
+		return this.exportSect.bind(name, func);
 	}
 
 	exportMemory(name: string, mem: MemoryRef) {
-		this.exportSect.bind(name, mem);
+		return this.exportSect.bind(name, mem);
 	}
 
 	addMemory(minPages: number, maxPages?: number): MemoryRef {
@@ -55,6 +58,9 @@ export default class Module {
 			return;
 
 		this.funcs.push(func);
+	}
+	setEntry(ref: FuncRef) {
+		this.entryFunc = ref;
 	}
 
 	unbindFunction(func: Function) {
@@ -85,7 +91,12 @@ export default class Module {
 		buffer.push(...this.memorySect.toBinary(0))   // mem*      : memsec
 		// global*   : globalsec
 		buffer.push(...this.exportSect.toBinary())   // export*   : exportsec
-		// start?    : startsec
+
+		if (this.entryFunc) {
+			buffer.push(                               // start?    : startsec
+				...Section.Start.toBinary(this.entryFunc)
+			)
+		}
 		// elm*      : elmsec
 		// m?        : datacountsec
 		// code^n    : codesec

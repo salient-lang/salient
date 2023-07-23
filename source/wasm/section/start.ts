@@ -1,13 +1,24 @@
+import { FuncRef } from "../funcRef";
 import { EncodeU32 } from "../type";
 
 
 export default class StartSection {
 
-	constructor() {}
+	static toBinary (ref: null | FuncRef) {
+		const buf = [];
 
-	toBinary () {
-		const size = 0;
-		return [StartSection.typeID, ...EncodeU32(size)];
+		if (ref === null) {
+			buf.push(0);
+		} else {
+			buf.push(1);
+			buf.push(...EncodeU32(ref.getIdentifier()))
+		}
+
+		return [
+			StartSection.typeID,
+			...EncodeU32(buf.length),
+			...buf
+		];
 	}
 
 	static typeID = 8;
