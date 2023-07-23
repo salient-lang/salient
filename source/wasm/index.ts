@@ -19,6 +19,8 @@ const type2 = mod.makeType([], []);
 mod.importFunction("wasix_32v1", "tty_get", type0);
 mod.importFunction("wasi_snapshot_preview1", "fd_write", type1);
 
+const mem = mod.addMemory(1);
+
 const main = new Function(type2);
 mod.bindFunction(main);
 const extra = new Function(type0);

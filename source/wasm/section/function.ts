@@ -7,9 +7,7 @@ export default class FunctionSection {
 	static typeID = 3;
 
 	static toBinary(idxOffset: number, funcs: Function[]) {
-		let buf: Byte[] = [
-			...EncodeU32(funcs.length)
-		];
+		let buf: Byte[] = EncodeU32(funcs.length);
 
 		for (const func of funcs) {
 			func.resolve(idxOffset++, true);

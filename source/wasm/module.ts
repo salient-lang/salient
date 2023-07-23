@@ -12,12 +12,14 @@ import { Byte } from "./helper";
 export default class Module {
 	typeSect   : Section.Type;
 	importSect : Section.Import;
+	memorySect : Section.Memory;
 
 	funcs: Function[];
 
 	constructor() {
 		this.typeSect   = new Section.Type();
 		this.importSect = new Section.Import();
+		this.memorySect = new Section.Memory();
 		this.funcs = [];
 	}
 
@@ -28,6 +30,10 @@ export default class Module {
 		ref.resolve(idx);
 
 		return ref;
+	}
+
+	addMemory(minPages: number, maxPages?: number): number {
+		return this.memorySect.addMemory(minPages, maxPages);
 	}
 
 	bindFunction(func: Function) {
@@ -62,7 +68,7 @@ export default class Module {
 			)
 		);
 		// table*    : tablesec
-		// mem*      : memsec
+		buffer.push(...this.memorySect.toBinary())   // mem*      : memsec
 		// global*   : globalsec
 		// export*   : exportsec
 		// start?    : startsec
