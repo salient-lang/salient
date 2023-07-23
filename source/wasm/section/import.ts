@@ -1,5 +1,5 @@
 import type { Byte } from "../helper";
-import { EncodeU32 } from "../type";
+import { EncodeName, EncodeU32 } from "../type";
 
 class Register {
 	mod:  string;
@@ -15,14 +15,9 @@ class Register {
 	}
 
 	toBinary(): Byte[] {
-		const encoder = new TextEncoder();
-		const buffMod = new Uint8Array(encoder.encode(this.mod).buffer);
-		const buffName = new Uint8Array(encoder.encode(this.name).buffer);
 		return [
-			...EncodeU32(buffMod.length),
-			...buffMod,
-			...EncodeU32(buffName.length),
-			...buffName,
+			...EncodeName(this.mod),
+			...EncodeName(this.name),
 			...EncodeU32(0x00),      // Import type
 			...EncodeU32(this.type)
 		];

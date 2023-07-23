@@ -5,6 +5,7 @@ import { FuncRef } from "./funcRef";
 import * as Section from "./section/index";
 import { Intrinsic } from "./type";
 import { Byte } from "./helper";
+import { MemoryRef } from "./memoryRef";
 
 
 
@@ -13,6 +14,7 @@ export default class Module {
 	typeSect   : Section.Type;
 	importSect : Section.Import;
 	memorySect : Section.Memory;
+	exportSect : Section.Export;
 
 	funcs: Function[];
 
@@ -20,6 +22,7 @@ export default class Module {
 		this.typeSect   = new Section.Type();
 		this.importSect = new Section.Import();
 		this.memorySect = new Section.Memory();
+		this.exportSect = new Section.Export();
 		this.funcs = [];
 	}
 
@@ -32,8 +35,19 @@ export default class Module {
 		return ref;
 	}
 
-	addMemory(minPages: number, maxPages?: number): number {
-		return this.memorySect.addMemory(minPages, maxPages);
+	exportFunction(name: string, func: Function) {
+		this.exportSect.bind(name, func.ref);
+	}
+
+	exportMemory(name: string, mem: MemoryRef) {
+		this.exportSect.bind(name, mem);
+	}
+
+	addMemory(minPages: number, maxPages?: number): MemoryRef {
+		const ref = new MemoryRef(false);
+		this.memorySect.addMemory(ref, minPages, maxPages);
+
+		return ref;
 	}
 
 	bindFunction(func: Function) {
@@ -68,9 +82,9 @@ export default class Module {
 			)
 		);
 		// table*    : tablesec
-		buffer.push(...this.memorySect.toBinary())   // mem*      : memsec
+		buffer.push(...this.memorySect.toBinary(0))   // mem*      : memsec
 		// global*   : globalsec
-		// export*   : exportsec
+		buffer.push(...this.exportSect.toBinary())   // export*   : exportsec
 		// start?    : startsec
 		// elm*      : elmsec
 		// m?        : datacountsec

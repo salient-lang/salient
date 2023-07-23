@@ -1,10 +1,12 @@
 import { Byte } from "../helper";
+import { MemoryRef } from "../memoryRef";
 import { EncodeLimitType, EncodeU32 } from "../type";
 
 
 type Range = {
 	min: number,
-	max: undefined | number
+	max: undefined | number,
+	ref: MemoryRef
 }
 
 export default class MemorySection {
@@ -14,20 +16,19 @@ export default class MemorySection {
 		this.memories = [];
 	}
 
-	addMemory(minPages: number, maxPages?: number): number {
-		const idx = this.memories.length;
+	addMemory(ref: MemoryRef, minPages: number, maxPages?: number) {
 		this.memories.push({
 			min: minPages,
-			max: maxPages
+			max: maxPages,
+			ref: ref
 		})
-
-		return idx;
 	}
 
-	toBinary (): Byte[] {
+	toBinary (idxOffset: number): Byte[] {
 		let buff: Byte[] = EncodeU32(this.memories.length);
 
 		for (const mem of this.memories) {
+			mem.ref.resolve(idxOffset++, true);
 			buff.push(...EncodeLimitType(mem.min, mem.max));
 		}
 

@@ -1,13 +1,41 @@
-import { EncodeU32 } from "../type";
+import { EncodeName, EncodeU32 } from "../type";
+import { FuncRef } from "../funcRef";
+import { MemoryRef } from "../memoryRef";
 
+
+interface Registry {
+	[key: string]: FuncRef | MemoryRef;
+}
 
 export default class ExportSection {
+	reg: Registry;
 
-	constructor() {}
+	constructor() {
+		this.reg = {};
+	}
+
+	bind(name: string, ref: FuncRef | MemoryRef) {
+		if (this.reg[name])
+			throw new Error(`Attempting to export on already used name ${name}`);
+
+		this.reg[name] = ref;
+	}
 
 	toBinary () {
-		const size = 0;
-		return [ExportSection.typeID, ...EncodeU32(size)];
+		const buf = EncodeU32(Object.keys(this.reg).length);
+
+		for (const name in this.reg) {
+			const entity = this.reg[name];
+			buf.push(...EncodeName(name));
+			buf.push(entity instanceof FuncRef ? 0x00 : 0x02);
+			buf.push(...EncodeU32(this.reg[name].getIdentifier()));
+		}
+
+		return [
+			ExportSection.typeID,
+			...EncodeU32(buf.length),
+			...buf
+		];
 	}
 
 	static typeID = 7;

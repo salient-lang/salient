@@ -15,6 +15,18 @@ export enum Intrinsic {
 	externref = 0x6f,
 }
 
+
+const textEncoder = new TextEncoder();
+export function EncodeName(str: string) {
+	const buff = new Uint8Array(textEncoder.encode(str).buffer);
+
+	return [
+		...EncodeU32(buff.length),
+		...buff
+	];
+}
+
+
 export function EncodeLimitType(min: number, max?: number): Byte[] {
 	if (!isFinite(min) || min < 0 || min % 1 !== 0)
 		throw new Error(`Limit minimum must be a real unsigned integer not ${min}`);

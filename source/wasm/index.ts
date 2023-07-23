@@ -26,4 +26,7 @@ mod.bindFunction(main);
 const extra = new Function(type0);
 mod.bindFunction(extra);
 
+mod.exportMemory("memory", mem);
+mod.exportFunction("_start", main);
+
 fs.writeFileSync("./dump.wasm", mod.toBinary());

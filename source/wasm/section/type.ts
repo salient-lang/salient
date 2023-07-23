@@ -2,6 +2,20 @@ import { EncodeU32, Intrinsic } from "../type";
 import type { Byte } from "../helper";
 
 
+
+function DeepEqual(a: Byte[], b: Byte[]) {
+	if (a.length !== b.length)
+		return false;
+
+	for (let i=0; i<a.length; i++) {
+		if (a[i] !== b[i]) return false;
+	}
+
+	return true;
+}
+
+
+
 export default class TypeSection {
 	_entries: Byte[][];
 
@@ -45,16 +59,6 @@ export default class TypeSection {
 }
 
 
-function DeepEqual(a: Byte[], b: Byte[]) {
-	if (a.length !== b.length)
-		return false;
-
-	for (let i=0; i<a.length; i++) {
-		if (a[i] !== b[i]) return false;
-	}
-
-	return true;
-}
 
 function EncodeFuncType(input: Intrinsic[], output: Intrinsic[]): Byte[] {
 	return [ 0x60, ...EncodeResultType(input), ...EncodeResultType(output) ];

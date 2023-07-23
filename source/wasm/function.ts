@@ -19,4 +19,8 @@ export class Function {
 	unresolve() {
 		this.ref.unresolve();
 	}
+
+	getID() {
+		return this.ref.getIdentifier();
+	}
 }
