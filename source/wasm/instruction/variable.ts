@@ -1,76 +1,27 @@
 import { Byte } from "../helper";
 import { EncodeU32 } from "../type";
 
-export class GetLocal {
-	x: number;
 
-	constructor(idx: number) {
-		this.x = idx;
-	}
-
-	toBinary(): Byte[] {
-		return [
-			0x20,
-			...EncodeU32(this.x)
-		];
-	}
+export enum Type {
+	localGet  = 0x20,
+	localSet  = 0x21,
+	localTee  = 0x22,
+	globalGet = 0x23,
+	globalSet = 0x24,
 }
 
-export class SetLocal {
-	x: number;
+export class Variable {
+	type: Type;
+	x   : number;
 
-	constructor(idx: number) {
-		this.x = idx;
+	constructor(type: number, idx: number) {
+		this.type = type;
+		this.x    = idx;
 	}
 
 	toBinary(): Byte[] {
 		return [
-			0x21,
-			...EncodeU32(this.x)
-		];
-	}
-}
-
-export class TeeLocal {
-	x: number;
-
-	constructor(idx: number) {
-		this.x = idx;
-	}
-
-	toBinary(): Byte[] {
-		return [
-			0x22,
-			...EncodeU32(this.x)
-		];
-	}
-}
-
-export class GetGlobal {
-	x: number;
-
-	constructor(idx: number) {
-		this.x = idx;
-	}
-
-	toBinary(): Byte[] {
-		return [
-			0x23,
-			...EncodeU32(this.x)
-		];
-	}
-}
-
-export class SetGlobal {
-	x: number;
-
-	constructor(idx: number) {
-		this.x = idx;
-	}
-
-	toBinary(): Byte[] {
-		return [
-			0x24,
+			this.type,
 			...EncodeU32(this.x)
 		];
 	}
@@ -78,13 +29,13 @@ export class SetGlobal {
 
 const wrapper = {
 	global: {
-		get: GetGlobal,
-		set: SetGlobal
+		get: (x: number) => new Variable(Type.globalGet, x),
+		set: (x: number) => new Variable(Type.globalSet, x)
 	},
 	local: {
-		get: GetLocal,
-		set: SetLocal,
-		tee: TeeLocal
+		get: (x: number) => new Variable(Type.localGet, x),
+		set: (x: number) => new Variable(Type.localSet, x),
+		tee: (x: number) => new Variable(Type.localTee, x),
 	}
 }
 export default wrapper;

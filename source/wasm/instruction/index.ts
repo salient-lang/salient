@@ -4,7 +4,8 @@ import { FuncRef } from "../funcRef";
 import { EncodeU32 } from "../type";
 import { Byte } from "../helper";
 
-import Variable, { GetLocal, SetLocal, TeeLocal, GetGlobal, SetGlobal } from "./variable";
+import varFuncs, { Variable } from "./variable";
+import constFuncs, { Constant } from "./constant";
 
 export class Call {
 	x: FuncRef | number;
@@ -33,36 +34,30 @@ export type Any =
 	Unreachable | NoOp | Block | Loop | IfBlock |
 	Br_If | Br |
 	Return | Call | Drop |
-	GetLocal | SetLocal | TeeLocal | GetGlobal | SetGlobal;
+	Constant |
+	Variable;
 
-export {
-	Unreachable,
-	IfBlock,
-	Block,
-	Loop,
-	NoOp,
 
-	Br_If,
-	Br,
-
-	GetGlobal, GetLocal, SetGlobal, SetLocal, TeeLocal
-
-	// Select,
-}
+	const shared_Unreachable = new Unreachable();
+	const shared_Return = new Return();
+	const shared_Drop = new Drop();
+	const shared_NoOp = new NoOp();
 
 const wrapper = {
-	...Variable,
+	const: constFuncs,
+	...varFuncs,
 
-	unreachable: Unreachable,
-	noop: NoOp,
-	block: Block,
-	loop: Loop,
-	if: IfBlock,
-	br: Br,
-	br_if: Br_If,
-	return: Return,
-	call: Call,
-	drop: Drop,
+	unreachable: () => shared_Unreachable,
+	return     : () => shared_Return,
+	drop       : () => shared_Drop,
+	noop       : () => shared_NoOp,
+
+	block: (n?: Any[])                 => new Block(n),
+	br_if: (i: number)                 => new Br_If(i),
+	br   : (i: number)                 => new Br(i),
+	call : (funcRef: FuncRef | number) => new Call(funcRef),
+	if   : (t?: Any[], f?: Any[])      => new IfBlock(t, f),
+	loop : (n?: Any[])                 => new Loop(n),
 }
 
 export default wrapper;

@@ -118,3 +118,16 @@ export function EncodeI32(val: number) {
 
 	return EncodeUnsignedLEB(val);
 }
+
+export function EncodeU64(val: number) {
+	if (val > 2**64)
+		throw new Error(`Requested to encode an u64 with too large a number ${val}`);
+
+	return EncodeUnsignedLEB(val);
+}
+export function EncodeI64(val: number) {
+	if (Math.abs(val) > 2**63)
+		throw new Error(`Requested to encode an i64 with too large a number ${val}`);
+
+	return EncodeUnsignedLEB(val);
+}
