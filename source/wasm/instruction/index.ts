@@ -6,6 +6,7 @@ import { Byte } from "../helper";
 
 import varFuncs, { Variable } from "./variable";
 import constFuncs, { Constant } from "./constant";
+import memFuncs, { MemoryRegister } from "./memory";
 
 export class Call {
 	x: FuncRef | number;
@@ -35,7 +36,8 @@ export type Any =
 	Br_If | Br |
 	Return | Call | Drop |
 	Constant |
-	Variable;
+	Variable |
+	MemoryRegister;
 
 
 	const shared_Unreachable = new Unreachable();
@@ -46,6 +48,7 @@ export type Any =
 const wrapper = {
 	const: constFuncs,
 	...varFuncs,
+	...memFuncs,
 
 	unreachable: () => shared_Unreachable,
 	return     : () => shared_Return,

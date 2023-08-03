@@ -25,15 +25,14 @@ const mem = mod.addMemory(1);
 const main = mod.makeFunction([], []);
 main.code.push(Instruction.const.i32(100));
 main.code.push(Instruction.const.i32(0));
-// store
+main.code.push(Instruction.i32.store(0, 2));
 main.code.push(Instruction.const.i32(104));
 main.code.push(Instruction.const.i32(15));
-// store
+main.code.push(Instruction.i32.store(0, 2));
 main.code.push(Instruction.const.i32(1));
 main.code.push(Instruction.const.i32(100));
 main.code.push(Instruction.const.i32(1));
 main.code.push(Instruction.const.i32(0));
-main.code.push(Instruction.local.get(0));
 main.code.push(Instruction.call(fd_write));
 main.code.push(Instruction.drop());
 

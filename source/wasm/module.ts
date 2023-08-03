@@ -121,7 +121,6 @@ export default class Module {
 		);
 
 		// buffer.push(...this.dataSect.toBinary())      // data^m    : datasec
-		// dataCount
 
 		return new Uint8Array(buffer);
 	}

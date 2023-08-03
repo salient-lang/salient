@@ -116,7 +116,7 @@ export function EncodeI32(val: number) {
 	if (Math.abs(val) > 2**31)
 		throw new Error(`Requested to encode an i32 with too large a number ${val}`);
 
-	return EncodeUnsignedLEB(val);
+	return EncodeSignedLEB(val);
 }
 
 export function EncodeU64(val: number) {

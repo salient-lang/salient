@@ -1,3 +1,5 @@
+// https://webassembly.github.io/spec/core/binary/instructions.html#control-instructions
+
 import type { Any } from "./index";
 import { EncodeU32 } from "../type";
 import { Byte } from "../helper";

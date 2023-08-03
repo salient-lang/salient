@@ -1,5 +1,6 @@
-import { Byte } from "../helper";
+// https://webassembly.github.io/spec/core/binary/instructions.html#variable-instructions
 import { EncodeU32 } from "../type";
+import { Byte } from "../helper";
 
 
 export enum Type {
@@ -14,7 +15,7 @@ export class Variable {
 	type: Type;
 	x   : number;
 
-	constructor(type: number, idx: number) {
+	constructor(type: Type, idx: number) {
 		this.type = type;
 		this.x    = idx;
 	}

@@ -1,5 +1,6 @@
-import { AssertUnreachable, Byte } from "../helper";
+// https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
 import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "../type";
+import { Byte } from "../helper";
 
 
 export enum Type {

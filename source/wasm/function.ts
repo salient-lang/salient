@@ -1,6 +1,6 @@
 import { FuncRef } from "./funcRef";
 import { Byte } from "./helper";
-import { EncodeU32, Intrinsic } from "./type";
+import { EncodeI32, EncodeU32, Intrinsic } from "./type";
 import * as Instruction from "./instruction/index";
 
 
@@ -48,11 +48,10 @@ export class Function {
 			buf.push(local);
 		}
 
-		buf.push(...EncodeU32(this.code.length));
 		for (const line of this.code) {
 			buf.push(...line.toBinary());
 		}
-		buf.push(0); // end marker
+		buf.push(0x0b); // end marker
 
 		return [
 			...EncodeU32(buf.length),
