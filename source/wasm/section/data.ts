@@ -1,5 +1,5 @@
 import { Byte } from "../helper";
-import { EncodeU32 } from "../type";
+import { EncodeI32, EncodeU32 } from "../type";
 
 
 const textEncoder = new TextEncoder();
@@ -44,17 +44,15 @@ export default class DataSection {
 
 			// i32 const expr
 			buf.push(0x41);
-			buf.push(...EncodeU32(entry.offset));
+			buf.push(...EncodeI32(entry.offset));
+			buf.push(0x0b);
 
-			if (entry.data instanceof ArrayBuffer) {
-				buf.push(...Array.from(
-					new Uint8Array(entry.data)
-				));
-			} else {
-				buf.push(...Array.from(
-					new Uint8Array(entry.data.buffer, entry.data.byteOffset, entry.data.byteLength)
-				));
-			}
+			const raw = entry.data instanceof ArrayBuffer
+				? Array.from( new Uint8Array(entry.data) )
+				: new Uint8Array(entry.data.buffer, entry.data.byteOffset, entry.data.byteLength);
+
+			buf.push(...EncodeU32(raw.length));
+			buf.push(...raw);
 		}
 
 

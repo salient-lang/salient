@@ -120,7 +120,7 @@ export default class Module {
 			...Section.Code.toBinary(this.funcs)
 		);
 
-		// buffer.push(...this.dataSect.toBinary())      // data^m    : datasec
+		buffer.push(...this.dataSect.toBinary())      // data^m    : datasec
 
 		return new Uint8Array(buffer);
 	}
