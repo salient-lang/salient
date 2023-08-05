@@ -12,6 +12,7 @@
 		"build:ts": "tsc",
 		"build:syntax": "npx bnf-compile ./bnf/",
 		"test": "run-s test:*",
+		"test:types": "tsc --noEmit",
 		"test:mocha": "npx mocha"
 	},
 	"bin": {
