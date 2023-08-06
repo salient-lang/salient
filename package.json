@@ -35,7 +35,7 @@
 	"homepage": "https://salient.moe",
 	"dependencies": {
 		"chalk": "^5.3.0",
-		"getopts": "^2.3.0"
+		"bnf-parser": "^4.0.5"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.5",
