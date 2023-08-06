@@ -5,7 +5,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve, join, relative } from "node:path";
 import chalk from "chalk";
 
-import { Parse } from "./parser/index.js";
+import { Parse } from "./parser.js";
 
 
 const cwd = resolve("./");

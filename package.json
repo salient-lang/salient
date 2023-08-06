@@ -16,7 +16,7 @@
 		"test:mocha": "npx mocha"
 	},
 	"bin": {
-		"salient": "bin/compiler/index.js"
+		"salient": "bin/cli.js"
 	},
 	"preferGlobal": true,
 	"engineStrict": true,
