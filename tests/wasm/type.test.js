@@ -4,7 +4,7 @@ import { expect } from 'chai';
 import { EncodeSignedLEB, EncodeUnsignedLEB } from "../../bin/wasm/type.js";
 
 
-function toHex(arr: number[]) {
+function toHex(arr) {
 	return arr.map(x => x.toString(16).padStart(2, "0")).join("");
 }
 

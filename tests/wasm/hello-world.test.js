@@ -39,11 +39,11 @@ describe('Wasm module test', () => {
 
 		let stdout = "";
 
-		let memory: WebAssembly.Memory;
+		let memory;
 
 		const imports = {
 			wasi_snapshot_preview1: {
-				fd_write: (fd: number, iovs: number, iovs_len: number, n_written: number) => {
+				fd_write: (fd, iovs, iovs_len, n_written) => {
 					const memoryArray = new Int32Array(memory.buffer);
 					const byteArray   = new Uint8Array(memory.buffer);
 					for (let iovIdx = 0; iovIdx < iovs_len; iovIdx++) {
@@ -65,7 +65,7 @@ describe('Wasm module test', () => {
 			const instance = await WebAssembly.instantiate(wasmModule, imports);
 
 			const { exports } = instance;
-			memory = exports.memory as any;
+			memory = exports.memory;
 
 			// Check if the _start function exists
 			expect(exports).to.have.property('_start').that.is.a('function');
