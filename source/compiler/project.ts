@@ -13,6 +13,7 @@ export default class Project {
 		this.files = [];
 
 		this.cwd = path.dirname(entry);
+		this.import(entry);
 	}
 
 	import(filePath: string) {

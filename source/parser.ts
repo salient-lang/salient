@@ -21,7 +21,7 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 		process.exit(1);
 	}
 
-	return res;
+	return res.root;
 }
 
 export function SourceView(path: string, name: string, range: ReferenceRange) {

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 "use strict";
 
-import { readFileSync, existsSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { resolve, join, relative } from "node:path";
 import chalk from "chalk";
 
-import { Parse } from "./parser.js";
+import Project from "./compiler/project.js";
 
 
 const cwd = resolve("./");
@@ -16,5 +16,5 @@ if (!existsSync(root)) {
 	process.exit(1);
 }
 
-const data = readFileSync(root, 'utf8');
-Parse(data, root, relative(cwd, root));
+const project = new Project(root);
+console.log(project);
