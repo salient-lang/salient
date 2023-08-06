@@ -35,6 +35,7 @@
 	},
 	"homepage": "https://salient.moe",
 	"dependencies": {
+		"bnf-parser": "^4.0.5",
 		"getopts": "^2.3.0"
 	},
 	"devDependencies": {
