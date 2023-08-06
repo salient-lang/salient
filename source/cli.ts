@@ -17,4 +17,4 @@ if (!existsSync(root)) {
 }
 
 const data = readFileSync(root, 'utf8');
-Parse(data, relative(cwd, root));
+Parse(data, root, relative(cwd, root));
