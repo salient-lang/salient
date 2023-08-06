@@ -1,7 +1,7 @@
-import { FuncRef } from "./funcRef";
-import { Byte } from "./helper";
-import { EncodeI32, EncodeU32, Intrinsic } from "./type";
-import * as Instruction from "./instruction/index";
+import { FuncRef } from "./funcRef.js";
+import { Byte } from "./helper.js";
+import { EncodeI32, EncodeU32, Intrinsic } from "./type.js";
+import * as Instruction from "./instruction/index.js";
 
 
 export class Function {

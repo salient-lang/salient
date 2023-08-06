@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { Module, Instruction, Type } from "../../source/wasm/index";
+import { Module, Instruction, Type } from "../../bin/wasm/index.js";
 
 const decoder = new TextDecoder();
 

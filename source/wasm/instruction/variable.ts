@@ -1,6 +1,6 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#variable-instructions
-import { EncodeU32 } from "../type";
-import { Byte } from "../helper";
+import { EncodeU32 } from "../type.js";
+import { Byte } from "../helper.js";
 
 
 export enum Type {

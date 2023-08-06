@@ -1,11 +1,11 @@
 // https://webassembly.github.io/spec/core/binary/modules.html
 
-import { Function } from "./function";
-import { FuncRef } from "./funcRef";
-import * as Section from "./section/index";
-import { Intrinsic } from "./type";
-import { Byte } from "./helper";
-import { MemoryRef } from "./memoryRef";
+import { Function } from "./function.js";
+import { FuncRef } from "./funcRef.js";
+import * as Section from "./section/index.js";
+import { Intrinsic } from "./type.js";
+import { Byte } from "./helper.js";
+import { MemoryRef } from "./memoryRef.js";
 
 
 

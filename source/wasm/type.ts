@@ -1,4 +1,4 @@
-import type { Byte } from "./helper";
+import type { Byte } from "./helper.js";
 
 // https://webassembly.github.io/spec/core/binary/types.html
 
