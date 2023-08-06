@@ -1,5 +1,5 @@
-import type { Byte } from "./helper";
-import { EncodeU32 } from "./type";
+import type { Byte } from "./helper.js";
+import { EncodeU32 } from "./type.js";
 
 export class MemoryRef {
 	external: boolean;

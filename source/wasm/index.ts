@@ -1,6 +1,6 @@
-import Instruction from "./instruction";
-import * as Type from "./type";
-import Module from "./module";
+import Instruction from "./instruction/index.js";
+import * as Type from "./type.js";
+import Module from "./module.js";
 
 export {
 	Instruction,

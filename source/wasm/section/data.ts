@@ -1,5 +1,5 @@
-import { Byte } from "../helper";
-import { EncodeI32, EncodeU32 } from "../type";
+import { Byte } from "../helper.js";
+import { EncodeI32, EncodeU32 } from "../type.js";
 
 
 const textEncoder = new TextEncoder();

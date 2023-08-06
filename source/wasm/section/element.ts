@@ -1,4 +1,4 @@
-import { EncodeU32 } from "../type";
+import { EncodeU32 } from "../type.js";
 
 
 export default class ElementSection {

@@ -1,6 +1,6 @@
-import { Function } from "../function";
-import { Byte } from "../helper";
-import { EncodeU32 } from "../type";
+import { Function } from "../function.js";
+import { Byte } from "../helper.js";
+import { EncodeU32 } from "../type.js";
 
 
 export default class CodeSection {

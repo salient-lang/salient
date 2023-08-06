@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha';
 import { expect } from 'chai';
 
-import { EncodeSignedLEB, EncodeUnsignedLEB } from "../../source/wasm/type";
+import { EncodeSignedLEB, EncodeUnsignedLEB } from "../../bin/wasm/type.js";
 
 
 function toHex(arr: number[]) {

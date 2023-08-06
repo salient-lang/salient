@@ -1,8 +1,8 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#control-instructions
 
-import type { Any } from "./index";
-import { EncodeU32 } from "../type";
-import { Byte } from "../helper";
+import type { Any } from "./index.js";
+import { EncodeU32 } from "../type.js";
+import { Byte } from "../helper.js";
 
 export class Unreachable {
 	toBinary(): Byte[] {

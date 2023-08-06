@@ -1,5 +1,5 @@
-import { FuncRef } from "../funcRef";
-import { EncodeU32 } from "../type";
+import { FuncRef } from "../funcRef.js";
+import { EncodeU32 } from "../type.js";
 
 
 export default class StartSection {

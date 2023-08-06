@@ -1,6 +1,6 @@
-import { EncodeU32 } from "../type";
-import { Byte } from "../helper";
-import { Data } from ".";
+import { EncodeU32 } from "../type.js";
+import { Byte } from "../helper.js";
+import { Data } from "./index.js";
 
 
 export default class DataCountSection {

@@ -1,5 +1,5 @@
-import type { Byte } from "../helper";
-import { EncodeName, EncodeU32 } from "../type";
+import type { Byte } from "../helper.js";
+import { EncodeName, EncodeU32 } from "../type.js";
 
 class Register {
 	mod:  string;

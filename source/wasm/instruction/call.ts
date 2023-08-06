@@ -1,6 +1,6 @@
-import { FuncRef } from "../funcRef";
-import { EncodeU32 } from "../type";
-import { Byte } from "../helper";
+import { FuncRef } from "../funcRef.js";
+import { EncodeU32 } from "../type.js";
+import { Byte } from "../helper.js";
 
 export default class Call {
 	x: FuncRef | number;

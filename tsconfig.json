@@ -4,10 +4,11 @@
 
 		/* Language and Environment */
 		"target": "ES2018",
+		"allowJs": true,
 
 		/* Modules */
-		"module": "CommonJS",
-		"moduleResolution": "Node",
+		"module": "ESNext",
+		"moduleResolution": "NodeNext",
 		"esModuleInterop": true,
 
 		/* Type Checking */
@@ -27,5 +28,5 @@
 		"outDir": "./bin"
 	},
 	"include": ["source"],
-	"exclude": ["node_modules"]
+	"exclude": ["node_modules"],
 }
