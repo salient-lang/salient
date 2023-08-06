@@ -16,8 +16,7 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 	if (res.isPartial) {
 		console.error(
 			chalk.red("Syntax Error") + "\n"
-			+ SourceView( path, new ReferenceRange(res.reach, res.reach) )
-			+ `\n  File: ${name}`
+			+ SourceView( path, name, new ReferenceRange(res.reach, res.reach) )
 		);
 		process.exit(1);
 	}
@@ -25,10 +24,11 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 	return res;
 }
 
-export function SourceView(path: string, range: ReferenceRange) {
+export function SourceView(path: string, name: string, range: ReferenceRange) {
 	const source = ReadByteRange(path, range.start.index-200, range.end.index+200);
 
 	const begin = ExtractLine(source, range.start).replace(/\t/g, "  ");
+	let body = "";
 
 	if (range.start.line === range.end.line) {
 		const margin = ` ${range.start.line} | `;
@@ -37,19 +37,23 @@ export function SourceView(path: string, range: ReferenceRange) {
 		const trimDiff = begin.length - trimmed.length;
 
 		const underline = "\n"
-			+ " ".repeat(margin.length + range.start.col - trimDiff -1)
+			+ " ".repeat(margin.length + range.start.col - trimDiff)
 			+ "^".repeat(Math.max(1, range.end.col - range.start.col));
 
-		return margin + trimmed + underline;
+		body = margin + trimmed + underline;
 	} else {
 		const eLine = " " + range.end.line.toString();
 		const sLine = range.start.line.toString().padStart(eLine.length, " ");
 
 		const finish = ExtractLine(source, range.end).replace(/\t/g, "  ");;
 
-		return sLine + " | " + begin + "\n"
-			+ eLine + " | " + finish ;
+		body = sLine + " | " + begin + "\n"
+			+ eLine + " | " + finish;
 	}
+
+	body += `\n  ${name}: ${range.toString()}`;
+
+	return body;
 }
 
 function ExtractLine(source: string, ref: Reference) {
@@ -60,6 +64,8 @@ function ExtractLine(source: string, ref: Reference) {
 }
 
 function FindNewLine(source: string, index: number, step: number) {
+	index += step;
+
 	while (index >= 0 && index < source.length && source[index] !== "\n") {
 		index += step;
 	}

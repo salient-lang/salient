@@ -545,7 +545,7 @@ export type Term_Func_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Func_call
+		(Term_Return | Term_Func_call)
 	]
 }
 export declare function Parse_Func_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -604,6 +604,23 @@ export type Term_Func_call_body = {
 }
 export declare function Parse_Func_call_body (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Func_call_body,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Return = {
+	type: 'return',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr
+	]
+}
+export declare function Parse_Return (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Return,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

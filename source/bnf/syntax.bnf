@@ -64,10 +64,12 @@ function ::= func_head %w* ( func_body | ";" ) ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) data_type ;
 	func_body ::= %( "{" w* ) ( func_stmt %w* )* %( w* "}" w* ";"? ) ;
-		func_stmt ::= func_call ;
+		func_stmt ::= return | func_call ;
 
 	func_call ::= ...name func_call_body;
 		func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
+
+	return ::= %("return" w+) expr %";";
 
 #=============================
 #  Expression
