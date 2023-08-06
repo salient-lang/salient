@@ -23,7 +23,7 @@ jobs:
           node-version: '18.x'
 
       - name: Install Dependencies
-        run: npm clean-install
+        run: npm install
       - name: Build Library
         run: npm run build
       - name: Automated tests
