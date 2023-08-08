@@ -10,9 +10,7 @@ export default class Import {
 
 	merge(other: Namespace) {
 		console.error(
-			(other instanceof Function
-				? `${chalk.red("Error")}: Function overrides are not supported\n`
-				: `${chalk.red("Error")}: Cannot share a name space between these two\n`)
+			`${chalk.red("Error")}: Cannot share a name space between these two\n`
 			+ this.declarationView()
 			+ other.declarationView()
 		);

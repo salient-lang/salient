@@ -60,6 +60,8 @@ function ExtractLine(source: string, ref: Reference) {
 	const begin = FindNewLine(source, ref.index, -1);
 	const end   = FindNewLine(source, ref.index, 1);
 
+	console.log(33, begin, end);
+
 	return source.slice(begin, end);
 }
 
@@ -74,7 +76,7 @@ function FindNewLine(source: string, index: number, step: number) {
 		index -= step;
 	}
 
-	return index;
+	return Math.max(index, 0);
 }
 
 
