@@ -17,4 +17,8 @@ if (!existsSync(root)) {
 }
 
 const project = new Project(root);
+if (project.failed) {
+	console.error(`Compilation ${chalk.red("Failed")}`)
+	process.exit(1);
+}
 console.log(project);

@@ -12,7 +12,7 @@ import { AssertUnreachable } from "../bnf/shared.js";
 
 export type Namespace = Function | Import | Global | Structure ;
 
-export default class File {
+export class File {
 	owner: Project;
 	name: string;
 	path: string;
@@ -31,6 +31,10 @@ export default class File {
 			this.name
 		));
 	}
+
+	markFailure() {
+		this.owner.markFailure();
+	}
 }
 
 
@@ -47,7 +51,7 @@ function Ingest(file: File, syntax: Term_Program) {
 }
 
 function IngestFunction(file: File, syntax: Term_Function) {
-	const func = new Function(file, [syntax]);
+	const func = new Function(file, syntax);
 
 	const existing = file.namespace[func.name];
 	if (!existing) {

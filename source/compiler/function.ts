@@ -1,22 +1,32 @@
-import type File from "./file.js";
+import type { File, Namespace } from "./file.js";
 import { Term_Function } from "../bnf/syntax.js";
+import { SourceView } from "../parser.js";
+import chalk from "chalk";
 
 export default class Function {
 	owner: File;
-	asts: Term_Function[];
+	ast: Term_Function;
 	name: string;
 
-	constructor(owner: File, asts: Term_Function[]) {
+	constructor(owner: File, ast: Term_Function) {
 		this.owner = owner;
-		this.asts = asts;
-
-		this.name = asts[0].value[0].value[0].value;
+		this.name = ast.value[0].value[0].value;
+		this.ast = ast;
 	}
 
-	merge(other: Function) {
-		if (other.name !== this.name)
-			throw new Error(`Attempting to merge functions with different names`);
+	declarationView(): string {
+		return SourceView(this.owner.path, this.owner.name, this.ast.value[0].ref);
+	}
 
-		this.asts.push(...other.asts);
+	merge(other: Namespace) {
+		console.error(
+			(other instanceof Function
+				? `${chalk.red("Error")}: Function overrides are not supported\n`
+				: `${chalk.red("Error")}: Cannot share a name space between these two\n`)
+			+ this.declarationView()
+			+ other.declarationView()
+		);
+
+		this.owner.markFailure();
 	}
 }

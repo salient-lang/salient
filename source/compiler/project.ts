@@ -1,6 +1,6 @@
 import path from "node:path";
 
-import File from "./file.js"
+import { File } from "./file.js"
 
 export default class Project {
 	files: File[];
@@ -20,5 +20,9 @@ export default class Project {
 		this.files.push(
 			new File(this, filePath, path.relative(this.cwd, filePath))
 		);
+	}
+
+	markFailure() {
+		this.failed = true;
 	}
 }

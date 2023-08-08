@@ -51,7 +51,7 @@ export function SourceView(path: string, name: string, range: ReferenceRange) {
 			+ eLine + " | " + finish;
 	}
 
-	body += `\n  ${name}: ${range.toString()}`;
+	body += `\n  ${name}: ${range.toString()}\n`;
 
 	return body;
 }
