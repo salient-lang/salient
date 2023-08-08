@@ -1,11 +1,21 @@
 import chalk from "chalk";
-import { Namespace } from "./file.js";
+
+import type { File, Namespace } from "./file.js";
+import { ReferenceRange, SourceView } from "../parser.js";
 
 export default class Import {
+	owner: File;
+	name: string;
+
+	constructor(owner: File) {
+		this.owner = owner;
+		this.name = "UNKNOWN";
+		// this.name = ast.value[0].value[0].value;
+		// this.ast = ast;
+	}
 
 	declarationView(): string {
-		// return SourceView(this.owner.path, this.owner.name, this.ast.value[0].ref);
-		return "";
+		return SourceView(this.owner.path, this.owner.name, ReferenceRange.blank());
 	}
 
 	merge(other: Namespace) {
