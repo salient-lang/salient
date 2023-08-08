@@ -34,8 +34,8 @@
 	},
 	"homepage": "https://salient.moe",
 	"dependencies": {
-		"chalk": "^5.3.0",
-		"bnf-parser": "^4.0.5"
+		"bnf-parser": "^4.0.6",
+		"chalk": "^5.3.0"
 	},
 	"devDependencies": {
 		"@types/chai": "^4.3.5",
