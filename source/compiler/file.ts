@@ -1,16 +1,18 @@
+import { AssertUnreachable } from "../bnf/shared.js";
 import fs from "node:fs";
 
-import type { Term_Function, Term_Program } from "../bnf/syntax.js";
+import type { Term_Access, Term_Accessor, Term_Function, Term_Program } from "../bnf/syntax.js";
 import type Project from "./project.js";
-import { Parse } from "../parser.js";
 
+import { Intrinsic, i32, i64, f32, f64 } from "./intrinsic.js";
+import { Parse } from "../parser.js";
+import Structure from "./structure.js";
 import Function from "./function.js";
 import Global from "./global.js";
 import Import from "./import.js";
-import Structure from "./structure.js";
-import { AssertUnreachable } from "../bnf/shared.js";
+import { FlatAccess, FlattenAccess } from "./helper.js";
 
-export type Namespace = Function | Import | Global | Structure ;
+export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 
 export class File {
 	owner: Project;
@@ -24,7 +26,10 @@ export class File {
 		this.name = name;
 		this.path = path;
 
-		this.namespace = {};
+		this.namespace = {
+			i32, i64,
+			f32, f64
+		};
 		Ingest(this, Parse(
 			fs.readFileSync(this.path, "utf-8"),
 			this.path,
@@ -34,6 +39,20 @@ export class File {
 
 	markFailure() {
 		this.owner.markFailure();
+	}
+
+	get(access: Term_Access | FlatAccess): Namespace | null {
+		if (!Array.isArray(access)) {
+			access = FlattenAccess(access);
+		}
+
+		if (access.length !== 1) return null;
+
+		const target = access.pop();
+		if (!target) return null;
+		if (target.type !== "access_static" && target.type !== "name") return null;
+
+		return this.namespace[target.value[0].value];
 	}
 }
 

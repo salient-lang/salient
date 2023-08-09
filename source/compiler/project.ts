@@ -1,25 +1,31 @@
 import path from "node:path";
 
 import { File } from "./file.js"
+import Module from "../wasm/module.js";
 
 export default class Project {
 	files: File[];
+	entry: File;
 	cwd: string;
+
+	module: Module;
 
 	failed: boolean;
 
 	constructor(entry: string) {
 		this.failed = false;
 		this.files = [];
-
 		this.cwd = path.dirname(entry);
-		this.import(entry);
+
+		this.module = new Module();
+		this.entry = this.import(entry);
 	}
 
 	import(filePath: string) {
-		this.files.push(
-			new File(this, filePath, path.relative(this.cwd, filePath))
-		);
+		const file = new File(this, filePath, path.relative(this.cwd, filePath));
+		this.files.push(file);
+
+		return file;
 	}
 
 	markFailure() {

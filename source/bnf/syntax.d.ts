@@ -370,23 +370,6 @@ export declare function Parse_Float (i: string, refMapping?: boolean): _Shared.P
 	isPartial: boolean
 }
 
-export type Term_Variable = {
-	type: 'variable',
-	start: number,
-	end: number,
-	count: number,
-	ref: _Shared.ReferenceRange,
-	value: [
-		_Literal
-	]
-}
-export declare function Parse_Variable (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_Variable,
-	reachBytes: number,
-	reach: null | _Shared.Reference,
-	isPartial: boolean
-}
-
 export type Term_Name = {
 	type: 'name',
 	start: number,
@@ -394,8 +377,7 @@ export type Term_Name = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)+', value: [(Term_Letter | _Literal & {value: "\x5f"})] & Array<(Term_Letter | _Literal & {value: "\x5f"})>, start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		{ type: '(...)*', value: Array<(Term_Letter | Term_Digit | _Literal & {value: "\x5f"})>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		_Literal
 	]
 }
 export declare function Parse_Name (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -405,8 +387,52 @@ export declare function Parse_Name (i: string, refMapping?: boolean): _Shared.Pa
 	isPartial: boolean
 }
 
-export type Term_Data_type = {
-	type: 'data_type',
+export type Term_Access = {
+	type: 'access',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Name,
+		{ type: '(...)*', value: Array<{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Accessor
+	]
+}>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}
+export declare function Parse_Access (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Access,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Accessor = {
+	type: 'accessor',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Access_static | Term_Access_dynamic | Term_Access_comp)
+	]
+}
+export declare function Parse_Accessor (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Accessor,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Access_static = {
+	type: 'access_static',
 	start: number,
 	end: number,
 	count: number,
@@ -415,8 +441,42 @@ export type Term_Data_type = {
 		_Literal
 	]
 }
-export declare function Parse_Data_type (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_Data_type,
+export declare function Parse_Access_static (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Access_static,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Access_dynamic = {
+	type: 'access_dynamic',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+
+	]
+}
+export declare function Parse_Access_dynamic (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Access_dynamic,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Access_comp = {
+	type: 'access_comp',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+
+	]
+}
+export declare function Parse_Access_comp (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Access_comp,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
@@ -448,7 +508,8 @@ export type Term_Func_head = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		_Literal,
-		Term_Func_args
+		Term_Func_args,
+		Term_Access
 	]
 }
 export declare function Parse_Func_head (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -502,7 +563,7 @@ export type Term_Func_arg = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		_Literal,
-		Term_Data_type
+		Term_Access
 	]
 }
 export declare function Parse_Func_arg (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -713,7 +774,7 @@ export type Term_Expr_val = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Variable,
+		Term_Access,
 		{ type: '(...)?', value: [] | [Term_Func_call_body], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
