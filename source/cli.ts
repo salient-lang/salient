@@ -7,7 +7,12 @@ import chalk from "chalk";
 
 import Project from "./compiler/project.js";
 import Function from "./compiler/function.js";
+import { execSync } from "node:child_process";
 
+if (process.argv.includes("--version")) {
+	console.log("version: 0.0.0");
+	process.exit(0);
+}
 
 const cwd = resolve("./");
 const root = join(cwd, process.argv[2]);
@@ -30,7 +35,10 @@ if (!(mainFunc instanceof Function)) {
 	process.exit(1);
 }
 
+
 mainFunc.compile();
 
 
 writeFileSync("out.wasm", project.module.toBinary());
+execSync("wasm2wat out.wasm");
+console.log(`  out: ${"out.wasm"}`);

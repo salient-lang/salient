@@ -1,10 +1,25 @@
 import type { File, Namespace } from "./file.js";
 import { Term_Access, Term_Function } from "../bnf/syntax.js";
-import { SourceView } from "../parser.js";
+import { ReferenceRange, SourceView } from "../parser.js";
 import chalk from "chalk";
 import { Intrinsic } from "./intrinsic.js";
 import { FlatAccessToStr, FlattenAccess } from "./helper.js";
 import { Instruction } from "../wasm/index.js";
+import { Scope } from "./codegen/scope.js";
+
+
+class Argument {
+	name: string;
+	type: Intrinsic;
+	ref: ReferenceRange;
+
+	constructor(name: string, type: Intrinsic, ref: ReferenceRange) {
+		this.name = name;
+		this.type = type;
+		this.ref  = ref;
+	}
+}
+
 
 export default class Function {
 	owner: File;
@@ -15,7 +30,7 @@ export default class Function {
 	isLinking:  boolean;
 	isLinked:   boolean;
 
-	signature: Intrinsic[];
+	arguments: Argument[];
 	returns:   Intrinsic[];
 
 	constructor(owner: File, ast: Term_Function) {
@@ -23,8 +38,8 @@ export default class Function {
 		this.name = ast.value[0].value[0].value;
 		this.ast = ast;
 
-		this.signature = [];
 		this.returns   = [];
+		this.arguments = [];
 
 		this.isLinking  = false;
 		this.isLinked   = false;
@@ -56,15 +71,22 @@ export default class Function {
 
 		const head = this.ast.value[0];
 
-		const raw_args = head.value[1].value[0].value[0];
-		const args = LinkTypes(this.getFile(),
-			raw_args ? [
-				raw_args.value[0].value[1],
-				...raw_args.value[1].value.map(x => x.value[0].value[1])
-			] : []
-		);
-		if (args === null) return;
-		this.signature = args;
+		const arg_group = head.value[1].value[0].value[0];
+		const raw_args = arg_group ? [
+			arg_group.value[0],
+			...arg_group.value[1].value.map(x => x.value[0])
+		] : [] ;
+
+		const types = LinkTypes(this.getFile(), raw_args.map(x => x.value[1]));
+		if (types === null) return;
+
+		for (let i=0; i<raw_args.length; i++) {
+			this.arguments.push(new Argument(
+				raw_args[i].value[0].value,
+				types[i],
+				raw_args[i].ref
+			))
+		}
 
 		const rets = LinkTypes(this.getFile(),
 			[head.value[2]]
@@ -81,13 +103,19 @@ export default class Function {
 		if (this.isCompiled) return;      // Already compiled
 		if (!this.isLinked)  this.link(); // Link if not done already
 		if (!this.isLinked)  return;      // Failed to link
+		console.log(103, this);
 
 		const project = this.getFile().owner;
 
 		const func = project.module.makeFunction(
-			this.signature.map(x => x.bitcode),
+			this.arguments.map(x => x.type.bitcode),
 			this.returns.map(x => x.bitcode)
 		);
+
+		const scope = new Scope();
+		for (const arg of this.arguments) {
+			scope.registerArgument(arg.name, arg.type, arg.ref)
+		}
 
 		func.code.push(Instruction.const.i32(0));
 		func.code.push(Instruction.return());
