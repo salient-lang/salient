@@ -1,4 +1,4 @@
-import { FuncRef } from "./funcRef.js";
+import { FuncRef, LocalRef } from "./funcRef.js";
 import { Byte } from "./helper.js";
 import { EncodeU32, Intrinsic } from "./type.js";
 import * as Instruction from "./instruction/index.js";
@@ -11,7 +11,7 @@ export class Function {
 	ref   : FuncRef;
 	code  : Instruction.Any[];
 
-	locals: Intrinsic[];
+	locals: LocalRef[];
 
 	constructor(typeIdx: number, inputs: number, outputs: number) {
 		this.inputs  = inputs;
@@ -23,11 +23,11 @@ export class Function {
 		this.code   = [];
 	}
 
-	addLocal(type: Intrinsic): number {
-		const idx = this.locals.length;
-		this.locals.push(type);
+	addLocal(type: Intrinsic): LocalRef {
+		const ref = new LocalRef(type);
+		this.locals.push(ref);
 
-		return this.inputs + idx;
+		return ref;
 	}
 
 	resolve(idx: number, override: boolean = false) {
@@ -43,9 +43,29 @@ export class Function {
 
 
 	toBinary (): Byte[] {
-		const buf = EncodeU32(this.locals.length);
-		for (const local of this.locals) {
-			buf.push(local as number);
+		// Count the number of instances of each type
+		const types = new Map<Intrinsic, number>();
+		for (const ref of this.locals) {
+			types.set(
+				ref.type,
+				(types.get(ref.type) || 0) + 1
+			);
+		}
+
+		const buf = EncodeU32(Object.keys(types).length);
+		let offset = 0;
+		for (const entry of types) {      // locals ::=
+			const count = entry[1];
+			const type  = entry[0];
+			buf.push(...EncodeU32(count));  // n:u32
+			buf.push(type);                 // t:valtype
+
+			// Resolve local variable refs
+			for (const ref of this.locals) {
+				if (ref.type !== type) continue;
+				ref.resolve(offset);
+				offset++;
+			}
 		}
 
 		for (const line of this.code) {

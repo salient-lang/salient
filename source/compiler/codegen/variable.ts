@@ -1,5 +1,6 @@
 import { ReferenceRange } from "../../parser.js";
 import { Intrinsic } from "../intrinsic.js";
+import { Register } from "./registers.js";
 
 export enum TypeSystem {
 	Affine,
@@ -10,7 +11,7 @@ export class Variable {
 	name: string;
 	type: Intrinsic;
 	storage: TypeSystem;
-	register: number;
+	register: Register;
 
 	isDefined: boolean;
 	isGlobal: boolean;
@@ -19,7 +20,7 @@ export class Variable {
 	modifiedAt: ReferenceRange;
 
 
-	constructor(name: string, type: Intrinsic, register: number, ref: ReferenceRange) {
+	constructor(name: string, type: Intrinsic, register: Register, ref: ReferenceRange) {
 		this.name = name;
 		this.type = type;
 		this.storage    = (type instanceof Intrinsic) ? TypeSystem.Normal : TypeSystem.Affine;

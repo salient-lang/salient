@@ -1,10 +1,10 @@
 import type { File, Namespace } from "./file.js";
+import chalk from "chalk";
+
 import { Term_Access, Term_Function } from "../bnf/syntax.js";
 import { ReferenceRange, SourceView } from "../parser.js";
-import chalk from "chalk";
 import { Intrinsic } from "./intrinsic.js";
-import { FlatAccessToStr, FlattenAccess } from "./helper.js";
-import { Instruction } from "../wasm/index.js";
+import { Context } from "./codegen/context.js";
 import { Scope } from "./codegen/scope.js";
 
 
@@ -103,7 +103,6 @@ export default class Function {
 		if (this.isCompiled) return;      // Already compiled
 		if (!this.isLinked)  this.link(); // Link if not done already
 		if (!this.isLinked)  return;      // Failed to link
-		console.log(103, this);
 
 		const project = this.getFile().owner;
 
@@ -112,13 +111,16 @@ export default class Function {
 			this.returns.map(x => x.bitcode)
 		);
 
-		const scope = new Scope();
+		const scope = new Scope(func);
 		for (const arg of this.arguments) {
 			scope.registerArgument(arg.name, arg.type, arg.ref)
 		}
 
-		func.code.push(Instruction.const.i32(0));
-		func.code.push(Instruction.return());
+		const ctx = new Context(this.getFile(), scope, func.code);
+		const body = this.ast.value[1];
+		if (body.type === "literal") throw new Error("Missing function body");
+
+		ctx.compile(body.value.map(x => x.value[0].value[0]));
 	}
 }
 
@@ -130,9 +132,7 @@ function LinkTypes(scope: File, syntax: Term_Access[]) {
 
 	let failed = false;
 	for (const arg of syntax) {
-		const flat = FlattenAccess(arg);
-
-		const res = scope.get(flat);
+		const res = scope.get(arg);
 		if (res === null || !(res instanceof Intrinsic)) {
 			console.error(
 				`${chalk.red("Error")}: Cannot find type\n`

@@ -1,42 +1,49 @@
+import { LocalRef } from "../../wasm/funcRef.js";
+import { Function } from "../../wasm/function.js";
 import * as Wasm from "../../wasm/index.js";
 
 export class Register {
 	type: Wasm.Type.Intrinsic;
 	isFree: boolean;
+	ref: LocalRef;
 
-	constructor(type: number, isFree: boolean) {
+	constructor(type: number, ref: LocalRef, isFree: boolean = false) {
 		this.isFree = isFree;
 		this.type   = type;
+		this.ref    = ref;
 	}
 }
 
 export class RegisterAllocator {
+	_args: number;
 	_regs: Register[];
+	func: Function;
 
-	constructor() {
+	constructor(func: Function) {
+		this._args = 0;
 		this._regs = [];
+		this.func = func;
 	}
 
+	allocate(type: Wasm.Type.Intrinsic, isArg: boolean = false) {
+		if (isArg) {
+			let ref = new LocalRef(type);
+			ref.resolve(this._args++);
 
-	allocate(type: Wasm.Type.Intrinsic) {
+			return new Register(type, ref);
+		}
+
 		for (let i=0; i<this._regs.length; i++) {
 			const reg = this._regs[i];
 			if (reg.isFree && reg.type === type) {
 				reg.isFree = false;
-				return i;
+				return reg;
 			}
 		}
 
-		const index = this._regs.length;
-		this._regs.push(new Register(type, false));
-		return index;
-	}
+		const reg = new Register(type, this.func.addLocal(type));
+		this._regs.push(reg);
 
-	bulkFree(regs: number[]) {
-		for (let i=0; i<this._regs.length; i++) {
-			if (regs.includes(i)) {
-				this._regs[i].isFree = true;
-			}
-		}
+		return reg;
 	}
 }

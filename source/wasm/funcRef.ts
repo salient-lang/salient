@@ -1,5 +1,6 @@
 import type { Byte } from "./helper.js";
-import { EncodeU32 } from "./type.js";
+
+import { EncodeU32, Intrinsic } from "./type.js";
 
 export class FuncRef {
 	external: boolean;
@@ -40,10 +41,12 @@ export class FuncRef {
 
 export class LocalRef {
 	resolved: boolean;
+	type: Intrinsic;
 	idx: number;
 
-	constructor() {
+	constructor(type: Intrinsic) {
 		this.resolved = false;
+		this.type = type;
 		this.idx = 0;
 	}
 
