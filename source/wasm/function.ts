@@ -52,21 +52,28 @@ export class Function {
 			);
 		}
 
-		const buf = EncodeU32(Object.keys(types).length);
-		let offset = 0;
-		for (const entry of types) {      // locals ::=
-			const count = entry[1];
-			const type  = entry[0];
-			buf.push(...EncodeU32(count));  // n:u32
-			buf.push(type);                 // t:valtype
+		// Encode local types and accumulate total offsets by type
+		const buf = EncodeU32(types.size);
+		let tally = 0;
+		for (const [type, count] of types) { // locals ::=
+			buf.push(...EncodeU32(count));     // n:u32
+			buf.push(type);                    // t:valtype
 
-			// Resolve local variable refs
-			for (const ref of this.locals) {
-				if (ref.type !== type) continue;
-				ref.resolve(offset);
-				offset++;
-			}
+			// accumulate
+			types.set(type, tally);
+			tally += count;
 		}
+
+		// Resolve local variable refs
+		let offsets = new Map<Intrinsic, number>();;
+		for (const ref of this.locals) {
+			const key = ref.type;
+			const offset = offsets.get(key) || types.get(key) || 0;
+			ref.resolve(offset);
+			offsets.set(key, offset+1);
+		}
+
+		console.log(76, buf);
 
 		for (const line of this.code) {
 			buf.push(...line.toBinary());
