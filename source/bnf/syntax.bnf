@@ -57,6 +57,8 @@ access ::= name ( %w* accessor )* ;
 	access_dynamic ::= %"[]" ;
 	access_comp    ::= %"#[]";
 
+declare ::= %( "let" w* ) name %w* (%":" %w* access %w*)? %("=" w*) integer %(w* ";") ;
+
 
 
 #=============================
@@ -67,7 +69,7 @@ function ::= func_head %w* ( func_body | ";" ) ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 	func_body ::= %( "{" w* ) ( func_stmt %w* )* %( w* "}" w* ";"? ) ;
-		func_stmt ::= return | func_call ;
+		func_stmt ::= declare | return | func_call ;
 
 func_call ::= ...name func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;

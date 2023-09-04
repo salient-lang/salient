@@ -482,6 +482,34 @@ export declare function Parse_Access_comp (i: string, refMapping?: boolean): _Sh
 	isPartial: boolean
 }
 
+export type Term_Declare = {
+	type: 'declare',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Name,
+		{ type: '(...)?', value: [] | [{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Access
+	]
+}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
+		Term_Integer
+	]
+}
+export declare function Parse_Declare (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Declare,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
 export type Term_Function = {
 	type: 'function',
 	start: number,
@@ -606,7 +634,7 @@ export type Term_Func_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Return | Term_Func_call)
+		(Term_Declare | Term_Return | Term_Func_call)
 	]
 }
 export declare function Parse_Func_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {
