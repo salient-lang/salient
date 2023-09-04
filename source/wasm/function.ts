@@ -1,6 +1,6 @@
 import { FuncRef } from "./funcRef.js";
 import { Byte } from "./helper.js";
-import { EncodeI32, EncodeU32, Intrinsic } from "./type.js";
+import { EncodeU32, Intrinsic } from "./type.js";
 import * as Instruction from "./instruction/index.js";
 
 
@@ -45,7 +45,7 @@ export class Function {
 	toBinary (): Byte[] {
 		const buf = EncodeU32(this.locals.length);
 		for (const local of this.locals) {
-			buf.push(local);
+			buf.push(local as number);
 		}
 
 		for (const line of this.code) {

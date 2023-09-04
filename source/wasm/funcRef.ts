@@ -37,3 +37,29 @@ export class FuncRef {
 		];
 	}
 }
+
+export class LocalRef {
+	resolved: boolean;
+	idx: number;
+
+	constructor() {
+		this.resolved = false;
+		this.idx = 0;
+	}
+
+	resolve(idx: number, override: boolean = false) {
+		if (!override && this.resolved) throw new Error("This local variable reference has already been resolved");
+
+		this.resolved = true;
+		this.idx = idx;
+	}
+
+	unresolve() {
+		this.resolved = false;
+	}
+
+	getIdentifier(): number {
+		if (!this.resolved) throw new Error("Cannot get the identifier of an unresolved variable ref");
+		return this.idx;
+	}
+}

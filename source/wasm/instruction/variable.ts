@@ -1,6 +1,7 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#variable-instructions
 import { EncodeU32 } from "../type.js";
 import { Byte } from "../helper.js";
+import { LocalRef } from "../funcRef.js";
 
 
 export enum Type {
@@ -13,9 +14,9 @@ export enum Type {
 
 export class Variable {
 	type: Type;
-	x   : number;
+	x   : LocalRef | number;
 
-	constructor(type: Type, idx: number) {
+	constructor(type: Type, idx: LocalRef | number) {
 		this.type = type;
 		this.x    = idx;
 	}
@@ -23,7 +24,10 @@ export class Variable {
 	toBinary(): Byte[] {
 		return [
 			this.type,
-			...EncodeU32(this.x)
+			...EncodeU32(this.x instanceof LocalRef
+					? this.x.getIdentifier()
+					: this.x
+				)
 		];
 	}
 }
@@ -34,9 +38,9 @@ const wrapper = {
 		set: (x: number) => new Variable(Type.globalSet, x)
 	},
 	local: {
-		get: (x: number) => new Variable(Type.localGet, x),
-		set: (x: number) => new Variable(Type.localSet, x),
-		tee: (x: number) => new Variable(Type.localTee, x),
+		get: (x: LocalRef | number) => new Variable(Type.localGet, x),
+		set: (x: LocalRef | number) => new Variable(Type.localSet, x),
+		tee: (x: LocalRef | number) => new Variable(Type.localTee, x),
 	}
 }
 export default wrapper;
