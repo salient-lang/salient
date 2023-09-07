@@ -25,6 +25,8 @@ export class Scope {
 	}
 
 	registerVariable(name: string, type: Intrinsic, ref: ReferenceRange) {
+		if (this.vars[name]) return null;
+
 		this.vars[name] = new Variable(
 			name, type,
 			this.register.allocate(type.bitcode),

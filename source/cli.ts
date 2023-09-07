@@ -40,5 +40,5 @@ mainFunc.compile();
 
 
 writeFileSync("out.wasm", project.module.toBinary());
-execSync("wasm2wat out.wasm");
+execSync("wasm2wat out.wasm -o out.wat");
 console.log(`  out: ${"out.wasm"}`);

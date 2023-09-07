@@ -73,8 +73,6 @@ export class Function {
 			offsets.set(key, offset+1);
 		}
 
-		console.log(76, buf);
-
 		for (const line of this.code) {
 			buf.push(...line.toBinary());
 		}

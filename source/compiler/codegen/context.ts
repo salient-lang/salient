@@ -4,7 +4,7 @@ import type { File } from "../file.js";
 
 import { Instruction, AnyInstruction } from "../../wasm/index.js";
 import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic, i32 } from "../intrinsic.js";
+import { Intrinsic } from "../intrinsic.js";
 import chalk from "chalk";
 
 export class Context {
@@ -56,15 +56,22 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		process.exit(1);
 	}
 
-	if (typeRef !== i32) {
+	let reg = ctx.scope.registerVariable(name, typeRef, type.ref);
+	if (!reg) {
 		console.error(
-			`${chalk.red("Error")}: Only currently allow i32\n`
+			`${chalk.red("Error")}: Variable ${name} is already declared\n`
 			+ SourceView(ctx.file.path, ctx.file.name, type.ref)
 		)
 		process.exit(1);
 	}
 
-	let reg = ctx.scope.registerVariable(name, typeRef, type.ref);
+	ctx.block.push(Instruction.const.i32(
+		Number(
+			(value.value[0].value[0]?.value || "")
+			+ value.value[1].value
+		)
+	));
+	ctx.block.push(Instruction.local.set(reg.register.ref));
 
-	console.log(41, syntax);
+	// console.log(41, syntax, reg);
 }
