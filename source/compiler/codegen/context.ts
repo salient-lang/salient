@@ -63,7 +63,15 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		process.exit(1);
 	}
 
-	CompileExpr(ctx, value);
+	const resolveType = CompileExpr(ctx, value, typeRef);
+	if (resolveType !== typeRef) {
+		console.error(
+			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
+			+ SourceView(ctx.file.path, ctx.file.name, type.ref)
+		)
+		process.exit(1);
+	}
+
 	ctx.block.push(Instruction.local.set(reg.register.ref));
 }
 

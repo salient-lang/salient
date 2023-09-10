@@ -346,20 +346,7 @@ export type Term_Float = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		_Literal,
-		_Literal & {value: "\x2e"},
-		_Literal,
-		{ type: '(...)?', value: [] | [{
-	type: '(...)',
-	start: number,
-	end: number,
-	count: number,
-	ref: _Shared.ReferenceRange,
-	value: [
-		_Literal & {value: "e"},
 		_Literal
-	]
-}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Float (i: string, refMapping?: boolean): _Shared.ParseError | {

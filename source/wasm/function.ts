@@ -5,7 +5,7 @@ import * as Instruction from "./instruction/index.js";
 
 
 export class Function {
-	inputs : number;
+	inputs  : number;
 	outputs : number;
 	type  : number;
 	ref   : FuncRef;
@@ -65,11 +65,11 @@ export class Function {
 		}
 
 		// Resolve local variable refs
-		let offsets = new Map<Intrinsic, number>();;
+		let offsets = new Map<Intrinsic, number>();
 		for (const ref of this.locals) {
 			const key = ref.type;
 			const offset = offsets.get(key) || types.get(key) || 0;
-			ref.resolve(offset);
+			ref.resolve(offset+this.inputs);
 			offsets.set(key, offset+1);
 		}
 

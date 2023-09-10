@@ -42,7 +42,7 @@ void ::= "void" ;
 integer ::= ...integer_u ;
 	integer_u ::= ( digit_nz digit* ) | zero ;
 	zero ::= "0" ;
-float ::= ...integer "." ...integer_u ( "e" ...integer )? ;
+float ::= ...( integer "." integer_u ( "e" integer )? ) ;
 
 
 
