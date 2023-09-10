@@ -6,6 +6,7 @@ import { Instruction, AnyInstruction } from "../../wasm/index.js";
 import { AssertUnreachable } from "../../bnf/shared.js";
 import { Intrinsic } from "../intrinsic.js";
 import chalk from "chalk";
+import { CompileExpr } from "./expression.js";
 
 export class Context {
 	file: File;
@@ -27,15 +28,12 @@ export class Context {
 			const line = stmt.value[0];
 
 			switch (line.type) {
-				case "declare": CompileDeclare(this, line); break;
-				case "func_call": break;
-				case "return": break;
+				case "declare":   CompileDeclare (this, line); break;
+				case "statement": CompileExprStmt(this, line); break;
+				case "return":    CompileReturn  (this, line); break;
 				default: AssertUnreachable(line);
 			}
 		}
-
-		this.block.push(Instruction.const.i32(0));
-		this.block.push(Instruction.return());
 	}
 }
 
@@ -65,13 +63,20 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		process.exit(1);
 	}
 
-	ctx.block.push(Instruction.const.i32(
-		Number(
-			(value.value[0].value[0]?.value || "")
-			+ value.value[1].value
-		)
-	));
+	CompileExpr(ctx, value);
 	ctx.block.push(Instruction.local.set(reg.register.ref));
+}
 
-	// console.log(41, syntax, reg);
+
+function CompileExprStmt(ctx: Context, syntax: Syntax.Term_Statement) {
+	CompileExpr(ctx, syntax.value[0]);
+	ctx.block.push(Instruction.drop());
+}
+
+
+function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
+	const value = syntax.value[0];
+
+	CompileExpr(ctx, value);
+	ctx.block.push(Instruction.return());
 }

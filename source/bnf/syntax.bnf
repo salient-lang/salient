@@ -39,7 +39,7 @@ boolean ::= "true" | "false" ;
 
 void ::= "void" ;
 
-integer ::= "-"? ...integer_u ;
+integer ::= ...integer_u ;
 	integer_u ::= ( digit_nz digit* ) | zero ;
 	zero ::= "0" ;
 float ::= ...integer "." ...integer_u ( "e" ...integer )? ;
@@ -57,7 +57,7 @@ access ::= name ( %w* accessor )* ;
 	access_dynamic ::= %"[]" ;
 	access_comp    ::= %"#[]";
 
-declare ::= %( "let" w* ) name %w* (%":" %w* access %w*)? %("=" w*) integer %(w* ";") ;
+declare ::= %( "let" w* ) name %w* (%":" %w* access %w*)? %("=" w*) expr %(w* ";") ;
 
 
 
@@ -69,9 +69,9 @@ function ::= func_head %w* ( func_body | ";" ) ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 	func_body ::= %( "{" w* ) ( func_stmt %w* )* %( w* "}" w* ";"? ) ;
-		func_stmt ::= declare | return | func_call ;
+		func_stmt ::= declare | statement | return ;
 
-func_call ::= ...name func_call_body;
+func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
 return ::= %("return" w+) expr %";";
@@ -87,3 +87,5 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | expr_val ) ;
 		expr_val ::= access func_call_body? ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
+
+statement ::= expr %(w* ";" w*) ;

@@ -285,7 +285,6 @@ export type Term_Integer = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)?', value: [] | [_Literal & {value: "\x2d"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
 		_Literal
 	]
 }
@@ -500,7 +499,7 @@ export type Term_Declare = {
 		Term_Access
 	]
 }], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		Term_Integer
+		Term_Expr
 	]
 }
 export declare function Parse_Declare (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -634,7 +633,7 @@ export type Term_Func_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Declare | Term_Return | Term_Func_call)
+		(Term_Declare | Term_Statement | Term_Return)
 	]
 }
 export declare function Parse_Func_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -651,7 +650,7 @@ export type Term_Func_call = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		_Literal,
+		Term_Access,
 		Term_Func_call_body
 	]
 }
@@ -825,6 +824,23 @@ export type Term_Expr_brackets = {
 }
 export declare function Parse_Expr_brackets (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Expr_brackets,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Statement = {
+	type: 'statement',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr
+	]
+}
+export declare function Parse_Statement (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Statement,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

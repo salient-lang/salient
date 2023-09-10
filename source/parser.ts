@@ -16,7 +16,13 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 	if (res.isPartial) {
 		console.error(
 			chalk.red("Syntax Error") + "\n"
-			+ SourceView( path, name, new ReferenceRange(res.reach, res.reach) )
+			+ SourceView(
+					path,
+					name,
+					res.reach
+						? new ReferenceRange(res.reach, res.reach)
+						: ReferenceRange.blank()
+				)
 		);
 		process.exit(1);
 	}
