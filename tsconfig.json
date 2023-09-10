@@ -3,12 +3,14 @@
 		/* Visit https://aka.ms/tsconfig to read more about this file */
 
 		/* Language and Environment */
-		"target": "ES2018",
+		"target": "ESNext",
 		"allowJs": true,
 
 		/* Modules */
-		"module": "ESNext",
+		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
+		"resolveJsonModule": true,
+		"forceConsistentCasingInFileNames": true,
 		"esModuleInterop": true,
 
 		/* Type Checking */
@@ -29,4 +31,9 @@
 	},
 	"include": ["source"],
 	"exclude": ["node_modules"],
+
+	"ts-node": {
+		"esm": true,
+		"experimentalSpecifierResolution": "node"
+	}
 }
