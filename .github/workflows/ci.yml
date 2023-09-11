@@ -17,14 +17,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Use Node.js
-        uses: actions/setup-node@v2
+      - uses: denoland/setup-deno@v1
         with:
-          node-version: '18.x'
+          deno-version: v1.x
 
-      - name: Install Dependencies
-        run: npm install
-      - name: Build Library
-        run: tsc
       - name: Automated tests
-        run: npm run test:mocha
+        run: deno test
