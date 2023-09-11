@@ -1,10 +1,8 @@
 import { SourceView, type Syntax } from "../../parser.js";
-import type { Scope } from "./scope.js";
-import type { File } from "../file.js";
 
 import { Instruction, AnyInstruction } from "../../wasm/index.js";
 import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic, f32, f64, i32, i64 } from "../intrinsic.js";
+import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.js";
 import { Context } from "./context.js";
 import chalk from "chalk";
 
@@ -47,6 +45,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 		process.exit(1);
 	}
 
+	const unsigned = expect === u32 || expect === u64;
 	if (prefix) {
 		const op = prefix.value[0].value;
 		switch (op) {
@@ -57,6 +56,14 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 				)
 				process.exit(1);
 			case "-":
+				if (unsigned) {
+					console.error(
+						`${chalk.red("Error")}: Cannot have a negative unsigned integer\n`
+						+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
+					)
+					process.exit(1);
+				}
+
 				num *= -1;
 				break;
 			default: AssertUnreachable(op);
@@ -65,10 +72,12 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 
 	if (expect === i64) {
 		ctx.block.push(Instruction.const.i64(num));
+		if (unsigned) return u64;
 		return i64;
 	}
 
 	ctx.block.push(Instruction.const.i32(num));
+	if (unsigned) return u32;
 	return i32;
 }
 

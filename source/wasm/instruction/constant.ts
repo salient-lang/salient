@@ -1,6 +1,6 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
 import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "../type.js";
-import { AssertUnreachable, Byte } from "../helper.js";
+import { Byte } from "../helper.js";
 
 
 export enum Type {
