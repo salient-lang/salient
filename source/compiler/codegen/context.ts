@@ -1,6 +1,6 @@
 import { SourceView, type Syntax } from "../../parser.js";
 import type { Scope } from "./scope.js";
-import type { File } from "../file.js";
+import type { File, Namespace } from "../file.js";
 
 import { Instruction, AnyInstruction } from "../../wasm/index.js";
 import { AssertUnreachable } from "../../bnf/shared.js";
@@ -43,31 +43,33 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const type  = syntax.value[1].value[0];
 	const value = syntax.value[2];
 
-	if (!type) throw new Error("Unimplemented auto type");
-	const typeRef = ctx.file.get(type.value[0]);
+	let typeRef: null | Namespace = null;
+	if (type) {
+		typeRef = ctx.file.get(type.value[0]);
 
-	if (typeRef === null || !(typeRef instanceof Intrinsic)) {
+		if (typeRef === null || !(typeRef instanceof Intrinsic)) {
+			console.error(
+				`${chalk.red("Error")}: Cannot find type\n`
+				+ SourceView(ctx.file.path, ctx.file.name, type.ref)
+			)
+			process.exit(1);
+		}
+	}
+
+	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
+	if (typeRef && resolveType !== typeRef) {
 		console.error(
-			`${chalk.red("Error")}: Cannot find type\n`
-			+ SourceView(ctx.file.path, ctx.file.name, type.ref)
+			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
+			+ SourceView(ctx.file.path, ctx.file.name, type?.ref || syntax.ref)
 		)
 		process.exit(1);
 	}
 
-	let reg = ctx.scope.registerVariable(name, typeRef, type.ref);
+	let reg = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
 	if (!reg) {
 		console.error(
 			`${chalk.red("Error")}: Variable ${name} is already declared\n`
-			+ SourceView(ctx.file.path, ctx.file.name, type.ref)
-		)
-		process.exit(1);
-	}
-
-	const resolveType = CompileExpr(ctx, value, typeRef);
-	if (resolveType !== typeRef) {
-		console.error(
-			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
-			+ SourceView(ctx.file.path, ctx.file.name, type.ref)
+			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
 		process.exit(1);
 	}
