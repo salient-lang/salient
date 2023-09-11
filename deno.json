@@ -1,0 +1,33 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"strict": true,
+		"strictNullChecks": true,
+		"lib": ["ESNext", "DOM"]
+	},
+	"lint": {
+		"include": ["source/"],
+		"exclude": ["source/bnf/"],
+		"rules": {
+			"tags": ["recommended"],
+			"include": ["ban-untagged-todo"],
+			"exclude": ["no-unused-vars"]
+		}
+	},
+	"ignore-fmt": {
+		"useTabs": true,
+		"semiColons": true,
+		"proseWrap": "preserve",
+		"include": ["source/"],
+		"exclude": ["source/bnf/"]
+	},
+	"lock": false,
+	"nodeModulesDir": true,
+	"test": {
+		"include": ["source/"],
+		"exclude": ["source/bnf/"]
+	},
+	"tasks": {
+		"start": "deno run --allow-read --allow-write cli.ts"
+	}
+}

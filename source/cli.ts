@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-"use strict";
+/// <reference lib="deno.ns" />
 
 import { existsSync, writeFileSync } from "node:fs";
 import { resolve, join, relative } from "node:path";
@@ -9,30 +8,35 @@ import chalk from "chalk";
 import Project from "./compiler/project.ts";
 import Function from "./compiler/function.ts";
 
-if (process.argv.includes("--version")) {
+if (Deno.args.includes("--version")) {
 	console.log("version: 0.0.0");
-	process.exit(0);
+	Deno.exit(0);
+}
+
+if (!Deno.args[0]) {
+	console.error(`${chalk.red("Error")}: Please provide an entry file`);
+	Deno.exit(1);
 }
 
 const cwd = resolve("./");
-const root = join(cwd, process.argv[2]);
+const root = join(cwd, Deno.args[0]);
 
 if (!existsSync(root)) {
 	console.error(`${chalk.red("Error")}: Cannot find entry ${chalk.cyan(relative(cwd, root))}`);
-	process.exit(1);
+	Deno.exit(1);
 }
 
 const project = new Project(root);
 if (project.failed) {
 	console.error(`Compilation ${chalk.red("Failed")}`);
-	process.exit(1);
+	Deno.exit(1);
 }
 
 const mainFile = project.entry;
 const mainFunc = mainFile.namespace["fibonacci"];
 if (!(mainFunc instanceof Function)) {
 	console.error(`Main namespace is not a function: ${mainFunc.constructor.name}`);
-	process.exit(1);
+	Deno.exit(1);
 }
 
 

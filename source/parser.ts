@@ -4,13 +4,14 @@ import chalk from "chalk";
 import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
 import * as Syntax from "./bnf/syntax.js";
 
+await Syntax.ready;
 
 export function Parse(data: string, path: string, name: string): Syntax.Term_Program {
 	const res = Syntax.Parse_Program(data, true);
 
 	if (res instanceof ParseError) {
 		console.error(`${chalk.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
-		process.exit(1);
+		Deno.exit(1);
 	};
 
 	if (res.isPartial) {
@@ -24,7 +25,7 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 						: ReferenceRange.blank()
 				)
 		);
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	return res.root;

@@ -42,7 +42,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 			`${chalk.red("Error")}: Invalid number ${syntax.value[0].value}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	const unsigned = expect === u32 || expect === u64;
@@ -54,14 +54,14 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 					`${chalk.red("Error")}: Cannot negate an integer\n`
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
-				process.exit(1);
+				Deno.exit(1);
 			case "-":
 				if (unsigned) {
 					console.error(
 						`${chalk.red("Error")}: Cannot have a negative unsigned integer\n`
 						+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 					)
-					process.exit(1);
+					Deno.exit(1);
 				}
 
 				num *= -1;
@@ -89,7 +89,7 @@ function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syn
 			`${chalk.red("Error")}: Invalid number ${syntax.value[0].value}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	if (prefix) {
@@ -100,7 +100,7 @@ function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syn
 					`${chalk.red("Error")}: Cannot negate an integer\n`
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
-				process.exit(1);
+				Deno.exit(1);
 			case "-":
 				num *= -1;
 				break;

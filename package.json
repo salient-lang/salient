@@ -8,10 +8,8 @@
 		"bin/*"
 	],
 	"scripts": {
-		"cli": "node --no-warnings --loader ts-node/esm ./source/cli.ts",
 		"build": "run-s build:*",
 		"build:syntax": "npx bnf-compile ./source/bnf/",
-		"build:ts": "tsc",
 		"test": "run-s test:*",
 		"test:types": "tsc --noEmit",
 		"test:mocha": "npx mocha"

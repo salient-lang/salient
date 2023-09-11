@@ -52,7 +52,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 				`${chalk.red("Error")}: Cannot find type\n`
 				+ SourceView(ctx.file.path, ctx.file.name, type.ref)
 			)
-			process.exit(1);
+			Deno.exit(1);
 		}
 	}
 
@@ -62,7 +62,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, type?.ref || syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	let reg = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
@@ -71,7 +71,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			`${chalk.red("Error")}: Variable ${name} is already declared\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	ctx.block.push(Instruction.local.set(reg.register.ref));
