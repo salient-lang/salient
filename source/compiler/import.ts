@@ -1,7 +1,7 @@
 import chalk from "chalk";
 
-import type { File, Namespace } from "./file.js";
-import { ReferenceRange, SourceView } from "../parser.js";
+import type { File, Namespace } from "./file.ts";
+import { ReferenceRange, SourceView } from "../parser.ts";
 
 export default class Import {
 	owner: File;

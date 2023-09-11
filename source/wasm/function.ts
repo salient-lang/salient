@@ -1,7 +1,7 @@
-import { FuncRef, LocalRef } from "./funcRef.js";
-import { Byte } from "./helper.js";
-import { EncodeU32, Intrinsic } from "./type.js";
-import * as Instruction from "./instruction/index.js";
+import { FuncRef, LocalRef } from "./funcRef.ts";
+import { Byte } from "./helper.ts";
+import { EncodeU32, Intrinsic } from "./type.ts";
+import * as Instruction from "./instruction/index.ts";
 
 
 export class Function {

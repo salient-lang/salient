@@ -1,9 +1,9 @@
-import { SourceView, type Syntax } from "../../parser.js";
+import { SourceView, type Syntax } from "../../parser.ts";
 
-import { Instruction, AnyInstruction } from "../../wasm/index.js";
-import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.js";
-import { Context } from "./context.js";
+import { Instruction, AnyInstruction } from "../../wasm/index.ts";
+import { AssertUnreachable } from "../../bnf/shared.ts";
+import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.ts";
+import { Context } from "./context.ts";
 import chalk from "chalk";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {

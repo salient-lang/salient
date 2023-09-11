@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
 import chalk from "chalk";
 
-import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
-import * as Syntax from "./bnf/syntax.js";
+import { ParseError, ReferenceRange, Reference } from "./bnf/shared.ts";
+import * as Syntax from "./bnf/syntax.ts";
 
 
 export function Parse(data: string, path: string, name: string): Syntax.Term_Program {

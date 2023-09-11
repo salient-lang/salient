@@ -1,12 +1,12 @@
-import { Unreachable, IfBlock, Block, Loop, NoOp, Br, Br_If, Return } from "./control-flow.js";
+import { Unreachable, IfBlock, Block, Loop, NoOp, Br, Br_If, Return } from "./control-flow.ts";
 
-import { FuncRef } from "../funcRef.js";
-import { EncodeU32 } from "../type.js";
-import { Byte } from "../helper.js";
+import { FuncRef } from "../funcRef.ts";
+import { EncodeU32 } from "../type.ts";
+import { Byte } from "../helper.ts";
 
-import varFuncs, { Variable } from "./variable.js";
-import constFuncs, { Constant } from "./constant.js";
-import memFuncs, { MemoryRegister } from "./memory.js";
+import varFuncs, { Variable } from "./variable.ts";
+import constFuncs, { Constant } from "./constant.ts";
+import memFuncs, { MemoryRegister } from "./memory.ts";
 
 export class Call {
 	x: FuncRef | number;

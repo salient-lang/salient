@@ -1,12 +1,12 @@
-import { SourceView, type Syntax } from "../../parser.js";
-import type { Scope } from "./scope.js";
-import type { File, Namespace } from "../file.js";
+import { SourceView, type Syntax } from "../../parser.ts";
+import type { Scope } from "./scope.ts";
+import type { File, Namespace } from "../file.ts";
 
-import { Instruction, AnyInstruction } from "../../wasm/index.js";
-import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic } from "../intrinsic.js";
+import { Instruction, AnyInstruction } from "../../wasm/index.ts";
+import { AssertUnreachable } from "../../bnf/shared.ts";
+import { Intrinsic } from "../intrinsic.ts";
 import chalk from "chalk";
-import { CompileExpr } from "./expression.js";
+import { CompileExpr } from "./expression.ts";
 
 export class Context {
 	file: File;

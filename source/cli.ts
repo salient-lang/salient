@@ -6,8 +6,8 @@ import { resolve, join, relative } from "node:path";
 import { execSync } from "node:child_process";
 import chalk from "chalk";
 
-import Project from "./compiler/project.js";
-import Function from "./compiler/function.js";
+import Project from "./compiler/project.ts";
+import Function from "./compiler/function.ts";
 
 if (process.argv.includes("--version")) {
 	console.log("version: 0.0.0");

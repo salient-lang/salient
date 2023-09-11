@@ -1,16 +1,16 @@
-import { AssertUnreachable } from "../bnf/shared.js";
+import { AssertUnreachable } from "../bnf/shared.ts";
 import fs from "node:fs";
 
-import type { Term_Access, Term_Accessor, Term_Function, Term_Program } from "../bnf/syntax.js";
-import type Project from "./project.js";
+import type { Term_Access, Term_Accessor, Term_Function, Term_Program } from "../bnf/syntax.ts";
+import type Project from "./project.ts";
 
-import { Intrinsic, i32, i64, u32, u64, f32, f64 } from "./intrinsic.js";
-import { Parse } from "../parser.js";
-import Structure from "./structure.js";
-import Function from "./function.js";
-import Global from "./global.js";
-import Import from "./import.js";
-import { FlatAccess, FlattenAccess } from "./helper.js";
+import { Intrinsic, i32, i64, u32, u64, f32, f64 } from "./intrinsic.ts";
+import { Parse } from "../parser.ts";
+import Structure from "./structure.ts";
+import Function from "./function.ts";
+import Global from "./global.ts";
+import Import from "./import.ts";
+import { FlatAccess, FlattenAccess } from "./helper.ts";
 
 export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 

@@ -1,6 +1,6 @@
-import { EncodeU32 } from "../type.js";
-import { Function } from "../function.js";
-import { Byte } from "../helper.js";
+import { EncodeU32 } from "../type.ts";
+import { Function } from "../function.ts";
+import { Byte } from "../helper.ts";
 
 
 export default class FunctionSection {

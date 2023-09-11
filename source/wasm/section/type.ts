@@ -1,5 +1,5 @@
-import { EncodeU32, Intrinsic } from "../type.js";
-import type { Byte } from "../helper.js";
+import { EncodeU32, Intrinsic } from "../type.ts";
+import type { Byte } from "../helper.ts";
 
 
 

@@ -1,4 +1,4 @@
-import { EncodeU32 } from "../type.js";
+import { EncodeU32 } from "../type.ts";
 
 
 export default class TableSection {

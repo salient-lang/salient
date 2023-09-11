@@ -1,4 +1,4 @@
-import * as Types from "../wasm/type.js";
+import * as Types from "../wasm/type.ts";
 
 export class Intrinsic {
 	bitcode: number;

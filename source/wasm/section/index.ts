@@ -1,16 +1,16 @@
-import Custom    from "./custom.js";
-import Type      from "./type.js";
-import Import    from "./import.js";
-import Function  from "./function.js";
-import Table     from "./table.js";
-import Memory    from "./memory.js";
-import Global    from "./global.js";
-import Export    from "./export.js";
-import Start     from "./start.js";
-import Element   from "./element.js";
-import Code      from "./code.js";
-import Data      from "./data.js";
-import DataCount from "./data-count.js";
+import Custom    from "./custom.ts";
+import Type      from "./type.ts";
+import Import    from "./import.ts";
+import Function  from "./function.ts";
+import Table     from "./table.ts";
+import Memory    from "./memory.ts";
+import Global    from "./global.ts";
+import Export    from "./export.ts";
+import Start     from "./start.ts";
+import Element   from "./element.ts";
+import Code      from "./code.ts";
+import Data      from "./data.ts";
+import DataCount from "./data-count.ts";
 
 type Section = Custom | Type | Import | Function | Table | Memory | Global | Export | Start | Element | Code | Data | DataCount ;
 

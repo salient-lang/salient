@@ -1,6 +1,6 @@
-import { Byte } from "../helper.js";
-import { MemoryRef } from "../memoryRef.js";
-import { EncodeLimitType, EncodeU32 } from "../type.js";
+import { Byte } from "../helper.ts";
+import { MemoryRef } from "../memoryRef.ts";
+import { EncodeLimitType, EncodeU32 } from "../type.ts";
 
 
 type Range = {

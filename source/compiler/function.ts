@@ -1,11 +1,11 @@
-import type { File, Namespace } from "./file.js";
+import type { File, Namespace } from "./file.ts";
 import chalk from "chalk";
 
-import { Term_Access, Term_Function } from "../bnf/syntax.js";
-import { ReferenceRange, SourceView } from "../parser.js";
-import { Intrinsic } from "./intrinsic.js";
-import { Context } from "./codegen/context.js";
-import { Scope } from "./codegen/scope.js";
+import { Term_Access, Term_Function } from "../bnf/syntax.ts";
+import { ReferenceRange, SourceView } from "../parser.ts";
+import { Intrinsic } from "./intrinsic.ts";
+import { Context } from "./codegen/context.ts";
+import { Scope } from "./codegen/scope.ts";
 
 
 class Argument {
