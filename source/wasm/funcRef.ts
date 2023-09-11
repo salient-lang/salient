@@ -1,6 +1,6 @@
-import type { Byte } from "./helper.js";
+import type { Byte } from "../helper.ts";
 
-import { EncodeU32, Intrinsic } from "./type.js";
+import { EncodeU32, Intrinsic } from "./type.ts";
 
 export class FuncRef {
 	external: boolean;

@@ -1,10 +1,11 @@
-import { SourceView, type Syntax } from "../../parser.js";
-
-import { Instruction, AnyInstruction } from "../../wasm/index.js";
-import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.js";
-import { Context } from "./context.js";
 import chalk from "chalk";
+
+import type * as Syntax from "../../bnf/syntax.d.ts";
+import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.ts";
+import { AssertUnreachable } from "../../helper.ts";
+import { Instruction } from "../../wasm/index.ts";
+import { SourceView } from "../../parser.ts";
+import { Context } from "./context.ts";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {
 	return CompileArg(ctx, syntax.value[0], expect);
@@ -42,7 +43,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 			`${chalk.red("Error")}: Invalid number ${syntax.value[0].value}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	const unsigned = expect === u32 || expect === u64;
@@ -54,14 +55,15 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 					`${chalk.red("Error")}: Cannot negate an integer\n`
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
-				process.exit(1);
+				Deno.exit(1);
+				break;
 			case "-":
 				if (unsigned) {
 					console.error(
 						`${chalk.red("Error")}: Cannot have a negative unsigned integer\n`
 						+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 					)
-					process.exit(1);
+					Deno.exit(1);
 				}
 
 				num *= -1;
@@ -89,7 +91,7 @@ function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syn
 			`${chalk.red("Error")}: Invalid number ${syntax.value[0].value}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	if (prefix) {
@@ -100,7 +102,7 @@ function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syn
 					`${chalk.red("Error")}: Cannot negate an integer\n`
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
-				process.exit(1);
+				Deno.exit(1);
 			case "-":
 				num *= -1;
 				break;

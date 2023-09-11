@@ -1,8 +1,8 @@
-import { RegisterAllocator } from "./registers.js";
-import { ReferenceRange } from "../../parser.js";
-import { Intrinsic } from "../intrinsic.js";
-import { Variable } from "./variable.js"
-import { Function } from "../../wasm/function.js";
+import { RegisterAllocator } from "./registers.ts";
+import { ReferenceRange } from "../../parser.ts";
+import { Intrinsic } from "../intrinsic.ts";
+import { Variable } from "./variable.ts"
+import { Function } from "../../wasm/function.ts";
 
 export class Scope {
 	register: RegisterAllocator;

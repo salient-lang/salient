@@ -1,7 +1,7 @@
 import path from "node:path";
 
-import { File } from "./file.js"
-import Module from "../wasm/module.js";
+import { File } from "./file.ts"
+import Module from "../wasm/module.ts";
 
 export default class Project {
 	files: File[];

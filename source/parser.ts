@@ -1,17 +1,18 @@
-import * as fs from "node:fs";
 import chalk from "chalk";
 
 import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
-import * as Syntax from "./bnf/syntax.js";
+import * as Instance from "./bnf/syntax.js";
+import * as Syntax from "./bnf/syntax.d.ts";
 
+await Instance.ready;
 
 export function Parse(data: string, path: string, name: string): Syntax.Term_Program {
-	const res = Syntax.Parse_Program(data, true);
+	const res = Instance.Parse_Program(data, true);
 
 	if (res instanceof ParseError) {
 		console.error(`${chalk.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
-		process.exit(1);
-	};
+		Deno.exit(1);
+	}
 
 	if (res.isPartial) {
 		console.error(
@@ -24,10 +25,10 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 						: ReferenceRange.blank()
 				)
 		);
-		process.exit(1);
+		Deno.exit(1);
 	}
 
-	return res.root;
+	return res.root as Syntax.Term_Program;
 }
 
 export function SourceView(path: string, name: string, range: ReferenceRange) {
@@ -84,25 +85,30 @@ function FindNewLine(source: string, index: number, step: number) {
 }
 
 
-function ReadByteRange(path: string, start: number, end: number) {
+function ReadByteRange(path: string, start: number, end: number): string {
 	// Ensure end byte is not before the start byte
 	if (end < start) throw new Error('End byte should be greater than start byte');
 
 	start = Math.max(0, start);
 
 	// Open the file for reading
-	const fd = fs.openSync(path, 'r');
+	const file = Deno.openSync(path, { read: true });
 
 	const bufferSize = end - start + 1;
-	const buffer = Buffer.alloc(bufferSize);
+	const buffer = new Uint8Array(bufferSize);
+
+	// Position the file cursor to the start byte
+	file.seekSync(start, Deno.SeekMode.Start);
 
 	// Read the specified byte range into the buffer
-	fs.readSync(fd, buffer, 0, bufferSize, start);
+	file.readSync(buffer);
 
 	// Close the file
-	fs.closeSync(fd);
+	file.close();
 
-	return buffer.toString();
+	// Convert Uint8Array to string
+	const decoder = new TextDecoder();
+	return decoder.decode(buffer);
 }
 
 

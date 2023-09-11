@@ -1,12 +1,13 @@
-import { SourceView, type Syntax } from "../../parser.js";
-import type { Scope } from "./scope.js";
-import type { File, Namespace } from "../file.js";
-
-import { Instruction, AnyInstruction } from "../../wasm/index.js";
-import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic } from "../intrinsic.js";
 import chalk from "chalk";
-import { CompileExpr } from "./expression.js";
+
+import type * as Syntax from "../../bnf/syntax.d.ts";
+import type { File, Namespace } from "../file.ts";
+import type { Scope } from "./scope.ts";
+import { Instruction, AnyInstruction } from "../../wasm/index.ts";
+import { AssertUnreachable } from "../../bnf/shared.js";
+import { CompileExpr } from "./expression.ts";
+import { SourceView } from "../../parser.ts";
+import { Intrinsic } from "../intrinsic.ts";
 
 export class Context {
 	file: File;
@@ -43,7 +44,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const type  = syntax.value[1].value[0];
 	const value = syntax.value[2];
 
-	let typeRef: null | Namespace = null;
+	let typeRef: Namespace | null = null;
 	if (type) {
 		typeRef = ctx.file.get(type.value[0]);
 
@@ -52,17 +53,25 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 				`${chalk.red("Error")}: Cannot find type\n`
 				+ SourceView(ctx.file.path, ctx.file.name, type.ref)
 			)
-			process.exit(1);
+			Deno.exit(1);
 		}
 	}
 
-	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
+	const resolveType: Intrinsic = CompileExpr(ctx, value, typeRef || undefined);
+	if (!typeRef && !resolveType) {
+		console.error(
+			`${chalk.red("Error")}: Unable to determine type\n`
+			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
+		)
+		Deno.exit(1);
+	}
+
 	if (typeRef && resolveType !== typeRef) {
 		console.error(
 			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, type?.ref || syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	let reg = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
@@ -71,7 +80,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			`${chalk.red("Error")}: Variable ${name} is already declared\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
-		process.exit(1);
+		Deno.exit(1);
 	}
 
 	ctx.block.push(Instruction.local.set(reg.register.ref));

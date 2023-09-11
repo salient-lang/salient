@@ -1,6 +1,6 @@
-import { ReferenceRange } from "../../parser.js";
-import { Intrinsic } from "../intrinsic.js";
-import { Register } from "./registers.js";
+import { ReferenceRange } from "../../parser.ts";
+import { Intrinsic } from "../intrinsic.ts";
+import { Register } from "./registers.ts";
 
 export enum TypeSystem {
 	Affine,

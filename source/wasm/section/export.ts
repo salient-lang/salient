@@ -1,6 +1,6 @@
-import { EncodeName, EncodeU32 } from "../type.js";
-import { FuncRef } from "../funcRef.js";
-import { MemoryRef } from "../memoryRef.js";
+import { EncodeName, EncodeU32 } from "../type.ts";
+import { FuncRef } from "../funcRef.ts";
+import { MemoryRef } from "../memoryRef.ts";
 
 
 interface Registry {

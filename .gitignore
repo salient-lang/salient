@@ -29,7 +29,9 @@ package-lock.json
 .vscode-test
 
 # Build outputs
-
 *.wasm
 *.wat
 *.sa
+*.exe
+*.out
+*.app
