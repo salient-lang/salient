@@ -1,5 +1,5 @@
 /// <reference lib="deno.ns" />
-import { assert, fail, assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
+import { fail, assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 import { Module, Instruction, Type } from "../../source/wasm/index.ts";
 
 const decoder = new TextDecoder();
