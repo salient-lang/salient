@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type { Term_Access, Term_Function } from "../bnf/syntax.d.ts";
 import type { File, Namespace } from "./file.ts";
@@ -58,8 +58,8 @@ export default class Function {
 	merge(other: Namespace) {
 		console.error(
 			(other instanceof Function
-				? `${chalk.red("Error")}: Function overloads are not supported\n`
-				: `${chalk.red("Error")}: Cannot share a name space between these two\n`)
+				? `${colors.red("Error")}: Function overloads are not supported\n`
+				: `${colors.red("Error")}: Cannot share a name space between these two\n`)
 			+ this.declarationView()
 			+ other.declarationView()
 		);
@@ -136,7 +136,7 @@ function LinkTypes(scope: File, syntax: Term_Access[]) {
 		const res = scope.get(arg);
 		if (res === null || !(res instanceof Intrinsic)) {
 			console.error(
-				`${chalk.red("Error")}: Cannot find type\n`
+				`${colors.red("Error")}: Cannot find type\n`
 				+ SourceView(scope.path, scope.name, arg.ref)
 			)
 			failed = true;

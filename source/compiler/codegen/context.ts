@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "../../bnf/syntax.d.ts";
 import type { File, Namespace } from "../file.ts";
@@ -50,7 +50,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 
 		if (typeRef === null || !(typeRef instanceof Intrinsic)) {
 			console.error(
-				`${chalk.red("Error")}: Cannot find type\n`
+				`${colors.red("Error")}: Cannot find type\n`
 				+ SourceView(ctx.file.path, ctx.file.name, type.ref)
 			)
 			Deno.exit(1);
@@ -60,7 +60,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const resolveType: Intrinsic = CompileExpr(ctx, value, typeRef || undefined);
 	if (!typeRef && !resolveType) {
 		console.error(
-			`${chalk.red("Error")}: Unable to determine type\n`
+			`${colors.red("Error")}: Unable to determine type\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
 		Deno.exit(1);
@@ -68,7 +68,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 
 	if (typeRef && resolveType !== typeRef) {
 		console.error(
-			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
+			`${colors.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, type?.ref || syntax.ref)
 		)
 		Deno.exit(1);
@@ -77,7 +77,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	let reg = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
 	if (!reg) {
 		console.error(
-			`${chalk.red("Error")}: Variable ${name} is already declared\n`
+			`${colors.red("Error")}: Variable ${name} is already declared\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
 		Deno.exit(1);

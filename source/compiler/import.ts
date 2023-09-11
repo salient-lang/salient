@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type { File, Namespace } from "./file.ts";
 import { ReferenceRange, SourceView } from "../parser.ts";
@@ -20,7 +20,7 @@ export default class Import {
 
 	merge(other: Namespace) {
 		console.error(
-			`${chalk.red("Error")}: Cannot share a name space between these two\n`
+			`${colors.red("Error")}: Cannot share a name space between these two\n`
 			+ this.declarationView()
 			+ other.declarationView()
 		);

@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
 import * as Instance from "./bnf/syntax.js";
@@ -10,13 +10,13 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 	const res = Instance.Parse_Program(data, true);
 
 	if (res instanceof ParseError) {
-		console.error(`${chalk.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
+		console.error(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
 		Deno.exit(1);
 	}
 
 	if (res.isPartial) {
 		console.error(
-			chalk.red("Syntax Error") + "\n"
+			colors.red("Syntax Error") + "\n"
 			+ SourceView(
 					path,
 					name,

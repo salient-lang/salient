@@ -1,4 +1,4 @@
-import chalk from "chalk";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "../../bnf/syntax.d.ts";
 import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.ts";
@@ -40,7 +40,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 
 	if (isNaN(num)) {
 		console.error(
-			`${chalk.red("Error")}: Invalid number ${syntax.value[0].value}\n`
+			`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
 		Deno.exit(1);
@@ -52,7 +52,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 		switch (op) {
 			case "!":
 				console.error(
-					`${chalk.red("Error")}: Cannot negate an integer\n`
+					`${colors.red("Error")}: Cannot negate an integer\n`
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
 				Deno.exit(1);
@@ -60,7 +60,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 			case "-":
 				if (unsigned) {
 					console.error(
-						`${chalk.red("Error")}: Cannot have a negative unsigned integer\n`
+						`${colors.red("Error")}: Cannot have a negative unsigned integer\n`
 						+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 					)
 					Deno.exit(1);
@@ -88,7 +88,7 @@ function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syn
 
 	if (isNaN(num)) {
 		console.error(
-			`${chalk.red("Error")}: Invalid number ${syntax.value[0].value}\n`
+			`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`
 			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 		)
 		Deno.exit(1);
@@ -99,7 +99,7 @@ function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syn
 		switch (op) {
 			case "!":
 				console.error(
-					`${chalk.red("Error")}: Cannot negate an integer\n`
+					`${colors.red("Error")}: Cannot negate an integer\n`
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
 				Deno.exit(1);

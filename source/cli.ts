@@ -3,7 +3,7 @@
 import { existsSync, writeFileSync } from "node:fs";
 import { resolve, join, relative } from "node:path";
 import { execSync } from "node:child_process";
-import chalk from "chalk";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import Project from "./compiler/project.ts";
 import Function from "./compiler/function.ts";
@@ -14,7 +14,7 @@ if (Deno.args.includes("--version")) {
 }
 
 if (!Deno.args[0]) {
-	console.error(`${chalk.red("Error")}: Please provide an entry file`);
+	console.error(`${colors.red("Error")}: Please provide an entry file`);
 	Deno.exit(1);
 }
 
@@ -22,13 +22,13 @@ const cwd = resolve("./");
 const root = join(cwd, Deno.args[0]);
 
 if (!existsSync(root)) {
-	console.error(`${chalk.red("Error")}: Cannot find entry ${chalk.cyan(relative(cwd, root))}`);
+	console.error(`${colors.red("Error")}: Cannot find entry ${colors.cyan(relative(cwd, root))}`);
 	Deno.exit(1);
 }
 
 const project = new Project(root);
 if (project.failed) {
-	console.error(`Compilation ${chalk.red("Failed")}`);
+	console.error(`Compilation ${colors.red("Failed")}`);
 	Deno.exit(1);
 }
 
