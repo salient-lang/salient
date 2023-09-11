@@ -4,6 +4,7 @@
 
 		/* Language and Environment */
 		"target": "ESNext",
+		"allowImportingTsExtensions": true,
 		"allowJs": true,
 
 		/* Modules */

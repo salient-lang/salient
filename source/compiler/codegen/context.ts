@@ -3,7 +3,7 @@ import type { Scope } from "./scope.ts";
 import type { File, Namespace } from "../file.ts";
 
 import { Instruction, AnyInstruction } from "../../wasm/index.ts";
-import { AssertUnreachable } from "../../bnf/shared.ts";
+import { AssertUnreachable } from "../../bnf/shared.js";
 import { Intrinsic } from "../intrinsic.ts";
 import chalk from "chalk";
 import { CompileExpr } from "./expression.ts";

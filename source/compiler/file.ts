@@ -1,7 +1,7 @@
-import { AssertUnreachable } from "../bnf/shared.ts";
+import { AssertUnreachable } from "../bnf/shared.js";
 import fs from "node:fs";
 
-import type { Term_Access, Term_Accessor, Term_Function, Term_Program } from "../bnf/syntax.ts";
+import type { Term_Access, Term_Function, Term_Program } from "../bnf/syntax.js";
 import type Project from "./project.ts";
 
 import { Intrinsic, i32, i64, u32, u64, f32, f64 } from "./intrinsic.ts";
