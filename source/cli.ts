@@ -43,10 +43,13 @@ mainFunc.compile();
 
 
 await Deno.writeFile("out.wasm", project.module.toBinary());
-const process = Deno.run({
-	cmd: ["wasm2wat", "out.wasm", "-o", "out.wat"]
-});
-await process.status();
-process.close();
+const command = new Deno.Command(
+	"wasm2wat",
+	{
+		args: ["out.wasm", "-o", "out.wat"]
+	}
+);
+const { code, stdout, stderr } = await command.output();
+console.assert(code === 0);
 
 console.log(`  out: ${"out.wasm"}`);
