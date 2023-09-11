@@ -1,11 +1,11 @@
-import { AssertUnreachable } from "../bnf/shared.js";
-import fs from "node:fs";
+/// <reference lib="deno.ns" />
 
 import type { Term_Access, Term_Function, Term_Program } from "../bnf/syntax.d.ts";
 import type Project from "./project.ts";
 
 import { Intrinsic, i32, i64, u32, u64, f32, f64 } from "./intrinsic.ts";
 import { FlatAccess, FlattenAccess } from "../helper.ts";
+import { AssertUnreachable } from "../bnf/shared.js";
 import { Parse } from "../parser.ts";
 import Structure from "./structure.ts";
 import Function from "./function.ts";
@@ -14,6 +14,7 @@ import Import from "./import.ts";
 
 export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 
+const decoder = new TextDecoder();
 export class File {
 	owner: Project;
 	name: string;
@@ -31,7 +32,7 @@ export class File {
 			f32, f64
 		};
 		Ingest(this, Parse(
-			fs.readFileSync(this.path, "utf-8"),
+			decoder.decode(Deno.readFileSync(this.path)),
 			this.path,
 			this.name
 		));

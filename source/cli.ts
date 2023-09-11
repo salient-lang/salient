@@ -1,8 +1,7 @@
 /// <reference lib="deno.ns" />
 
-import { existsSync, writeFileSync } from "node:fs";
-import { resolve, join, relative } from "node:path";
-import { execSync } from "node:child_process";
+import { resolve, join, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
+import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import Project from "./compiler/project.ts";
@@ -43,6 +42,11 @@ if (!(mainFunc instanceof Function)) {
 mainFunc.compile();
 
 
-writeFileSync("out.wasm", project.module.toBinary());
-execSync("wasm2wat out.wasm -o out.wat");
+await Deno.writeFile("out.wasm", project.module.toBinary());
+const process = Deno.run({
+	cmd: ["wasm2wat", "out.wasm", "-o", "out.wat"]
+});
+await process.status();
+process.close();
+
 console.log(`  out: ${"out.wasm"}`);

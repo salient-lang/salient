@@ -1,7 +1,7 @@
-import path from "node:path";
+import { dirname, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
 
-import { File } from "./file.ts"
 import Module from "../wasm/module.ts";
+import { File } from "./file.ts"
 
 export default class Project {
 	files: File[];
@@ -15,14 +15,14 @@ export default class Project {
 	constructor(entry: string) {
 		this.failed = false;
 		this.files = [];
-		this.cwd = path.dirname(entry);
+		this.cwd = dirname(entry);
 
 		this.module = new Module();
 		this.entry = this.import(entry);
 	}
 
 	import(filePath: string) {
-		const file = new File(this, filePath, path.relative(this.cwd, filePath));
+		const file = new File(this, filePath, relative(this.cwd, filePath));
 		this.files.push(file);
 
 		return file;
