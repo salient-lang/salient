@@ -24,8 +24,7 @@
 	"lock": false,
 	"nodeModulesDir": true,
 	"test": {
-		"include": ["source/"],
-		"exclude": ["source/bnf/"]
+		"include": ["tests/*"]
 	},
 	"tasks": {
 		"start": "deno run --allow-read --allow-write cli.ts"
