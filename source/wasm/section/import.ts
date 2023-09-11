@@ -1,4 +1,4 @@
-import type { Byte } from "../helper.ts";
+import type { Byte } from "../../helper.ts";
 import { EncodeName, EncodeU32 } from "../type.ts";
 
 class Register {

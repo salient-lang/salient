@@ -2,7 +2,7 @@ import { Unreachable, IfBlock, Block, Loop, NoOp, Br, Br_If, Return } from "./co
 
 import { FuncRef } from "../funcRef.ts";
 import { EncodeU32 } from "../type.ts";
-import { Byte } from "../helper.ts";
+import { Byte } from "../../helper.ts";
 
 import varFuncs, { Variable } from "./variable.ts";
 import constFuncs, { Constant } from "./constant.ts";

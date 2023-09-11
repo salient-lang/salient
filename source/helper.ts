@@ -1,4 +1,4 @@
-import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "../bnf/syntax.js";
+import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "./bnf/syntax.d.ts";
 export type FlatAccess = (Term_Name | Term_Access_static | Term_Access_dynamic | Term_Access_comp)[];
 
 
@@ -18,4 +18,16 @@ export function FlatAccessToStr(access: FlatAccess): string {
 		: x.type === "access_comp" ? "#[]"
 		: "UNK"
 	).join("")
+}
+
+
+export type Byte = number;
+
+export function isByte(value: number): value is Byte {
+	return Number.isInteger(value) && value >= 0 && value <= 255;
+}
+
+
+export function AssertUnreachable(x: never): never {
+	throw new Error("Unreachable code path reachable");
 }

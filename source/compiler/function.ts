@@ -1,7 +1,8 @@
-import type { File, Namespace } from "./file.ts";
 import chalk from "chalk";
 
-import { Term_Access, Term_Function } from "../bnf/syntax.js";
+import type { Term_Access, Term_Function } from "../bnf/syntax.d.ts";
+import type { File, Namespace } from "./file.ts";
+
 import { ReferenceRange, SourceView } from "../parser.ts";
 import { Intrinsic } from "./intrinsic.ts";
 import { Context } from "./codegen/context.ts";

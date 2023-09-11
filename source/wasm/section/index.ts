@@ -12,7 +12,7 @@ import Code      from "./code.ts";
 import Data      from "./data.ts";
 import DataCount from "./data-count.ts";
 
-type Section = Custom | Type | Import | Function | Table | Memory | Global | Export | Start | Element | Code | Data | DataCount ;
+export type Section = Custom | Type | Import | Function | Table | Memory | Global | Export | Start | Element | Code | Data | DataCount ;
 
 export {
 	Custom,
@@ -27,7 +27,5 @@ export {
 	Element,
 	Code,
 	Data,
-	DataCount,
-
-	Section
+	DataCount
 }

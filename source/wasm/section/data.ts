@@ -1,4 +1,4 @@
-import { Byte } from "../helper.ts";
+import type { Byte } from "../../helper.ts";
 import { EncodeI32, EncodeU32 } from "../type.ts";
 
 

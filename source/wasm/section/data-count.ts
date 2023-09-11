@@ -1,5 +1,5 @@
 import { EncodeU32 } from "../type.ts";
-import { Byte } from "../helper.ts";
+import { Byte } from "../../helper.ts";
 import { Data } from "./index.ts";
 
 

@@ -1,12 +1,13 @@
-import { SourceView, type Syntax } from "../../parser.ts";
-import type { Scope } from "./scope.ts";
-import type { File, Namespace } from "../file.ts";
+import chalk from "chalk";
 
+import type * as Syntax from "../../bnf/syntax.d.ts";
+import type { File, Namespace } from "../file.ts";
+import type { Scope } from "./scope.ts";
 import { Instruction, AnyInstruction } from "../../wasm/index.ts";
 import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic } from "../intrinsic.ts";
-import chalk from "chalk";
 import { CompileExpr } from "./expression.ts";
+import { SourceView } from "../../parser.ts";
+import { Intrinsic } from "../intrinsic.ts";
 
 export class Context {
 	file: File;
@@ -43,7 +44,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const type  = syntax.value[1].value[0];
 	const value = syntax.value[2];
 
-	let typeRef: null | Namespace = null;
+	let typeRef: Namespace | null = null;
 	if (type) {
 		typeRef = ctx.file.get(type.value[0]);
 
@@ -56,7 +57,15 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		}
 	}
 
-	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
+	const resolveType: Intrinsic = CompileExpr(ctx, value, typeRef || undefined);
+	if (!typeRef && !resolveType) {
+		console.error(
+			`${chalk.red("Error")}: Unable to determine type\n`
+			+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
+		)
+		Deno.exit(1);
+	}
+
 	if (typeRef && resolveType !== typeRef) {
 		console.error(
 			`${chalk.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`

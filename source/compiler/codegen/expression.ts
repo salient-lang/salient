@@ -1,10 +1,11 @@
-import { SourceView, type Syntax } from "../../parser.ts";
-
-import { Instruction, AnyInstruction } from "../../wasm/index.ts";
-import { AssertUnreachable } from "../../bnf/shared.js";
-import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.ts";
-import { Context } from "./context.ts";
 import chalk from "chalk";
+
+import type * as Syntax from "../../bnf/syntax.d.ts";
+import { Intrinsic, f32, f64, i32, i64, u32, u64 } from "../intrinsic.ts";
+import { AssertUnreachable } from "../../helper.ts";
+import { Instruction } from "../../wasm/index.ts";
+import { SourceView } from "../../parser.ts";
+import { Context } from "./context.ts";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {
 	return CompileArg(ctx, syntax.value[0], expect);
@@ -55,6 +56,7 @@ function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syn
 					+ SourceView(ctx.file.path, ctx.file.name, syntax.ref)
 				)
 				Deno.exit(1);
+				break;
 			case "-":
 				if (unsigned) {
 					console.error(

@@ -7,7 +7,5 @@
 		"Fuwawa",
 		"iovs"
 	],
-	"deno.enable": true,
-	"deno.lint": true,
-	"deno.unstable": false
+	"deno.enable": true
 }

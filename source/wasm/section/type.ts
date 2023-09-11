@@ -1,5 +1,5 @@
+import type { Byte } from "../../helper.ts";
 import { EncodeU32, Intrinsic } from "../type.ts";
-import type { Byte } from "../helper.ts";
 
 
 

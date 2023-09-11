@@ -1,6 +1,6 @@
-import { FuncRef } from "../funcRef.ts";
 import { EncodeU32 } from "../type.ts";
-import { Byte } from "../helper.ts";
+import { FuncRef } from "../funcRef.ts";
+import { Byte } from "../../helper.ts";
 
 export default class Call {
 	x: FuncRef | number;

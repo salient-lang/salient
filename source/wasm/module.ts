@@ -1,11 +1,11 @@
 // https://webassembly.github.io/spec/core/binary/modules.html
 
+import * as Section from "./section/index.ts";
+import { MemoryRef } from "./memoryRef.ts";
+import { Intrinsic } from "./type.ts";
 import { Function } from "./function.ts";
 import { FuncRef } from "./funcRef.ts";
-import * as Section from "./section/index.ts";
-import { Intrinsic } from "./type.ts";
-import { Byte } from "./helper.ts";
-import { MemoryRef } from "./memoryRef.ts";
+import { Byte } from "../helper.ts";
 
 
 

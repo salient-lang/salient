@@ -2,7 +2,7 @@
 
 import type { Any } from "./index.ts";
 import { EncodeU32 } from "../type.ts";
-import { Byte } from "../helper.ts";
+import { Byte } from "../../helper.ts";
 
 export class Unreachable {
 	toBinary(): Byte[] {
