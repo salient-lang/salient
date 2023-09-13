@@ -1,4 +1,6 @@
 import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "./bnf/syntax.d.ts";
+import type { ReferenceRange } from "./bnf/shared.d.ts";
+import { SourceView } from "./parser.ts";
 export type FlatAccess = (Term_Name | Term_Access_static | Term_Access_dynamic | Term_Access_comp)[];
 
 
@@ -30,4 +32,20 @@ export function isByte(value: number): value is Byte {
 
 export function AssertUnreachable(x: never): never {
 	throw new Error("Unreachable code path reachable");
+}
+
+
+export type SourceMap = {
+	path: string,
+	name: string,
+	ref:  ReferenceRange
+}
+
+export function Yeet(x: string, source?: SourceMap): never {
+	if (source) {
+		console.error(x + SourceView(source.path, source.name, source.ref));
+	} else {
+		console.error(x);
+	}
+	Deno.exit(1);
 }

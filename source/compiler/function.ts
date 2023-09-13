@@ -135,6 +135,7 @@ function LinkTypes(scope: File, syntax: Term_Access[]) {
 	for (const arg of syntax) {
 		const res = scope.get(arg);
 		if (res === null || !(res instanceof Intrinsic)) {
+			// Not yeet-ing, because we may want to display multiple failures at once
 			console.error(
 				`${colors.red("Error")}: Cannot find type\n`
 				+ SourceView(scope.path, scope.name, arg.ref)
