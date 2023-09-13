@@ -83,6 +83,7 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 	expr_prefix ::= "!" | "-" ;
 	expr_infix ::= "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">"
 		| "%" | "*" | "/" | "+" | "-"
+		| "as" | "instanceof"
 		| "->" ;
 	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | expr_val ) ;
 		expr_val ::= access func_call_body? ;
