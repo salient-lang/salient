@@ -7,7 +7,7 @@ import type { Scope } from "./scope.ts";
 import * as banned from "./banned.ts";
 import { Instruction, AnyInstruction } from "../../wasm/index.ts";
 import { AssertUnreachable } from "../../bnf/shared.js";
-import { CompileExpr } from "./expression.ts";
+import { CompileExpr } from "./expression/index.ts";
 import { Intrinsic } from "../intrinsic.ts";
 import { Yeet } from "../../helper.ts";
 

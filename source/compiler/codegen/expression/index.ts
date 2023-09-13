@@ -1,10 +1,10 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type * as Syntax from "../../bnf/syntax.d.ts";
-import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../intrinsic.ts";
-import { AssertUnreachable, Yeet } from "../../helper.ts";
-import { Instruction } from "../../wasm/index.ts";
-import { Context } from "./context.ts";
+import type * as Syntax from "../../../bnf/syntax.d.ts";
+import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
+import { AssertUnreachable, Yeet } from "../../../helper.ts";
+import { Instruction } from "../../../wasm/index.ts";
+import { Context } from "./../context.ts";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {
 	return CompileArg(ctx, syntax.value[0], expect);
