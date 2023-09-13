@@ -17,6 +17,10 @@ export class Intrinsic {
 }
 
 
+export const  u8 = new Intrinsic( "u8", Types.Intrinsic.i32, 1);
+export const  i8 = new Intrinsic( "i8", Types.Intrinsic.i32, 1);
+export const i16 = new Intrinsic("i16", Types.Intrinsic.i32, 2);
+export const u16 = new Intrinsic("u16", Types.Intrinsic.i32, 2);
 export const i32 = new Intrinsic("i32", Types.Intrinsic.i32, 4);
 export const u32 = new Intrinsic("u32", Types.Intrinsic.i32, 4);
 export const i64 = new Intrinsic("i64", Types.Intrinsic.i64, 8);
