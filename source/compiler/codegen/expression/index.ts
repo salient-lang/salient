@@ -7,7 +7,9 @@ import { Instruction } from "../../../wasm/index.ts";
 import { Context } from "./../context.ts";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {
-	return CompileArg(ctx, syntax.value[0], expect);
+	const op = CompileArg(ctx, syntax.value[0], expect);
+
+	return op;
 }
 
 
