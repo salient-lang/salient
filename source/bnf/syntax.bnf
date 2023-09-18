@@ -57,7 +57,7 @@ access ::= name ( %w* accessor )* ;
 	access_dynamic ::= %"[]" ;
 	access_comp    ::= %"#[]";
 
-declare ::= %( "let" w* ) name %w* (%":" %w* access %w*)? %("=" w*) expr %(w* ";") ;
+declare ::= %( "let" w* ) name %w* (%":" %w* access %w*)? ( %("=" w*) expr )? %(w* ";") ;
 assign  ::= name %w* %("=" w*) expr %(w* ";") ;
 
 

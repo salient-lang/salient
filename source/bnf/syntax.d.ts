@@ -486,7 +486,16 @@ export type Term_Declare = {
 		Term_Access
 	]
 }], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
+		{ type: '(...)?', value: [] | [{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
 		Term_Expr
+	]
+}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Declare (i: string, refMapping?: boolean): _Shared.ParseError | {

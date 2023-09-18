@@ -13,6 +13,8 @@ export class Variable {
 	storage: TypeSystem;
 	register: Register;
 
+	lastDefined: ReferenceRange | null;
+
 	isDefined: boolean;
 	isGlobal: boolean;
 	isClone: boolean;
@@ -30,22 +32,31 @@ export class Variable {
 		this.isGlobal   = false;
 		this.isLocal    = false;
 		this.isClone    = false;
+
+		this.lastDefined = ref;
 	}
 
 	markDefined() {
+		this.lastDefined = null;
 		this.isDefined = true;
+	}
+	markUndefined(ref: ReferenceRange) {
+		this.lastDefined = ref;
+		this.isDefined = false;
 	}
 
 	markGlobal() {
 		this.isGlobal = true;
 		this.isLocal  = false;
 		this.isClone  = false;
+		this.markDefined();
 	}
 
 	markArgument() {
 		this.isGlobal = false;
 		this.isLocal  = false;
 		this.isClone  = false;
+		this.markDefined();
 	}
 
 	toBinary() {

@@ -42,9 +42,9 @@ export class Context {
 
 
 function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
-	const name  = syntax.value[0].value[0].value;
-	const type  = syntax.value[1].value[0];
-	const value = syntax.value[2];
+	const name = syntax.value[0].value[0].value;
+	const type = syntax.value[1].value[0];
+	const expr = syntax.value[2].value[0];
 
 	if (banned.namespaces.includes(name))
 		Yeet(`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`, {
@@ -72,6 +72,26 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			})
 	}
 
+	if (!expr) {
+		if (!typeRef)
+			Yeet(`${colors.red("Error")}: Declared variables must have an explicit or an inferred type\n`, {
+				path: ctx.file.path,
+				name: ctx.file.name,
+				ref: syntax.ref
+			})
+
+		const variable = ctx.scope.registerVariable(name, typeRef, syntax.ref);
+		if (!variable)
+			Yeet(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
+				path: ctx.file.path,
+				name: ctx.file.name,
+				ref: syntax.ref
+			});
+
+		return;
+	}
+
+	const value = expr.value[0];
 	const resolveType: Intrinsic = CompileExpr(ctx, value, typeRef || undefined);
 	if (!typeRef && !resolveType)
 		Yeet(`${colors.red("Error")}: Unable to determine type\n`, {
@@ -93,7 +113,8 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.ref
-		})
+		});
+	variable.markDefined();
 
 	ctx.block.push(Instruction.local.set(variable.register.ref));
 }
