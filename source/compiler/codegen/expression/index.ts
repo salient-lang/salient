@@ -19,7 +19,7 @@ function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: Intrins
 	switch (val.type) {
 		case "constant":       return CompileConstant(ctx, val, prefix, expect);
 		case "expr_brackets":  throw new Error("1Unimplemented");
-		case "expr_val":       throw new Error("2Unimplemented");
+		case "name":           return CompileName(ctx, val, prefix, expect);
 		default: AssertUnreachable(val);
 	}
 }
@@ -33,6 +33,21 @@ function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, prefix?: Sy
 		case "string":  throw new Error("6Unimplemented");
 		default: AssertUnreachable(val);
 	}
+}
+
+function CompileName(ctx: Context, syntax: Syntax.Term_Name, prefix?: Syntax.Term_Expr_prefix, expect?: Intrinsic) {
+	const name = syntax.value[0].value;
+	const variable = ctx.scope.getVariable(name);
+	if (!variable) Yeet(`${colors.red("Error")}: Undeclared variable name ${name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+	});
+
+	if (!variable.isDefined) Yeet(`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+	});
+
+	ctx.block.push(Instruction.local.get(variable.register.ref));
+	return variable.type;
 }
 
 

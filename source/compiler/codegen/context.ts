@@ -129,7 +129,7 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.ref
-		})
+		});
 
 	const resolveType: Intrinsic = CompileExpr(ctx, value, variable.type);
 	if (resolveType !== variable.type)
@@ -137,9 +137,10 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.ref
-		})
+		});
 
 	ctx.block.push(Instruction.local.set(variable.register.ref));
+	variable.markDefined();
 }
 
 

@@ -790,6 +790,74 @@ export declare function Parse_Expr_infix (i: string, refMapping?: boolean): _Sha
 	isPartial: boolean
 }
 
+export type Term_Expr_postfix = {
+	type: 'expr_postfix',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Expr_call | Term_Expr_get | Term_Expr_param)
+	]
+}
+export declare function Parse_Expr_postfix (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Expr_postfix,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Expr_param = {
+	type: 'expr_param',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Arg_list
+	]
+}
+export declare function Parse_Expr_param (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Expr_param,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Expr_call = {
+	type: 'expr_call',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Arg_list
+	]
+}
+export declare function Parse_Expr_call (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Expr_call,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Expr_get = {
+	type: 'expr_get',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Arg_list
+	]
+}
+export declare function Parse_Expr_get (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Expr_get,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
 export type Term_Expr_arg = {
 	type: 'expr_arg',
 	start: number,
@@ -798,29 +866,12 @@ export type Term_Expr_arg = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		{ type: '(...)?', value: [] | [Term_Expr_prefix], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		(Term_Constant | Term_Expr_brackets | Term_Expr_val)
+		(Term_Constant | Term_Expr_brackets | Term_Name),
+		{ type: '(...)*', value: Array<Term_Expr_postfix>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_arg (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Expr_arg,
-	reachBytes: number,
-	reach: null | _Shared.Reference,
-	isPartial: boolean
-}
-
-export type Term_Expr_val = {
-	type: 'expr_val',
-	start: number,
-	end: number,
-	count: number,
-	ref: _Shared.ReferenceRange,
-	value: [
-		Term_Access,
-		{ type: '(...)?', value: [] | [Term_Func_call_body], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
-	]
-}
-export declare function Parse_Expr_val (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_Expr_val,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
@@ -838,6 +889,33 @@ export type Term_Expr_brackets = {
 }
 export declare function Parse_Expr_brackets (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Expr_brackets,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Arg_list = {
+	type: 'arg_list',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		{ type: '(...)*', value: Array<{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr_arg,
+		{ type: '(...)?', value: [] | [_Literal & {value: "\x2c"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}
+export declare function Parse_Arg_list (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Arg_list,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

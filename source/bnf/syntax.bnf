@@ -86,8 +86,13 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 		| "%" | "*" | "/" | "+" | "-"
 		| "as" | "instanceof"
 		| "->" ;
-	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | expr_val ) ;
-		expr_val ::= access func_call_body? ;
+	expr_postfix ::= expr_call | expr_get | expr_param ;
+		expr_param ::= %"#[" %w* arg_list  %w* %"]" ;
+		expr_call  ::=  %"(" %w* arg_list  %w* %")" ;
+		expr_get   ::=  %"[" %w* arg_list  %w* %"]" ;
+	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | name ) %w* expr_postfix* ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
+
+arg_list ::= ( expr_arg %w* ","? %w* )* ;
 
 statement ::= expr %(w* ";" w*) ;
