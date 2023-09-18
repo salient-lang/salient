@@ -28,7 +28,7 @@ export default class ExportSection {
 			const entity = this.reg[name];
 			buf.push(...EncodeName(name));
 			buf.push(entity instanceof FuncRef ? 0x00 : 0x02);
-			buf.push(...EncodeU32(this.reg[name].getIdentifier()));
+			buf.push(...EncodeU32(this.reg[name].get()));
 		}
 
 		return [

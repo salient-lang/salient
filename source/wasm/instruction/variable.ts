@@ -25,7 +25,7 @@ export class Variable {
 		return [
 			this.type,
 			...EncodeU32(this.x instanceof LocalRef
-					? this.x.getIdentifier()
+					? this.x.get()
 					: this.x
 				)
 		];

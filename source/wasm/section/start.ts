@@ -11,7 +11,7 @@ export default class StartSection {
 			buf.push(0);
 		} else {
 			buf.push(1);
-			buf.push(...EncodeU32(ref.getIdentifier()))
+			buf.push(...EncodeU32(ref.get()))
 		}
 
 		return [

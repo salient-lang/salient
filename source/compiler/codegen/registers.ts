@@ -27,7 +27,7 @@ export class RegisterAllocator {
 
 	allocate(type: Wasm.Type.Intrinsic, isArg: boolean = false) {
 		if (isArg) {
-			let ref = new LocalRef(type);
+			const ref = new LocalRef(type);
 			ref.resolve(this._args++);
 
 			return new Register(type, ref);

@@ -33,12 +33,12 @@ export class Function {
 	resolve(idx: number, override: boolean = false) {
 		this.ref.resolve(idx, override);
 	}
-	unresolve() {
-		this.ref.unresolve();
+	clear() {
+		this.ref.clear();
 	}
 
 	getID() {
-		return this.ref.getIdentifier();
+		return this.ref.get();
 	}
 
 

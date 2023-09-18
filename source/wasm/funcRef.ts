@@ -1,68 +1,29 @@
-import type { Byte } from "../helper.ts";
+import { LatentValue, type Byte } from "../helper.ts";
 
 import { EncodeU32, Intrinsic } from "./type.ts";
 
-export class FuncRef {
+export class FuncRef extends LatentValue<number> {
 	external: boolean;
-	resolved: boolean;
-	idx: number;
 
 	constructor(extern: boolean) {
+		super();
 		this.external = extern;
-		this.resolved = false;
-		this.idx = 0;
-	}
-
-	resolve(idx: number, override: boolean = false) {
-		if (!override && this.resolved) throw new Error("This function reference has already been resolved");
-
-		this.resolved = true;
-		this.idx = idx;
-	}
-
-	unresolve() {
-		this.resolved = false;
-	}
-
-	getIdentifier(): number {
-		if (!this.resolved) throw new Error("Cannot get the identifier of an unresolved function ref");
-		return this.idx;
 	}
 
 	toBinary(): Byte[] {
-		if (!this.resolved) throw new Error("Cannot emit binary for unresolved function ref");
-
 		return [
 			this.external ? 0x6f : 0x70,
-			...EncodeU32(this.idx)
+			...EncodeU32(this.get())
 		];
 	}
 }
 
-export class LocalRef {
-	resolved: boolean;
+
+export class LocalRef extends LatentValue<number> {
 	type: Intrinsic;
-	idx: number;
 
 	constructor(type: Intrinsic) {
-		this.resolved = false;
+		super();
 		this.type = type;
-		this.idx = 0;
-	}
-
-	resolve(idx: number, override: boolean = false) {
-		if (!override && this.resolved) throw new Error("This local variable reference has already been resolved");
-
-		this.resolved = true;
-		this.idx = idx;
-	}
-
-	unresolve() {
-		this.resolved = false;
-	}
-
-	getIdentifier(): number {
-		if (!this.resolved) throw new Error("Cannot get the identifier of an unresolved variable ref");
-		return this.idx;
 	}
 }

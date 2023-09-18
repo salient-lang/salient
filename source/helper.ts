@@ -49,3 +49,30 @@ export function Yeet(x: string, source?: SourceMap): never {
 	}
 	Deno.exit(1);
 }
+
+
+export class LatentValue<T> {
+	_value: T | null;
+
+	constructor() {
+		this._value = null;
+	}
+
+	get () {
+		if (this._value === null)
+			throw new Error("Attempting to read latent value before it's been resolved");
+
+		return this._value;
+	}
+
+	clear() {
+		this._value === null;
+	}
+
+	resolve(val: T, force: boolean = false) {
+		if (this._value !== null && !force)
+			throw new Error("Attempt to re-resolve already resolved latent value");
+
+		this._value = val;
+	}
+}

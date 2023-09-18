@@ -12,7 +12,7 @@ export default class Call {
 	toBinary(): Byte[] {
 		return [
 			0x10,
-			...EncodeU32(this.x instanceof FuncRef ? this.x.getIdentifier() : this.x)
+			...EncodeU32(this.x instanceof FuncRef ? this.x.get() : this.x)
 		];
 	}
 }
