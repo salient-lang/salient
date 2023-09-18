@@ -6,10 +6,9 @@ import type { Scope } from "./scope.ts";
 
 import * as banned from "./banned.ts";
 import { Instruction, AnyInstruction } from "../../wasm/index.ts";
-import { AssertUnreachable } from "../../bnf/shared.js";
 import { CompileExpr } from "./expression/index.ts";
-import { Intrinsic } from "../intrinsic.ts";
-import { Yeet } from "../../helper.ts";
+import { Intrinsic, i16, i8, u16, u8 } from "../intrinsic.ts";
+import { AssertUnreachable, Yeet } from "../../helper.ts";
 
 export class Context {
 	file: File;
@@ -32,6 +31,7 @@ export class Context {
 
 			switch (line.type) {
 				case "declare":   CompileDeclare  (this, line); break;
+				case "assign":    CompileAssign   (this, line); break;
 				case "statement": CompileExprStmt (this, line); break;
 				case "return":    CompileReturn   (this, line); break;
 				default: AssertUnreachable(line);
@@ -63,6 +63,13 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 				name: ctx.file.name,
 				ref: type.ref
 			})
+
+		if (typeRef === i8 || typeRef === u8 || typeRef === i16 || typeRef === u16)
+			Yeet(`${colors.red("Error")}: Cannot explicitly use virtual integer types\n`, {
+				path: ctx.file.path,
+				name: ctx.file.name,
+				ref: type.ref
+			})
 	}
 
 	const resolveType: Intrinsic = CompileExpr(ctx, value, typeRef || undefined);
@@ -74,21 +81,44 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		})
 
 	if (typeRef && resolveType !== typeRef)
-		Yeet(`${colors.red("Error")}: type ${resolveType.name} != type ${typeRef.name}\n`, {
+		Yeet(`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.name}\n`, {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: type?.ref || syntax.ref
 		})
 
-	const reg = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
-	if (!reg)
+	const variable = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
+	if (!variable)
 		Yeet(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.ref
 		})
 
-	ctx.block.push(Instruction.local.set(reg.register.ref));
+	ctx.block.push(Instruction.local.set(variable.register.ref));
+}
+
+function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
+	const name  = syntax.value[0].value[0].value;
+	const value = syntax.value[1];
+
+	const variable = ctx.scope.getVariable(name);
+	if (!variable)
+		Yeet(`${colors.red("Error")}: Undeclared variable ${name}\n`, {
+			path: ctx.file.path,
+			name: ctx.file.name,
+			ref: syntax.ref
+		})
+
+	const resolveType: Intrinsic = CompileExpr(ctx, value, variable.type);
+	if (resolveType !== variable.type)
+		Yeet(`${colors.red("Error")}: type ${variable.name} != type ${resolveType.name}\n`, {
+			path: ctx.file.path,
+			name: ctx.file.name,
+			ref: syntax.ref
+		})
+
+	ctx.block.push(Instruction.local.set(variable.register.ref));
 }
 
 

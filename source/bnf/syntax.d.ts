@@ -1,4 +1,4 @@
-import type * as _Shared from './shared.js';
+import type _Shared from './shared.js';
 export type _Literal = { type: "literal", value: string, start: number, end: number, count: number, ref: _Shared.ReferenceRange };
 export type Term_Program = {
 	type: 'program',
@@ -496,6 +496,24 @@ export declare function Parse_Declare (i: string, refMapping?: boolean): _Shared
 	isPartial: boolean
 }
 
+export type Term_Assign = {
+	type: 'assign',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Name,
+		Term_Expr
+	]
+}
+export declare function Parse_Assign (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Assign,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
 export type Term_Function = {
 	type: 'function',
 	start: number,
@@ -620,7 +638,7 @@ export type Term_Func_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Declare | Term_Statement | Term_Return)
+		(Term_Declare | Term_Assign | Term_Statement | Term_Return)
 	]
 }
 export declare function Parse_Func_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {

@@ -34,4 +34,8 @@ export class Scope {
 
 		return this.vars[name];
 	}
+
+	getVariable(name: string) {
+		return this.vars[name] || null;
+	}
 }
