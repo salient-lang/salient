@@ -30,7 +30,7 @@ if (project.failed) {
 }
 
 const mainFile = project.entry;
-const mainFunc = mainFile.namespace["fibonacci"];
+const mainFunc = mainFile.namespace["main"];
 if (!(mainFunc instanceof Function)) {
 	Yeet(`Main namespace is not a function: ${mainFunc.constructor.name}`);
 }
@@ -40,13 +40,17 @@ mainFunc.compile();
 
 
 await Deno.writeFile("out.wasm", project.module.toBinary());
+console.log(`  out: ${"out.wasm"}`);
+
 const command = new Deno.Command(
 	"wasm2wat",
 	{
-		args: ["out.wasm", "-o", "out.wat"]
+		args: ["-v", "out.wasm", "-o", "out.wat"]
 	}
 );
 const { code, stdout, stderr } = await command.output();
-console.assert(code === 0);
-
-console.log(`  out: ${"out.wasm"}`);
+if (code !== 0) {
+	console.error("Invalid wasm generated");
+	console.error(new TextDecoder().decode(stderr));
+	Deno.exit(1);
+}

@@ -12,6 +12,10 @@ export class Register {
 		this.type   = type;
 		this.ref    = ref;
 	}
+
+	free() {
+		this.isFree = true;
+	}
 }
 
 export class RegisterAllocator {

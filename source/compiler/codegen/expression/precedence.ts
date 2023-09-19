@@ -2,10 +2,11 @@
 import { assertEquals, assertThrows } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
 import type { Term_Expr, Term_Expr_arg, Term_Expr_infix, _Literal } from "../../../bnf/syntax.d.ts";
+import { ReferenceRange } from "../../../parser.ts";
 
 
 const precedence = {
-	"." : 1, "[]": 1, "->": 1,
+	"->": 1,
 	"*" : 3, "/" : 3, "%" : 3,
 	"+" : 4, "-" : 4,
 	"<<": 5, ">>": 5,
@@ -37,13 +38,15 @@ function GetPrecedence (a: string, b: string) {
 }
 
 export type PrecedenceTree = Term_Expr_arg | {
+	type: "infix",
 	lhs : PrecedenceTree,
 	op  : string,
-	rhs : PrecedenceTree
+	rhs : PrecedenceTree,
+	ref : ReferenceRange
 };
 
 export function ApplyPrecedence(syntax: Term_Expr) {
-	let root = syntax.value[0] as PrecedenceTree;
+	let root: PrecedenceTree = syntax.value[0] as PrecedenceTree;
 
 	for (const action of syntax.value[1].value) {
 		const op = action.value[0].value;
@@ -52,9 +55,11 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 		// First action
 		if (!Array.isArray(root)) {
 			root = {
+				type: "infix",
 				lhs: root,
 				op,
-				rhs: arg
+				rhs: arg,
+				ref: ReferenceRange.union(root.ref, arg.ref)
 			};
 			continue;
 		}
@@ -64,24 +69,32 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 			// Transform stealing previous operand
 			// (1 + 2) * 3 -> (2 * 3) + 1
 			root = {
+				type: "infix",
 				lhs: {
+					type: "infix",
 					lhs: root[2],
 					op,
-					rhs: arg
+					rhs: arg,
+					ref: ReferenceRange.union(root[2].ref, arg.ref)
 				},
 				op: root[1],
 				rhs: root[0],
+				ref: ReferenceRange.union(arg.ref, arg.ref)
 			}
 
 		} else {
 			root = {
+				type: "infix",
 				lhs: root[0],
 				op:  root[1],
 				rhs: {
+					type: "infix",
 					lhs: root[2],
 					op,
-					rhs: arg
-				}
+					rhs: arg,
+					ref: ReferenceRange.union(root[2].ref, arg.ref)
+				},
+				ref: ReferenceRange.union(root[0].ref, arg.ref)
 			}
 		}
 	}

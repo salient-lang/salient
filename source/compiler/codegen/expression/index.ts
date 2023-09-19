@@ -1,16 +1,26 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "../../../bnf/syntax.d.ts";
+import { ApplyPrecedence, PrecedenceTree } from "./precedence.ts";
 import { CompileConstFloat, CompileConstInt } from "./constant.ts";
 import { AssertUnreachable, Yeet } from "../../../helper.ts";
+import { CompilePrefix } from "./prefix.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { Intrinsic } from "../../intrinsic.ts";
 import { Context } from "./../context.ts";
-import { CompilePrefixArithmeticInverse } from "./prefix.ts";
+import { CompileInfix } from "./infix.ts";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {
-	const op = CompileArg(ctx, syntax.value[0], expect);
-	return op;
+	return CompilePrecedence(ctx, ApplyPrecedence(syntax), expect);
+}
+
+function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: Intrinsic): Intrinsic {
+	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect)
+
+	const lhs = CompilePrecedence(ctx, elm.lhs, expect);
+	const rhs = CompilePrecedence(ctx, elm.rhs, lhs);
+
+	return CompileInfix(ctx, lhs, elm.op, rhs, elm.ref);
 }
 
 
@@ -62,20 +72,4 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic)
 
 	ctx.block.push(Instruction.local.get(variable.register.ref));
 	return variable.type;
-}
-
-
-function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, type: Intrinsic, expect?: Intrinsic): Intrinsic {
-
-	const op = prefix.value[0].value;
-	switch (op) {
-		case "!":
-			Yeet(`${colors.red("Error")}: Unimplemented negation prefix operation\n`, {
-				path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
-			});
-			break;
-		case "-":
-			return CompilePrefixArithmeticInverse(ctx, type, prefix, expect);
-		default: AssertUnreachable(op);
-	}
 }
