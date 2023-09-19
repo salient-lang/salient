@@ -7,6 +7,7 @@ import { Byte } from "../../helper.ts";
 import varFuncs, { Variable } from "./variable.ts";
 import constFuncs, { Constant } from "./constant.ts";
 import memFuncs, { MemoryRegister } from "./memory.ts";
+import numFuncs, { NumericInstruction } from "./numeric.ts";
 
 export class Call {
 	x: FuncRef | number;
@@ -31,24 +32,26 @@ export class Drop {
 	}
 }
 
-export type Any =
-	Unreachable | NoOp | Block | Loop | IfBlock |
-	Br_If | Br |
-	Return | Call | Drop |
-	Constant |
-	Variable |
-	MemoryRegister;
+export type Any = Unreachable | NoOp
+	| Block | Loop | IfBlock
+	| Br_If | Br
+	| Return | Call | Drop
+	| Constant
+	| Variable
+	| MemoryRegister
+	| NumericInstruction;
 
 
-	const shared_Unreachable = new Unreachable();
-	const shared_Return = new Return();
-	const shared_Drop = new Drop();
-	const shared_NoOp = new NoOp();
+const shared_Unreachable = new Unreachable();
+const shared_Return = new Return();
+const shared_Drop = new Drop();
+const shared_NoOp = new NoOp();
 
 const wrapper = {
 	const: constFuncs,
 	...varFuncs,
 	...memFuncs,
+	...numFuncs,
 
 	unreachable: () => shared_Unreachable,
 	return     : () => shared_Return,

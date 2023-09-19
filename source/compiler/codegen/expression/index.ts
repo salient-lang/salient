@@ -6,6 +6,7 @@ import { AssertUnreachable, Yeet } from "../../../helper.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { Intrinsic } from "../../intrinsic.ts";
 import { Context } from "./../context.ts";
+import { CompilePrefixArithmeticInverse } from "./prefix.ts";
 
 export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: Intrinsic) {
 	const op = CompileArg(ctx, syntax.value[0], expect);
@@ -19,33 +20,36 @@ function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: Intrins
 	const val = syntax.value[1];
 	let res: Intrinsic;
 	switch (val.type) {
-		case "constant":       res = CompileConstant(ctx, val, prefix, expect); break;
-		case "expr_brackets":  res = CompileBrackets(ctx, val, prefix, expect); break;
-		case "name":           res = CompileName(ctx, val, prefix, expect);     break;
+		case "constant":       res = CompileConstant(ctx, val, expect); break;
+		case "expr_brackets":  res = CompileBrackets(ctx, val, expect); break;
+		case "name":           res = CompileName(ctx, val, expect);     break;
 		default: AssertUnreachable(val);
 	}
 
 	if (postfix.length > 0) throw new Error("Unimplemented postfix operations");
+	if (prefix) return CompilePrefix(ctx, prefix, res, expect);
 
 	return res;
 }
 
-function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, prefix?: Syntax.Term_Expr_prefix, expect?: Intrinsic) {
+
+
+function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: Intrinsic) {
 	const val = syntax.value[0];
 	switch (val.type) {
 		case "boolean": throw new Error("Unimplemented boolean constant");
-		case "float":   return CompileConstFloat(ctx, val, prefix, expect);
-		case "integer": return CompileConstInt(ctx, val, prefix, expect);
+		case "float":   return CompileConstFloat(ctx, val, expect);
+		case "integer": return CompileConstInt(ctx, val, expect);
 		case "string":  throw new Error("Unimplemented string constant");
 		default: AssertUnreachable(val);
 	}
 }
 
-function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, prefix?: Syntax.Term_Expr_prefix, expect?: Intrinsic) {
+function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: Intrinsic) {
 	return CompileExpr(ctx, syntax.value[0], expect);
 }
 
-function CompileName(ctx: Context, syntax: Syntax.Term_Name, prefix?: Syntax.Term_Expr_prefix, expect?: Intrinsic) {
+function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic) {
 	const name = syntax.value[0].value;
 	const variable = ctx.scope.getVariable(name);
 	if (!variable) Yeet(`${colors.red("Error")}: Undeclared variable name ${name}\n`, {
@@ -58,4 +62,20 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name, prefix?: Syntax.Ter
 
 	ctx.block.push(Instruction.local.get(variable.register.ref));
 	return variable.type;
+}
+
+
+function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, type: Intrinsic, expect?: Intrinsic): Intrinsic {
+
+	const op = prefix.value[0].value;
+	switch (op) {
+		case "!":
+			Yeet(`${colors.red("Error")}: Unimplemented negation prefix operation\n`, {
+				path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
+			});
+			break;
+		case "-":
+			return CompilePrefixArithmeticInverse(ctx, type, prefix, expect);
+		default: AssertUnreachable(op);
+	}
 }

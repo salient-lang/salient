@@ -2,12 +2,12 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "../../../bnf/syntax.d.ts";
 import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
-import { AssertUnreachable, Yeet } from "../../../helper.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { Context } from "./../context.ts";
+import { Yeet } from "../../../helper.ts";
 
-export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefix?: Syntax.Term_Expr_prefix, expect?: Intrinsic) {
-	let num = Number(syntax.value[0].value);
+export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsic) {
+	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))
 		Yeet(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
@@ -21,25 +21,6 @@ export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefi
 
 	const unsigned = expect === u8 || expect === u16 || expect === u32 || expect === u64;
 	const size     = expect?.size || 4;
-	if (prefix) {
-		const op = prefix.value[0].value;
-		switch (op) {
-			case "!":
-				Yeet(`${colors.red("Error")}: Cannot negate an integer\n`, {
-					path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-				});
-				break;
-			case "-":
-				if (unsigned)
-					Yeet(`${colors.red("Error")}: Cannot have a negative unsigned integer\n`, {
-						path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-					});
-
-				num *= -1;
-				break;
-			default: AssertUnreachable(op);
-		}
-	}
 
 	if (size === 8) {
 		ctx.block.push(Instruction.const.i64(num));
@@ -123,28 +104,13 @@ export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, prefi
 	return i32;
 }
 
-export function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, prefix?: Syntax.Term_Expr_prefix, expect?: Intrinsic) {
-	let num = Number(syntax.value[0].value);
+export function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsic) {
+	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))
 		Yeet(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
-
-	if (prefix) {
-		const op = prefix.value[0].value;
-		switch (op) {
-			case "!":
-				Yeet(`${colors.red("Error")}: Cannot negate an integer\n`, {
-					path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-				});
-				break;
-			case "-":
-				num *= -1;
-				break;
-			default: AssertUnreachable(op);
-		}
-	}
 
 	if (expect === f64) {
 		ctx.block.push(Instruction.const.f64(num));
