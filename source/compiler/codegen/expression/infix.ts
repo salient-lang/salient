@@ -1,11 +1,10 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type * as Syntax from "../../../bnf/syntax.d.ts";
 import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
-import { AssertUnreachable, Yeet } from "../../../helper.ts";
+import { ReferenceRange } from "../../../parser.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { Context } from "./../context.ts";
-import { ReferenceRange } from "../../../parser.ts";
+import { Yeet } from "../../../helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: Intrinsic, op: string, rhs: Intrinsic, ref: ReferenceRange) {
@@ -15,6 +14,19 @@ export function CompileInfix(ctx: Context, lhs: Intrinsic, op: string, rhs: Intr
 		case "*": return CompileMul(ctx, lhs, rhs, ref);
 		case "/": return CompileDiv(ctx, lhs, rhs, ref);
 		case "%": return CompileRem(ctx, lhs, rhs, ref);
+
+		case "&&": return CompileAnd(ctx, lhs, rhs, ref);
+		case "||": return CompileOr (ctx, lhs, rhs, ref);
+		case "^":  return CompileXor(ctx, lhs, rhs, ref);
+
+		case "==": return CompileEq(ctx, lhs, rhs, ref);
+		case "!=": return CompileNeq(ctx, lhs, rhs, ref);
+		case "<":  return CompileLt(ctx, lhs, rhs, ref);
+		case "<=": return CompileLe(ctx, lhs, rhs, ref);
+		case ">":  return CompileGt(ctx, lhs, rhs, ref);
+		case ">=": return CompileGe(ctx, lhs, rhs, ref);
+
+
 		default: Yeet(`${colors.red("Error")}: Unimplemented infix operation "${op}"\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref
 		});
@@ -23,7 +35,7 @@ export function CompileInfix(ctx: Context, lhs: Intrinsic, op: string, rhs: Intr
 
 
 
-export function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
 	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot add unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -53,7 +65,7 @@ export function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 	});
 }
 
-export function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
 	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot subtract unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -86,7 +98,7 @@ export function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 
 
 
-export function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
 	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot multiply unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -116,7 +128,7 @@ export function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 	});
 }
 
-export function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
 	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -131,7 +143,7 @@ export function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 		return lhs;
 	}
 
-	if (lhs === i64 || lhs === u64) {
+	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.div_s());
 		return lhs;
 	}
@@ -144,7 +156,6 @@ export function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 		ctx.block.push(Instruction.f32.div());
 		return lhs;
 	}
-
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.div());
 		return lhs;
@@ -155,7 +166,7 @@ export function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 	});
 }
 
-export function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
 	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot remainder unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -170,7 +181,7 @@ export function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 		return lhs;
 	}
 
-	if (lhs === i64 || lhs === u64) {
+	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.rem_s());
 		return lhs;
 	}
@@ -220,6 +231,328 @@ export function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Re
 
 		regA.free();
 		regB.free();
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+
+
+
+
+function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.and());
+		return lhs;
+	}
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.and());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.and());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.and());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.or());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.or());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.or());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.or());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.xor());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.xor());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.xor());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.xor());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+
+
+
+
+function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.eq());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.eq());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.eq());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.eq());
+		return lhs;
+	}
+
+	if (lhs === f32) {
+		ctx.block.push(Instruction.f32.eq());
+		return lhs;
+	}
+	if (lhs === f64) {
+		ctx.block.push(Instruction.f64.eq());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.ne());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.ne());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.ne());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.ne());
+		return lhs;
+	}
+
+	if (lhs === f32) {
+		ctx.block.push(Instruction.f32.ne());
+		return lhs;
+	}
+	if (lhs === f64) {
+		ctx.block.push(Instruction.f64.ne());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.lt_s());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.lt_u());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.lt_s());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.lt_u());
+		return lhs;
+	}
+
+	if (lhs === f32) {
+		ctx.block.push(Instruction.f32.lt());
+		return lhs;
+	}
+	if (lhs === f64) {
+		ctx.block.push(Instruction.f64.lt());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.le_s());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.le_u());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.le_s());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.le_u());
+		return lhs;
+	}
+
+	if (lhs === f32) {
+		ctx.block.push(Instruction.f32.le());
+		return lhs;
+	}
+	if (lhs === f64) {
+		ctx.block.push(Instruction.f64.le());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.gt_s());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.gt_u());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.gt_s());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.gt_u());
+		return lhs;
+	}
+
+	if (lhs === f32) {
+		ctx.block.push(Instruction.f32.gt());
+		return lhs;
+	}
+	if (lhs === f64) {
+		ctx.block.push(Instruction.f64.gt());
+		return lhs;
+	}
+
+	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+}
+
+function CompileGe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref
+	});
+
+	if (lhs === i8 || lhs === i16 || lhs === i32) {
+		ctx.block.push(Instruction.i32.ge_s());
+		return lhs;
+	}
+
+	if (lhs === u8 || lhs === u16 || lhs === u32) {
+		ctx.block.push(Instruction.i32.ge_u());
+		return lhs;
+	}
+
+	if (lhs === i64 || lhs === u64) {
+		ctx.block.push(Instruction.i64.ge_s());
+		return lhs;
+	}
+	if (lhs === i64) {
+		ctx.block.push(Instruction.i64.ge_u());
+		return lhs;
+	}
+
+	if (lhs === f32) {
+		ctx.block.push(Instruction.f32.ge());
+		return lhs;
+	}
+	if (lhs === f64) {
+		ctx.block.push(Instruction.f64.ge());
 		return lhs;
 	}
 

@@ -75,14 +75,14 @@ function ::= func_head %w* ( func_body | ";" ) ;
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
-return ::= %("return" w+) expr %";";
+return ::= %"return" "_tail"? %w+ expr %";";
 
 #=============================
 #  Expression
 #=============================
 expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 	expr_prefix ::= "!" | "-" ;
-	expr_infix ::= "&&" | "||" | "==" | "!=" | "<=" | ">=" | "<" | ">"
+	expr_infix ::= "&&" | "||" | "^" | "==" | "!=" | "<=" | ">=" | "<" | ">"
 		| "%" | "*" | "/" | "+" | "-"
 		| "as" | "instanceof"
 		| "->" ;

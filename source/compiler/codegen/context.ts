@@ -151,7 +151,14 @@ function CompileExprStmt(ctx: Context, syntax: Syntax.Term_Statement) {
 
 
 function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
-	const value = syntax.value[0];
+	const isTail = syntax.value[0].value.length > 0;
+	const value = syntax.value[1];
+
+	if (isTail) Yeet(`${colors.red("Error")}: Unimplemented tail call return\n`, {
+		path: ctx.file.path,
+		name: ctx.file.name,
+		ref: syntax.ref
+	});
 
 	CompileExpr(ctx, value);
 	ctx.block.push(Instruction.return());
