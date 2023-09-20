@@ -10,7 +10,7 @@ const goalStdout = "";
 
 const source = `
 fn main(): f32 {
-	return -3.5 % 2.0aa;
+	return -3.5 % 2.0;
 }`;
 
 Deno.test(`Numeric logic test`, async () => {
