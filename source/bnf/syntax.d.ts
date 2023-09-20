@@ -647,7 +647,7 @@ export type Term_Func_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Declare | Term_Assign | Term_Statement | Term_Return)
+		(Term_Declare | Term_Assign | Term_Return | Term_Statement)
 	]
 }
 export declare function Parse_Func_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {

@@ -70,7 +70,7 @@ function ::= func_head %w* ( func_body | ";" ) ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 	func_body ::= %( "{" w* ) ( func_stmt %w* )* %( w* "}" w* ";"? ) ;
-		func_stmt ::= declare | assign | statement | return ;
+		func_stmt ::= declare | assign | return | statement ;
 
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
