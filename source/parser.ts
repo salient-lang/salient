@@ -1,4 +1,5 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 
 import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
 import * as Instance from "./bnf/syntax.js";
@@ -85,23 +86,27 @@ function ReadByteRange(path: string, start: number, end: number): string {
 	start = Math.max(0, start);
 
 	// Open the file for reading
-	const file = Deno.openSync(path, { read: true });
+	try {
+		const file = Deno.openSync(path, { read: true });
 
-	const bufferSize = end - start + 1;
-	const buffer = new Uint8Array(bufferSize);
+		const bufferSize = end - start + 1;
+		const buffer = new Uint8Array(bufferSize);
 
-	// Position the file cursor to the start byte
-	file.seekSync(start, Deno.SeekMode.Start);
+		// Position the file cursor to the start byte
+		file.seekSync(start, Deno.SeekMode.Start);
 
-	// Read the specified byte range into the buffer
-	file.readSync(buffer);
+		// Read the specified byte range into the buffer
+		file.readSync(buffer);
 
-	// Close the file
-	file.close();
+		// Close the file
+		file.close();
 
-	// Convert Uint8Array to string
-	const decoder = new TextDecoder();
-	return decoder.decode(buffer);
+		// Convert Uint8Array to string
+		const decoder = new TextDecoder();
+		return decoder.decode(buffer);
+	} catch (e) {
+		return "";
+	}
 }
 
 
