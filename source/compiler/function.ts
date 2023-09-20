@@ -6,6 +6,7 @@ import type { File, Namespace } from "./file.ts";
 import { ReferenceRange, SourceView } from "../parser.ts";
 import { Intrinsic } from "./intrinsic.ts";
 import { Context } from "./codegen/context.ts";
+import { FuncRef } from "../wasm/funcRef.ts";
 import { Scope } from "./codegen/scope.ts";
 
 
@@ -26,6 +27,7 @@ export default class Function {
 	owner: File;
 	ast: Term_Function;
 	name: string;
+	ref: FuncRef | null;
 
 	isCompiled: boolean;
 	isLinking:  boolean;
@@ -38,6 +40,7 @@ export default class Function {
 		this.owner = owner;
 		this.name = ast.value[0].value[0].value;
 		this.ast = ast;
+		this.ref = null;
 
 		this.returns   = [];
 		this.arguments = [];
@@ -122,6 +125,8 @@ export default class Function {
 		if (body.type === "literal") throw new Error("Missing function body");
 
 		ctx.compile(body.value[0].value.map(x => x.value[0]));
+
+		this.ref = func.ref;
 	}
 }
 

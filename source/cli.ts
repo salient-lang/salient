@@ -29,7 +29,7 @@ if (project.failed) {
 	Yeet(`Compilation ${colors.red("Failed")}`);
 }
 
-const mainFile = project.entry;
+const mainFile = project.import(root);
 const mainFunc = mainFile.namespace["main"];
 if (!(mainFunc instanceof Function)) {
 	Yeet(`Main namespace is not a function: ${mainFunc.constructor.name}`);

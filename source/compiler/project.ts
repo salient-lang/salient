@@ -5,24 +5,31 @@ import { File } from "./file.ts"
 
 export default class Project {
 	files: File[];
-	entry: File;
 	cwd: string;
 
 	module: Module;
 
 	failed: boolean;
 
-	constructor(entry: string) {
+	constructor(base: string) {
 		this.failed = false;
 		this.files = [];
-		this.cwd = dirname(entry);
+		this.cwd = dirname(base);
 
 		this.module = new Module();
-		this.entry = this.import(entry);
 	}
 
 	import(filePath: string) {
-		const file = new File(this, filePath, relative(this.cwd, filePath));
+		const name = relative(this.cwd, filePath);
+		const data = Deno.readTextFileSync(filePath);
+		const file = new File(this, filePath, name, data);
+		this.files.push(file);
+
+		return file;
+	}
+
+	importRaw(data: string) {
+		const file = new File(this, "./", "[buffer]", data);
 		this.files.push(file);
 
 		return file;

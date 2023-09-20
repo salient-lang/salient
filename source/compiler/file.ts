@@ -22,7 +22,7 @@ export class File {
 
 	namespace: { [key: string]: Namespace };
 
-	constructor(owner: Project, path: string, name: string) {
+	constructor(owner: Project, path: string, name: string, data: string) {
 		this.owner = owner;
 		this.name = name;
 		this.path = path;
@@ -33,7 +33,7 @@ export class File {
 			f32, f64            // native floats types
 		};
 		Ingest(this, Parse(
-			decoder.decode(Deno.readFileSync(this.path)),
+			data,
 			this.path,
 			this.name
 		));
