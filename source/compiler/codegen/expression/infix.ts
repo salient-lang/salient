@@ -193,18 +193,19 @@ function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 	if (lhs === f32) {
 		const regA = ctx.scope.register.allocate(f32.bitcode, false);
 		const regB = ctx.scope.register.allocate(f32.bitcode, false);
-		ctx.block.push(Instruction.local.set(regA.ref));
 		ctx.block.push(Instruction.local.set(regB.ref));
+		ctx.block.push(Instruction.local.set(regA.ref));
 
-		ctx.block.push(Instruction.local.get(regA.ref));
+		ctx.block.push(Instruction.local.get(regA.ref)); // a -
+
+		ctx.block.push(Instruction.local.get(regA.ref)); // floor(a/b)
 		ctx.block.push(Instruction.local.get(regB.ref));
 		ctx.block.push(Instruction.f32.div());
 		ctx.block.push(Instruction.f32.trunc());
 
-		ctx.block.push(Instruction.local.get(regB.ref));
+		ctx.block.push(Instruction.local.get(regB.ref)); // * b
 		ctx.block.push(Instruction.f32.mul());
 
-		ctx.block.push(Instruction.local.get(regA.ref));
 		ctx.block.push(Instruction.f32.sub());
 
 		regA.free();
