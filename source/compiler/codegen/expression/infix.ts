@@ -1,36 +1,55 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
+import { OperandType, CompileArg } from "./operand.ts";
 import { ReferenceRange } from "../../../parser.ts";
+import { PrecedenceTree } from "./precedence.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { Context } from "./../context.ts";
 import { Yeet } from "../../../helper.ts";
 
 
-export function CompileInfix(ctx: Context, lhs: Intrinsic, op: string, rhs: Intrinsic, ref: ReferenceRange) {
+export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: Intrinsic) {
+	const a = CompilePrecedence(ctx, lhs, expect);
+	if (!(a instanceof Intrinsic)) Yeet(
+		`${colors.red("Error")}: Cannot apply prefix operation to non-variable\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
+	});
+
+	const b = CompilePrecedence(ctx, rhs, a);
+	if (!(b instanceof Intrinsic)) Yeet(
+		`${colors.red("Error")}: Cannot apply prefix operation to non-variable\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
+	});
+
 	switch (op) {
-		case "+": return CompileAdd(ctx, lhs, rhs, ref);
-		case "-": return CompileSub(ctx, lhs, rhs, ref);
-		case "*": return CompileMul(ctx, lhs, rhs, ref);
-		case "/": return CompileDiv(ctx, lhs, rhs, ref);
-		case "%": return CompileRem(ctx, lhs, rhs, ref);
+		case "+": return CompileAdd(ctx, a, b, ref);
+		case "-": return CompileSub(ctx, a, b, ref);
+		case "*": return CompileMul(ctx, a, b, ref);
+		case "/": return CompileDiv(ctx, a, b, ref);
+		case "%": return CompileRem(ctx, a, b, ref);
 
-		case "&&": return CompileAnd(ctx, lhs, rhs, ref);
-		case "||": return CompileOr (ctx, lhs, rhs, ref);
-		case "^":  return CompileXor(ctx, lhs, rhs, ref);
+		case "&&": return CompileAnd(ctx, a, b, ref);
+		case "||": return CompileOr (ctx, a, b, ref);
+		case "^":  return CompileXor(ctx, a, b, ref);
 
-		case "==": return CompileEq(ctx, lhs, rhs, ref);
-		case "!=": return CompileNeq(ctx, lhs, rhs, ref);
-		case "<":  return CompileLt(ctx, lhs, rhs, ref);
-		case "<=": return CompileLe(ctx, lhs, rhs, ref);
-		case ">":  return CompileGt(ctx, lhs, rhs, ref);
-		case ">=": return CompileGe(ctx, lhs, rhs, ref);
+		case "==": return CompileEq (ctx, a, b, ref);
+		case "!=": return CompileNeq(ctx, a, b, ref);
+		case "<":  return CompileLt (ctx, a, b, ref);
+		case "<=": return CompileLe (ctx, a, b, ref);
+		case ">":  return CompileGt (ctx, a, b, ref);
+		case ">=": return CompileGe (ctx, a, b, ref);
 
 
 		default: Yeet(`${colors.red("Error")}: Unimplemented infix operation "${op}"\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref
 		});
 	}
+}
+
+function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: Intrinsic): OperandType {
+	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect);
+	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect);
 }
 
 

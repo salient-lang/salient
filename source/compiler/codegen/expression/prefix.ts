@@ -4,10 +4,16 @@ import type * as Syntax from "../../../bnf/syntax.d.ts";
 import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
 import { AssertUnreachable, Yeet } from "../../../helper.ts";
 import { Instruction } from "../../../wasm/index.ts";
+import { OperandType } from "./operand.ts";
 import { Context } from "./../context.ts";
 
 
-export function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, type: Intrinsic, expect?: Intrinsic): Intrinsic {
+export function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, type: OperandType, expect?: Intrinsic): Intrinsic {
+	if (!(type instanceof Intrinsic)) Yeet(
+		`${colors.red("Error")}: Cannot apply prefix operation to non-variable\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
+	});
+
 	const op = prefix.value[0].value;
 	switch (op) {
 		case "!":

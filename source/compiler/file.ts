@@ -14,7 +14,6 @@ import Import from "./import.ts";
 
 export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 
-const decoder = new TextDecoder();
 export class File {
 	owner: Project;
 	name: string;
@@ -55,6 +54,10 @@ export class File {
 		if (target.type !== "access_static" && target.type !== "name") return null;
 
 		return this.namespace[target.value[0].value];
+	}
+
+	access(name: string): Namespace | null {
+		return this.namespace[name] || null;
 	}
 }
 
