@@ -1,11 +1,11 @@
 {
-	"name": "uniview",
+	"name": "salient-lang",
 	"displayName": "%displayName%",
 	"description": "%description%",
 	"version": "0.0.3",
-	"publisher": "qupa-project",
+	"publisher": "Ajani Bilby",
 	"license": "MIT",
-	"repository": "https://github.com/qupa-project/uniview-vscode",
+	"repository": "https://github.com/ajanibilby/salient/tools/vscode-extension",
 	"engines": {
 		"vscode": "*"
 	},
@@ -15,22 +15,22 @@
 	"contributes": {
 		"languages": [
 			{
-				"id": "uniview",
+				"id": "salient",
 				"extensions": [
-					".uv"
+					".sa"
 				],
 				"aliases": [
-					"Uniview",
-					"uni-view"
+					"Salient",
+					"salient language"
 				],
 				"configuration": "./language-configuration.json"
 			}
 		],
 		"grammars": [
 			{
-				"language": "uniview",
-				"scopeName": "source.uv",
-				"path": "./syntaxes/uniview.tmLanguage.json"
+				"language": "salient",
+				"scopeName": "source.sa",
+				"path": "./syntaxes/salient.tmLanguage.json"
 			}
 		]
 	}
