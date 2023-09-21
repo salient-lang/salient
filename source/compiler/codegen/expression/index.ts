@@ -62,9 +62,12 @@ function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect
 function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic) {
 	const name = syntax.value[0].value;
 	const variable = ctx.scope.getVariable(name);
-	if (!variable) Yeet(`${colors.red("Error")}: Undeclared variable name ${name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
+	if (!variable) {
+		// TODO: Attempt resolve function/type
+		Yeet(`${colors.red("Error")}: Undeclared variable ${name}\n`, {
+			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+		});
+	}
 
 	if (!variable.isDefined) Yeet(`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
