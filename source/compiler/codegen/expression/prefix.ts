@@ -17,7 +17,8 @@ export function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, typ
 	const op = prefix.value[0].value;
 	switch (op) {
 		case "!":
-			Yeet(`${colors.red("Error")}: Unimplemented negation prefix operation\n`, {
+			Yeet(
+				`${colors.red("Error")}: Unimplemented negation prefix operation\n`, {
 				path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
 			});
 			break;

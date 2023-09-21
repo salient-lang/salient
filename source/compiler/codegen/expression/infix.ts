@@ -12,13 +12,13 @@ import { Yeet } from "../../../helper.ts";
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: Intrinsic) {
 	const a = CompilePrecedence(ctx, lhs, expect);
 	if (!(a instanceof Intrinsic)) Yeet(
-		`${colors.red("Error")}: Cannot apply prefix operation to non-variable\n`, {
+		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
 	const b = CompilePrecedence(ctx, rhs, a);
 	if (!(b instanceof Intrinsic)) Yeet(
-		`${colors.red("Error")}: Cannot apply prefix operation to non-variable\n`, {
+		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
 
