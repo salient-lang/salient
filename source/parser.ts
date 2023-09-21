@@ -1,5 +1,4 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
-import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 
 import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
 import * as Instance from "./bnf/syntax.js";
@@ -27,6 +26,7 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 
 export function SourceView(path: string, name: string, range: ReferenceRange) {
 	const source = ReadByteRange(path, range.start.index-200, range.end.index+200);
+	if (source === null) return `${name}: ${range.toString()}\n`;
 
 	const begin = ExtractLine(source, range.start).replace(/\t/g, "  ");
 	let body = "";
@@ -79,7 +79,7 @@ function FindNewLine(source: string, index: number, step: number) {
 }
 
 
-function ReadByteRange(path: string, start: number, end: number): string {
+function ReadByteRange(path: string, start: number, end: number): string | null {
 	// Ensure end byte is not before the start byte
 	if (end < start) throw new Error('End byte should be greater than start byte');
 
@@ -105,7 +105,7 @@ function ReadByteRange(path: string, start: number, end: number): string {
 		const decoder = new TextDecoder();
 		return decoder.decode(buffer);
 	} catch (e) {
-		return "";
+		return null;
 	}
 }
 
