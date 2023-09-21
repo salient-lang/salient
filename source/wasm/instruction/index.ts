@@ -58,12 +58,12 @@ const wrapper = {
 	drop       : () => shared_Drop,
 	noop       : () => shared_NoOp,
 
-	block: (n?: Any[])                 => new Block(n),
+	block: (typeIdx: number, n?: Any[])                 => new Block(typeIdx, n),
+	if   : (typeIdx: number, t?: Any[], f?: Any[])      => new IfBlock(typeIdx, t, f),
+	loop : (typeIdx: number, n?: Any[])                 => new Loop(typeIdx, n),
+	call : (funcRef: FuncRef | number) => new Call(funcRef),
 	br_if: (i: number)                 => new Br_If(i),
 	br   : (i: number)                 => new Br(i),
-	call : (funcRef: FuncRef | number) => new Call(funcRef),
-	if   : (t?: Any[], f?: Any[])      => new IfBlock(t, f),
-	loop : (n?: Any[])                 => new Loop(n),
 }
 
 export default wrapper;

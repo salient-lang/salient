@@ -17,9 +17,11 @@ export class NoOp {
 }
 
 export class Block {
+	type: number;
 	n: Any[];
 
-	constructor(n?: Any[]) {
+	constructor(typeIdx: number, n?: Any[]) {
+		this.type = typeIdx;
 		this.n = n ? n : [];
 	}
 
@@ -33,9 +35,11 @@ export class Block {
 }
 
 export class Loop {
+	type: number;
 	n: Any[];
 
-	constructor(n?: Any[]) {
+	constructor(typeIdx: number, n?: Any[]) {
+		this.type = typeIdx;
 		this.n = n ? n : [];
 	}
 
@@ -49,10 +53,12 @@ export class Loop {
 }
 
 export class IfBlock {
+	type: number
 	true: Any[];
 	false: Any[];
 
-	constructor(trueI?: Any[], falseI?: Any[]) {
+	constructor(typeIdx: number, trueI?: Any[], falseI?: Any[]) {
+		this.type  = typeIdx;
 		this.true  = trueI ?  trueI : [];
 		this.false = falseI ? falseI : [];
 	}
@@ -61,6 +67,7 @@ export class IfBlock {
 		if (this.false.length > 0) {
 			return [
 				0x04,
+				...EncodeU32(this.type),
 				...this.true.flatMap(x => x.toBinary()),
 				0x05,
 				...this.false.flatMap(x => x.toBinary()),
@@ -70,6 +77,7 @@ export class IfBlock {
 
 		return [
 			0x04,
+			...EncodeU32(this.type),
 			...this.true.flatMap(x => x.toBinary()),
 			0x0b
 		];
