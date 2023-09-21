@@ -6,9 +6,10 @@ import type { Scope } from "./scope.ts";
 
 import * as banned from "./banned.ts";
 import { Instruction, AnyInstruction } from "../../wasm/index.ts";
-import { CompileExpr } from "./expression/index.ts";
 import { Intrinsic, i16, i8, u16, u8 } from "../intrinsic.ts";
 import { AssertUnreachable, Yeet } from "../../helper.ts";
+import { CompileExpr } from "./expression/index.ts";
+import { none, never } from "../intrinsic.ts";
 
 export class Context {
 	file: File;
@@ -36,7 +37,16 @@ export class Context {
 				case "return":    CompileReturn   (this, line); break;
 				default: AssertUnreachable(line);
 			}
+
+			if (this.hasReturned) {
+				this.block.push(Instruction.unreachable());
+				break;
+			}
 		}
+	}
+
+	child() {
+		return new Context(this.file, this.scope, []);
 	}
 }
 
@@ -147,8 +157,11 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 
 
 function CompileExprStmt(ctx: Context, syntax: Syntax.Term_Statement) {
-	CompileExpr(ctx, syntax.value[0]);
-	ctx.block.push(Instruction.drop());
+	const res = CompileExpr(ctx, syntax.value[0]);
+
+	if (res !== none && res !== never) {
+		ctx.block.push(Instruction.drop());
+	}
 }
 
 
@@ -164,4 +177,5 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 
 	CompileExpr(ctx, value);
 	ctx.block.push(Instruction.return());
+	ctx.hasReturned = true;
 }
