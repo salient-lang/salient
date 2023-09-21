@@ -107,6 +107,7 @@ export default class Function {
 		if (this.isCompiled) return;      // Already compiled
 		if (!this.isLinked)  this.link(); // Link if not done already
 		if (!this.isLinked)  return;      // Failed to link
+		this.isCompiled = true;
 
 		const project = this.getFile().owner;
 
@@ -114,6 +115,7 @@ export default class Function {
 			this.arguments.map(x => x.type.bitcode),
 			this.returns.map(x => x.bitcode)
 		);
+		this.ref = func.ref;
 
 		const scope = new Scope(func);
 		for (const arg of this.arguments) {
@@ -126,7 +128,6 @@ export default class Function {
 
 		ctx.compile(body.value[0].value.map(x => x.value[0]));
 
-		this.ref = func.ref;
 	}
 }
 
