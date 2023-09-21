@@ -3,6 +3,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "../../../bnf/syntax.d.ts";
 import { CompileConstFloat, CompileConstInt } from "./constant.ts";
 import { AssertUnreachable, Yeet } from "../../../helper.ts";
+import { CompilePostfixes } from "./postfix.ts";
 import { CompilePrefix } from "./prefix.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { CompileExpr } from "./index.ts";
@@ -26,8 +27,8 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 		default: AssertUnreachable(val);
 	}
 
-	if (postfix.length > 0) throw new Error("Unimplemented postfix operations");
-	if (prefix) return CompilePrefix(ctx, prefix, res, expect);
+	if (prefix) res = CompilePrefix(ctx, prefix, res, expect);
+	if (postfix.length > 0) CompilePostfixes(ctx, postfix, res, expect);
 
 	return res;
 }
