@@ -764,7 +764,7 @@ export type Term_Expr_prefix = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(_Literal & {value: "\x21"} | _Literal & {value: "\x2d"})
+		(_Literal & {value: "\x21"} | _Literal & {value: "\x2d"} | _Literal & {value: "return"})
 	]
 }
 export declare function Parse_Expr_prefix (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -867,7 +867,7 @@ export type Term_Expr_arg = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		{ type: '(...)?', value: [] | [Term_Expr_prefix], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		(Term_Constant | Term_Expr_brackets | Term_Name),
+		(Term_Constant | Term_Expr_brackets | Term_If | Term_Name),
 		{ type: '(...)*', value: Array<Term_Expr_postfix>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
@@ -909,7 +909,7 @@ export type Term_Arg_list = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Expr_arg,
+		Term_Expr,
 		{ type: '(...)?', value: [] | [_Literal & {value: "\x2c"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
@@ -917,6 +917,34 @@ export type Term_Arg_list = {
 }
 export declare function Parse_Arg_list (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Arg_list,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_If = {
+	type: 'if',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr,
+		Term_Expr,
+		{ type: '(...)?', value: [] | [{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr
+	]
+}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}
+export declare function Parse_If (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_If,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

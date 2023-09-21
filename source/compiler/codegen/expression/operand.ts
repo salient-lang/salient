@@ -4,15 +4,16 @@ import type * as Syntax from "../../../bnf/syntax.d.ts";
 import { CompileConstFloat, CompileConstInt } from "./constant.ts";
 import { AssertUnreachable, Yeet } from "../../../helper.ts";
 import { CompilePostfixes } from "./postfix.ts";
+import { Intrinsic, never, none } from "../../intrinsic.ts";
 import { CompilePrefix } from "./prefix.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { CompileExpr } from "./index.ts";
-import { Intrinsic } from "../../intrinsic.ts";
+import { VirtualType } from "../../intrinsic.ts";
 import { Namespace } from "../../file.ts";
 import { Context } from "./../context.ts";
 
 
-export type OperandType = Intrinsic | Namespace;
+export type OperandType = Intrinsic | Namespace | VirtualType;
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: Intrinsic): OperandType {
@@ -24,6 +25,7 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 		case "constant":       res = CompileConstant(ctx, val, expect); break;
 		case "expr_brackets":  res = CompileBrackets(ctx, val, expect); break;
 		case "name":           res = CompileName(ctx, val, expect);     break;
+		case "if":             res = CompileIf(ctx, val, expect);       break;
 		default: AssertUnreachable(val);
 	}
 
@@ -68,4 +70,35 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic)
 
 	ctx.block.push(Instruction.local.get(variable.register.ref));
 	return variable.type;
+}
+
+function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
+	const cond = CompileExpr(ctx, syntax.value[0]);
+
+	const scopeIf = ctx.child();
+	const typeIf = CompileExpr(scopeIf, syntax.value[1], expect);
+
+	let typeElse:  OperandType | null = null;
+	let scopeElse: Context     | null = null;
+	if (syntax.value[2].value[0]) {
+		scopeElse = ctx.child();
+		typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
+
+		if (typeIf != typeElse) Yeet(
+			`${colors.red("Error")}: Type miss-match between if statement results\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		);
+	}
+
+	if (!(typeIf instanceof Intrinsic || typeIf instanceof VirtualType)) Yeet(
+		`${colors.red("Error")}: Invalid output type from if expression ${typeIf.name}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
+
+	const typeIdx = typeIf instanceof VirtualType
+		? 0x40
+		: ctx.file.owner.module.makeType([], [typeIf.bitcode]);
+
+	ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
+	return none;
 }

@@ -81,7 +81,7 @@ return ::= %"return" "_tail"? %w+ expr %";";
 #  Expression
 #=============================
 expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
-	expr_prefix ::= "!" | "-" ;
+	expr_prefix ::= "!" | "-" | "return" ;
 	expr_infix ::= "&&" | "||" | "^" | "==" | "!=" | "<=" | ">=" | "<" | ">"
 		| "%" | "*" | "/" | "+" | "-"
 		| "as" | "instanceof"
@@ -90,9 +90,11 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 		expr_param ::= %"#[" %w* arg_list  %w* %"]" ;
 		expr_call  ::=  %"(" %w* arg_list  %w* %")" ;
 		expr_get   ::=  %"[" %w* arg_list  %w* %"]" ;
-	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | name ) %w* expr_postfix* ;
+	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | if | name ) %w* expr_postfix* ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
 
-arg_list ::= ( expr_arg %w* ","? %w* )* ;
+arg_list ::= ( expr %w* ","? %w* )* ;
+
+if ::= %("if" w*) expr %w* expr %w* ( %"else" %w* expr )? ;
 
 statement ::= expr %(w* ";" w*) ;

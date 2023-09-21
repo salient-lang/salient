@@ -3,17 +3,14 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "../../../bnf/syntax.d.ts";
 import Function from "../../function.ts";
 import { AssertUnreachable, Yeet } from "../../../helper.ts";
-import { CompileArg } from "./operand.ts";
-import { Intrinsic } from "../../intrinsic.ts";
-import { Namespace } from "../../file.ts";
-import { Context } from "./../context.ts";
 import { Instruction } from "../../../wasm/index.ts";
+import { OperandType } from "./operand.ts";
+import { CompileArg } from "./operand.ts";
+import { Context } from "./../context.ts";
+import { CompileExpr } from "./index.ts";
 
 
-export type OperandType = Intrinsic | Namespace;
-
-
-export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[], type: OperandType, expect?: Intrinsic): OperandType {
+export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[], type: OperandType, expect?: OperandType): OperandType {
 	let res = type;
 	for (const postfix of syntax) {
 		const act = postfix.value[0];
@@ -36,7 +33,7 @@ export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[
 }
 
 
-function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: OperandType, expect?: Intrinsic) {
+function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: OperandType, expect?: OperandType) {
 	if (!(operand instanceof Function)) Yeet(
 		`${colors.red("Error")}: Cannot call on a non function value\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
@@ -59,7 +56,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 
 	for (let i=0; i<args.length; i++) {
 		const signature = operand.arguments[i];
-		const res = CompileArg(ctx, args[i], signature.type);
+		const res = CompileExpr(ctx, args[i], signature.type);
 
 		if (res !== signature.type) Yeet(
 			`${colors.red("Error")}: Call argument type miss-match, expected ${signature.type.name} got ${res.name}\n`,

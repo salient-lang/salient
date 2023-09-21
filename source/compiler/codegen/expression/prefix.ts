@@ -6,9 +6,10 @@ import { AssertUnreachable, Yeet } from "../../../helper.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { OperandType } from "./operand.ts";
 import { Context } from "./../context.ts";
+import { never } from "../../intrinsic.ts";
 
 
-export function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, type: OperandType, expect?: Intrinsic): Intrinsic {
+export function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, type: OperandType, expect?: Intrinsic) {
 	if (!(type instanceof Intrinsic)) Yeet(
 		`${colors.red("Error")}: Cannot apply prefix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
@@ -22,13 +23,13 @@ export function CompilePrefix(ctx: Context, prefix: Syntax.Term_Expr_prefix, typ
 				path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
 			});
 			break;
-		case "-":
-			return CompilePrefixArithmeticInverse(ctx, type, prefix, expect);
+		case "-": return CompileInverse(ctx, type, prefix);
+		case "return": return CompileReturn(ctx, type, prefix);
 		default: AssertUnreachable(op);
 	}
 }
 
-function CompilePrefixArithmeticInverse(ctx: Context, type: Intrinsic, prefix: Syntax.Term_Expr_prefix, expect?: Intrinsic): Intrinsic {
+function CompileInverse(ctx: Context, type: Intrinsic, prefix: Syntax.Term_Expr_prefix) {
 	if (type === u8 || type === u16 || type === u32 || type === u64)
 		Yeet(`${colors.red("Error")}: Cannot invert an unsigned integer\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
@@ -55,4 +56,10 @@ function CompilePrefixArithmeticInverse(ctx: Context, type: Intrinsic, prefix: S
 	Yeet(`${colors.red("Error")}: Unhandled arithmetic prefix inversion for type ${type.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
 	});
+}
+
+function CompileReturn(ctx: Context, type: Intrinsic, prefix: Syntax.Term_Expr_prefix) {
+	ctx.block.push(Instruction.return());
+	ctx.hasReturned = true;
+	return never;
 }
