@@ -92,20 +92,19 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	}
 
 	const value = expr.value[0];
-	const resolveType: Intrinsic = CompileExpr(ctx, value, typeRef || undefined);
-	if (!typeRef && !resolveType)
-		Yeet(`${colors.red("Error")}: Unable to determine type\n`, {
-			path: ctx.file.path,
-			name: ctx.file.name,
-			ref: syntax.ref
-		})
-
-	if (typeRef && resolveType !== typeRef)
-		Yeet(`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.name}\n`, {
-			path: ctx.file.path,
-			name: ctx.file.name,
-			ref: type?.ref || syntax.ref
-		})
+	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
+	if (!typeRef && !resolveType) Yeet(
+		`${colors.red("Error")}: Unable to determine type\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
+	if (typeRef && resolveType !== typeRef) Yeet(
+		`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.name}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
+	)
+	if (!(resolveType instanceof Intrinsic)) Yeet(
+		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
+	)
 
 	const variable = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
 	if (!variable)
@@ -131,13 +130,16 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 			ref: syntax.ref
 		});
 
-	const resolveType: Intrinsic = CompileExpr(ctx, value, variable.type);
-	if (resolveType !== variable.type)
-		Yeet(`${colors.red("Error")}: type ${variable.name} != type ${resolveType.name}\n`, {
-			path: ctx.file.path,
-			name: ctx.file.name,
-			ref: syntax.ref
-		});
+	const resolveType = CompileExpr(ctx, value, variable.type);
+	if (resolveType !== variable.type) Yeet(
+		`${colors.red("Error")}: type ${variable.name} != type ${resolveType.name}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
+
+	if (!(resolveType instanceof Intrinsic)) Yeet(
+		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	)
 
 	ctx.block.push(Instruction.local.set(variable.register.ref));
 	variable.markDefined();
