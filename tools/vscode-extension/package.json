@@ -1,0 +1,37 @@
+{
+	"name": "uniview",
+	"displayName": "%displayName%",
+	"description": "%description%",
+	"version": "0.0.3",
+	"publisher": "qupa-project",
+	"license": "MIT",
+	"repository": "https://github.com/qupa-project/uniview-vscode",
+	"engines": {
+		"vscode": "*"
+	},
+	"scripts": {
+		"package": "vsce package"
+	},
+	"contributes": {
+		"languages": [
+			{
+				"id": "uniview",
+				"extensions": [
+					".uv"
+				],
+				"aliases": [
+					"Uniview",
+					"uni-view"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "uniview",
+				"scopeName": "source.uv",
+				"path": "./syntaxes/uniview.tmLanguage.json"
+			}
+		]
+	}
+}
