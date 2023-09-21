@@ -1,0 +1,1 @@
+mklink /D "%USERPROFILE%\.vscode\extensions\salient-lang" "%~dp0"

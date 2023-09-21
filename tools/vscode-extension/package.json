@@ -1,0 +1,37 @@
+{
+	"name": "salient-lang",
+	"displayName": "%displayName%",
+	"description": "%description%",
+	"version": "0.0.3",
+	"publisher": "Ajani Bilby",
+	"license": "MIT",
+	"repository": "https://github.com/ajanibilby/salient/tools/vscode-extension",
+	"engines": {
+		"vscode": "*"
+	},
+	"scripts": {
+		"package": "vsce package"
+	},
+	"contributes": {
+		"languages": [
+			{
+				"id": "salient",
+				"extensions": [
+					".sa"
+				],
+				"aliases": [
+					"Salient",
+					"salient language"
+				],
+				"configuration": "./language-configuration.json"
+			}
+		],
+		"grammars": [
+			{
+				"language": "salient",
+				"scopeName": "source.sa",
+				"path": "./syntaxes/salient.tmLanguage.json"
+			}
+		]
+	}
+}
