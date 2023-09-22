@@ -3,6 +3,11 @@
 	"editor.insertSpaces": false,
 	"files.eol": "\n",
 	"cSpell.words": [
-		"iovs"
-	]
+		"bitcode",
+		"Fuwawa",
+		"impls",
+		"iovs",
+		"Yeet"
+	],
+	"deno.enable": true
 }

@@ -1,6 +1,6 @@
-import { EncodeName, EncodeU32 } from "../type.js";
-import { FuncRef } from "../funcRef.js";
-import { MemoryRef } from "../memoryRef.js";
+import { EncodeName, EncodeU32 } from "../type.ts";
+import { FuncRef } from "../funcRef.ts";
+import { MemoryRef } from "../memoryRef.ts";
 
 
 interface Registry {
@@ -28,7 +28,7 @@ export default class ExportSection {
 			const entity = this.reg[name];
 			buf.push(...EncodeName(name));
 			buf.push(entity instanceof FuncRef ? 0x00 : 0x02);
-			buf.push(...EncodeU32(this.reg[name].getIdentifier()));
+			buf.push(...EncodeU32(this.reg[name].get()));
 		}
 
 		return [

@@ -1,17 +1,17 @@
-import { FuncRef } from "./funcRef.js";
-import { Byte } from "./helper.js";
-import { EncodeI32, EncodeU32, Intrinsic } from "./type.js";
-import * as Instruction from "./instruction/index.js";
+import * as Instruction from "./instruction/index.ts";
+import { EncodeU32, Intrinsic } from "./type.ts";
+import { FuncRef, LocalRef } from "./funcRef.ts";
+import { Byte } from "../helper.ts";
 
 
 export class Function {
-	inputs : number;
+	inputs  : number;
 	outputs : number;
 	type  : number;
 	ref   : FuncRef;
 	code  : Instruction.Any[];
 
-	locals: Intrinsic[];
+	locals: LocalRef[];
 
 	constructor(typeIdx: number, inputs: number, outputs: number) {
 		this.inputs  = inputs;
@@ -23,29 +23,54 @@ export class Function {
 		this.code   = [];
 	}
 
-	addLocal(type: Intrinsic): number {
-		const idx = this.locals.length;
-		this.locals.push(type);
+	addLocal(type: Intrinsic): LocalRef {
+		const ref = new LocalRef(type);
+		this.locals.push(ref);
 
-		return this.inputs + idx;
+		return ref;
 	}
 
 	resolve(idx: number, override: boolean = false) {
 		this.ref.resolve(idx, override);
 	}
-	unresolve() {
-		this.ref.unresolve();
+	clear() {
+		this.ref.clear();
 	}
 
 	getID() {
-		return this.ref.getIdentifier();
+		return this.ref.get();
 	}
 
 
 	toBinary (): Byte[] {
-		const buf = EncodeU32(this.locals.length);
-		for (const local of this.locals) {
-			buf.push(local);
+		// Count the number of instances of each type
+		const types = new Map<Intrinsic, number>();
+		for (const ref of this.locals) {
+			types.set(
+				ref.type,
+				(types.get(ref.type) || 0) + 1
+			);
+		}
+
+		// Encode local types and accumulate total offsets by type
+		const buf = EncodeU32(types.size);
+		let tally = 0;
+		for (const [type, count] of types) { // locals ::=
+			buf.push(...EncodeU32(count));     // n:u32
+			buf.push(type);                    // t:valtype
+
+			// accumulate
+			types.set(type, tally);
+			tally += count;
+		}
+
+		// Resolve local variable refs
+		let offsets = new Map<Intrinsic, number>();
+		for (const ref of this.locals) {
+			const key = ref.type;
+			const offset = offsets.get(key) || types.get(key) || 0;
+			ref.resolve(offset+this.inputs);
+			offsets.set(key, offset+1);
 		}
 
 		for (const line of this.code) {

@@ -1,6 +1,6 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
-import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "../type.js";
-import { Byte } from "../helper.js";
+import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "../type.ts";
+import { Byte } from "../../helper.ts";
 
 
 export enum Type {
@@ -33,13 +33,13 @@ export class Constant {
 				this.type,
 				...EncodeF32(this.x)
 			];
-			case Type.i64: return [
+			case Type.f64: return [
 				this.type,
 				...EncodeF64(this.x)
 			];
 		}
 
-		throw new Error("Unreachable code path reachable");
+		throw new Error(`Unreachable code path reachable, type_idx: ${this.type}`);
 	}
 }
 

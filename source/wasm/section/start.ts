@@ -1,5 +1,5 @@
-import { FuncRef } from "../funcRef.js";
-import { EncodeU32 } from "../type.js";
+import { FuncRef } from "../funcRef.ts";
+import { EncodeU32 } from "../type.ts";
 
 
 export default class StartSection {
@@ -11,7 +11,7 @@ export default class StartSection {
 			buf.push(0);
 		} else {
 			buf.push(1);
-			buf.push(...EncodeU32(ref.getIdentifier()))
+			buf.push(...EncodeU32(ref.get()))
 		}
 
 		return [
