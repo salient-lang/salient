@@ -621,16 +621,7 @@ export type Term_Func_body = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)*', value: Array<{
-	type: '(...)',
-	start: number,
-	end: number,
-	count: number,
-	ref: _Shared.ReferenceRange,
-	value: [
-		Term_Func_stmt
-	]
-}>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)*', value: Array<Term_Func_stmt>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Func_body (i: string, refMapping?: boolean): _Shared.ParseError | {

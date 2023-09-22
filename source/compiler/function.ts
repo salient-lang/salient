@@ -126,8 +126,7 @@ export default class Function {
 		const body = this.ast.value[1];
 		if (body.type === "literal") throw new Error("Missing function body");
 
-		ctx.compile(body.value[0].value.map(x => x.value[0]));
-
+		ctx.compile(body.value[0].value);
 	}
 }
 
