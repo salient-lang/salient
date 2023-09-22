@@ -8,6 +8,7 @@ import { Intrinsic } from "./intrinsic.ts";
 import { Context } from "./codegen/context.ts";
 import { FuncRef } from "../wasm/funcRef.ts";
 import { Scope } from "./codegen/scope.ts";
+import { Yeet } from "../helper.ts";
 
 
 class Argument {
@@ -127,6 +128,10 @@ export default class Function {
 		if (body.type === "literal") throw new Error("Missing function body");
 
 		ctx.compile(body.value[0].value);
+
+		if (!ctx.done) Yeet(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`, {
+			path: ctx.file.path, name: ctx.file.name, ref: body.ref
+		})
 	}
 }
 
