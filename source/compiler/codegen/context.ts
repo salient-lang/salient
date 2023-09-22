@@ -46,7 +46,12 @@ export class Context {
 	}
 
 	child() {
-		return new Context(this.file, this.scope, []);
+		return new Context(this.file, this.scope.child(), []);
+	}
+
+	cleanup() {
+		if (this.hasReturned) return;
+		this.scope.cleanup(this);
 	}
 }
 
@@ -176,6 +181,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 	});
 
 	CompileExpr(ctx, value);
+	ctx.scope.cleanup(ctx);
 	ctx.block.push(Instruction.return());
 	ctx.hasReturned = true;
 }

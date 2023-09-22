@@ -12,14 +12,16 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 
 	if (res instanceof ParseError) Yeet(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
 
-	if (res.isPartial)
+	if (res.isPartial) {
+		console.log(res);
 		Yeet(colors.red("Syntax Error") + "\n", {
 			path,
 			name,
 			ref: res.reach
-				? new ReferenceRange(res.reach, res.reach)
+				? new ReferenceRange(res.root.ref.end, res.reach)
 				: ReferenceRange.blank()
 		});
+	}
 
 	return res.root as Syntax.Term_Program;
 }

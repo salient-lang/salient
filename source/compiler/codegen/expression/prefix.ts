@@ -59,6 +59,7 @@ function CompileInverse(ctx: Context, type: Intrinsic, prefix: Syntax.Term_Expr_
 }
 
 function CompileReturn(ctx: Context, type: Intrinsic, prefix: Syntax.Term_Expr_prefix) {
+	ctx.scope.cleanup(ctx);
 	ctx.block.push(Instruction.return());
 	ctx.hasReturned = true;
 	return never;

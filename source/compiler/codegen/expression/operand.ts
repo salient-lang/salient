@@ -96,5 +96,13 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 }
 
 function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: Intrinsic): OperandType {
-	throw new Error("Unimplemented");
+	const child = ctx.child();
+	child.compile(syntax.value[0].value);
+	child.cleanup();
+
+	ctx.block.push(Instruction.block(0x40, child.block))
+
+	console.log(ctx.block)
+
+	return none;
 }

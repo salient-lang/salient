@@ -28,6 +28,7 @@ export class Block {
 	toBinary(): Byte[] {
 		return [
 			0x02,
+			...EncodeU32(this.type),
 			...this.n.flatMap(x => x.toBinary()),
 			0x0b
 		];
