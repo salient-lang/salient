@@ -3,7 +3,7 @@
 import type { Term_Access, Term_Function, Term_Program } from "../bnf/syntax.d.ts";
 import type Project from "./project.ts";
 
-import { Intrinsic, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "./intrinsic.ts";
+import { Intrinsic, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "./intrinsic.ts";
 import { FlatAccess, FlattenAccess } from "../helper.ts";
 import { AssertUnreachable } from "../bnf/shared.js";
 import { Parse } from "../parser.ts";
@@ -27,6 +27,7 @@ export class File {
 		this.path = path;
 
 		this.namespace = {
+			bool,               // virtual native types
 			u8, i8, u16, i16,   // virtual native types
 			i32, i64, u32, u64, // native int types
 			f32, f64            // native floats types

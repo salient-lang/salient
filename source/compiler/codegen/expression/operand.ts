@@ -1,10 +1,10 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "../../../bnf/syntax.d.ts";
-import { CompileConstFloat, CompileConstInt } from "./constant.ts";
 import { AssertUnreachable, Yeet } from "../../../helper.ts";
+import { Intrinsic, bool, none } from "../../intrinsic.ts";
 import { CompilePostfixes } from "./postfix.ts";
-import { Intrinsic, never, none } from "../../intrinsic.ts";
+import { CompileConstant } from "./constant.ts";
 import { CompilePrefix } from "./prefix.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { CompileExpr } from "./index.ts";
@@ -24,6 +24,7 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	switch (val.type) {
 		case "constant":       res = CompileConstant(ctx, val, expect); break;
 		case "expr_brackets":  res = CompileBrackets(ctx, val, expect); break;
+		case "block":          res = CompileBlock(ctx, val, expect);    break;
 		case "name":           res = CompileName(ctx, val, expect);     break;
 		case "if":             res = CompileIf(ctx, val, expect);       break;
 		default: AssertUnreachable(val);
@@ -33,19 +34,6 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	if (postfix.length > 0) CompilePostfixes(ctx, postfix, res, expect);
 
 	return res;
-}
-
-
-
-function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: Intrinsic) {
-	const val = syntax.value[0];
-	switch (val.type) {
-		case "boolean": throw new Error("Unimplemented boolean constant");
-		case "float":   return CompileConstFloat(ctx, val, expect);
-		case "integer": return CompileConstInt(ctx, val, expect);
-		case "string":  throw new Error("Unimplemented string constant");
-		default: AssertUnreachable(val);
-	}
 }
 
 function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: Intrinsic) {
@@ -74,6 +62,10 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic)
 
 function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 	const cond = CompileExpr(ctx, syntax.value[0]);
+	if (cond !== bool) Yeet(
+		`${colors.red("Error")}: Invalid comparison type ${cond.name}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
+	);
 
 	const scopeIf = ctx.child();
 	const typeIf = CompileExpr(scopeIf, syntax.value[1], expect);
@@ -101,4 +93,8 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 
 	ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
 	return none;
+}
+
+function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: Intrinsic): OperandType {
+	throw new Error("Unimplemented");
 }

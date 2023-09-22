@@ -26,7 +26,7 @@ export class Context {
 		this.hasReturned = false;
 	}
 
-	compile(syntax: Syntax.Term_Func_stmt[]) {
+	compile(syntax: Syntax.Term_Block_stmt[]) {
 		for (const stmt of syntax) {
 			const line = stmt.value[0];
 

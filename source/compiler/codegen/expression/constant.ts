@@ -1,12 +1,35 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "../../../bnf/syntax.d.ts";
-import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
+import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "../../intrinsic.ts";
+import { AssertUnreachable, Yeet } from "../../../helper.ts";
 import { Instruction } from "../../../wasm/index.ts";
 import { Context } from "./../context.ts";
-import { Yeet } from "../../../helper.ts";
 
-export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsic) {
+export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: Intrinsic) {
+	const val = syntax.value[0];
+	switch (val.type) {
+		case "boolean": return CompileBool(ctx, val);
+		case "float":   return CompileFloat(ctx, val, expect);
+		case "integer": return CompileInt(ctx, val, expect);
+		case "string":  throw new Error("Unimplemented string constant");
+		default: AssertUnreachable(val);
+	}
+}
+
+export function CompileBool(ctx: Context, syntax: Syntax.Term_Boolean) {
+	let num = -1;
+	switch (syntax.value[0].value) {
+		case "false": num = 0; break;
+		case "true":  num = 1; break;
+		default: AssertUnreachable(syntax.value[0]);
+	}
+
+	ctx.block.push(Instruction.const.i32(num));
+	return bool;
+}
+
+function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsic) {
 	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))
@@ -104,7 +127,7 @@ export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, expec
 	return i32;
 }
 
-export function CompileConstFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsic) {
+function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsic) {
 	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))

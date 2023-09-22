@@ -29,6 +29,8 @@ export class VirtualType {
 }
 
 
+export const bool = new Intrinsic("bool", Types.Intrinsic.i32, 1);
+
 export const  u8 = new Intrinsic( "u8", Types.Intrinsic.i32, 1);
 export const  i8 = new Intrinsic( "i8", Types.Intrinsic.i32, 1);
 export const i16 = new Intrinsic("i16", Types.Intrinsic.i32, 2);

@@ -65,12 +65,13 @@ assign  ::= name %( w* "=" w*) expr %( w* ";" w* ) ;
 #=============================
 #  Function
 #=============================
-function ::= func_head %w* ( func_body | ";" ) ;
+function ::= func_head %w* ( block | ";" ) ;
 	func_head ::= %("fn" w+) ...name %( w* "(" w* ) func_args %(w* ")" w* ":" w*) access ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
-	func_body ::= %( "{" w* ) func_stmt* %( w* "}" w* ";"? ) ;
-		func_stmt ::= declare | assign | return | statement ;
+
+block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
+	block_stmt ::= declare | assign | return | statement ;
 
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
@@ -90,7 +91,7 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 		expr_param ::= %"#[" %w* arg_list  %w* %"]" ;
 		expr_call  ::=  %"(" %w* arg_list  %w* %")" ;
 		expr_get   ::=  %"[" %w* arg_list  %w* %"]" ;
-	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | if | name ) %w* expr_postfix* ;
+	expr_arg ::= expr_prefix? %w* ( constant | expr_brackets | if | name | block ) %w* expr_postfix* ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
 
 arg_list ::= ( expr %w* ","? %w* )* ;

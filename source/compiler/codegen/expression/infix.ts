@@ -1,6 +1,6 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
+import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "../../intrinsic.ts";
 import { OperandType, CompileArg } from "./operand.ts";
 import { ReferenceRange } from "../../../parser.ts";
 import { PrecedenceTree } from "./precedence.ts";
@@ -264,7 +264,7 @@ function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot && unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -292,7 +292,7 @@ function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 }
 
 function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot || unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -321,7 +321,7 @@ function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 }
 
 function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot ^ unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -354,36 +354,36 @@ function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot == unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
 	if (lhs === i8 || lhs === i16 || lhs === i32) {
 		ctx.block.push(Instruction.i32.eq());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === u8 || lhs === u16 || lhs === u32) {
 		ctx.block.push(Instruction.i32.eq());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === i64 || lhs === u64) {
 		ctx.block.push(Instruction.i64.eq());
-		return lhs;
+		return bool;
 	}
 	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.eq());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === f32) {
 		ctx.block.push(Instruction.f32.eq());
-		return lhs;
+		return bool;
 	}
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.eq());
-		return lhs;
+		return bool;
 	}
 
 	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
@@ -392,36 +392,36 @@ function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 }
 
 function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot != unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
 	if (lhs === i8 || lhs === i16 || lhs === i32) {
 		ctx.block.push(Instruction.i32.ne());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === u8 || lhs === u16 || lhs === u32) {
 		ctx.block.push(Instruction.i32.ne());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === i64 || lhs === u64) {
 		ctx.block.push(Instruction.i64.ne());
-		return lhs;
+		return bool;
 	}
 	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.ne());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === f32) {
 		ctx.block.push(Instruction.f32.ne());
-		return lhs;
+		return bool;
 	}
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.ne());
-		return lhs;
+		return bool;
 	}
 
 	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
@@ -430,36 +430,36 @@ function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 }
 
 function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot < unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
 	if (lhs === i8 || lhs === i16 || lhs === i32) {
 		ctx.block.push(Instruction.i32.lt_s());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === u8 || lhs === u16 || lhs === u32) {
 		ctx.block.push(Instruction.i32.lt_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === i64 || lhs === u64) {
 		ctx.block.push(Instruction.i64.lt_s());
-		return lhs;
+		return bool;
 	}
 	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.lt_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === f32) {
 		ctx.block.push(Instruction.f32.lt());
-		return lhs;
+		return bool;
 	}
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.lt());
-		return lhs;
+		return bool;
 	}
 
 	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
@@ -468,36 +468,36 @@ function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 }
 
 function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot <= unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
 	if (lhs === i8 || lhs === i16 || lhs === i32) {
 		ctx.block.push(Instruction.i32.le_s());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === u8 || lhs === u16 || lhs === u32) {
 		ctx.block.push(Instruction.i32.le_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === i64 || lhs === u64) {
 		ctx.block.push(Instruction.i64.le_s());
-		return lhs;
+		return bool;
 	}
 	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.le_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === f32) {
 		ctx.block.push(Instruction.f32.le());
-		return lhs;
+		return bool;
 	}
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.le());
-		return lhs;
+		return bool;
 	}
 
 	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
@@ -506,36 +506,36 @@ function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 }
 
 function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot > unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
 	if (lhs === i8 || lhs === i16 || lhs === i32) {
 		ctx.block.push(Instruction.i32.gt_s());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === u8 || lhs === u16 || lhs === u32) {
 		ctx.block.push(Instruction.i32.gt_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === i64 || lhs === u64) {
 		ctx.block.push(Instruction.i64.gt_s());
-		return lhs;
+		return bool;
 	}
 	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.gt_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === f32) {
 		ctx.block.push(Instruction.f32.gt());
-		return lhs;
+		return bool;
 	}
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.gt());
-		return lhs;
+		return bool;
 	}
 
 	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
@@ -544,36 +544,36 @@ function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 }
 
 function CompileGe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot >= unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
 	if (lhs === i8 || lhs === i16 || lhs === i32) {
 		ctx.block.push(Instruction.i32.ge_s());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === u8 || lhs === u16 || lhs === u32) {
 		ctx.block.push(Instruction.i32.ge_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === i64 || lhs === u64) {
 		ctx.block.push(Instruction.i64.ge_s());
-		return lhs;
+		return bool;
 	}
 	if (lhs === i64) {
 		ctx.block.push(Instruction.i64.ge_u());
-		return lhs;
+		return bool;
 	}
 
 	if (lhs === f32) {
 		ctx.block.push(Instruction.f32.ge());
-		return lhs;
+		return bool;
 	}
 	if (lhs === f64) {
 		ctx.block.push(Instruction.f64.ge());
-		return lhs;
+		return bool;
 	}
 
 	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
