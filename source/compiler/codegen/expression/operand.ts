@@ -69,12 +69,14 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 
 	const scopeIf = ctx.child();
 	const typeIf = CompileExpr(scopeIf, syntax.value[1], expect);
+	scopeIf.mergeBlock();
 
 	let typeElse:  OperandType | null = null;
 	let scopeElse: Context     | null = null;
 	if (syntax.value[2].value[0]) {
 		scopeElse = ctx.child();
 		typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
+		scopeElse.mergeBlock();
 
 		if (typeIf != typeElse) Yeet(
 			`${colors.red("Error")}: Type miss-match between if statement results\n`,
@@ -92,7 +94,7 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 		: ctx.file.owner.module.makeType([], [typeIf.bitcode]);
 
 	ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
-	return none;
+	return typeIf;
 }
 
 function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: Intrinsic): OperandType {
@@ -100,9 +102,6 @@ function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: Intrinsi
 	child.compile(syntax.value[0].value);
 	child.cleanup();
 
-	ctx.block.push(Instruction.block(0x40, child.block))
-
-	console.log(ctx.block)
-
-	return none;
+	ctx.block.push(Instruction.block(0x40, child.block));
+	return child.raiseType;
 }

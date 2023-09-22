@@ -9,21 +9,26 @@ import { Instruction, AnyInstruction } from "../../wasm/index.ts";
 import { Intrinsic, i16, i8, u16, u8 } from "../intrinsic.ts";
 import { AssertUnreachable, Yeet } from "../../helper.ts";
 import { CompileExpr } from "./expression/index.ts";
+import { OperandType } from "./expression/operand.ts";
 import { none, never } from "../intrinsic.ts";
+import { Block } from "../../wasm/instruction/control-flow.ts";
 
 export class Context {
 	file: File;
 	scope: Scope;
-	hasReturned: boolean;
+	done: boolean;
+
+	raiseType: OperandType;
 
 	block: AnyInstruction[];
 
 	constructor(file: File, scope: Scope, block: AnyInstruction[]) {
+		this.raiseType = none;
 		this.scope = scope;
 		this.block = block;
 		this.file  = file;
 
-		this.hasReturned = false;
+		this.done = false;
 	}
 
 	compile(syntax: Syntax.Term_Block_stmt[]) {
@@ -31,18 +36,26 @@ export class Context {
 			const line = stmt.value[0];
 
 			switch (line.type) {
-				case "declare":   CompileDeclare  (this, line); break;
-				case "assign":    CompileAssign   (this, line); break;
-				case "statement": CompileExprStmt (this, line); break;
-				case "return":    CompileReturn   (this, line); break;
+				case "declare":   CompileDeclare   (this, line); break;
+				case "assign":    CompileAssign    (this, line); break;
+				case "statement": CompileStatement (this, line); break;
+				case "return":    CompileReturn    (this, line); break;
+				case "raise":     CompileRaise     (this, line); break;
 				default: AssertUnreachable(line);
 			}
 
-			if (this.hasReturned) {
+			if (this.done) {
 				this.block.push(Instruction.unreachable());
 				break;
 			}
 		}
+	}
+
+	mergeBlock() {
+		if (this.block.length !== 1) return;
+		if (!(this.block[0] instanceof Block)) return;
+
+		this.block = this.block[0].n;
 	}
 
 	child() {
@@ -50,7 +63,7 @@ export class Context {
 	}
 
 	cleanup() {
-		if (this.hasReturned) return;
+		if (this.done) return;
 		this.scope.cleanup(this);
 	}
 }
@@ -161,13 +174,16 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 }
 
 
-function CompileExprStmt(ctx: Context, syntax: Syntax.Term_Statement) {
+function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 	const res = CompileExpr(ctx, syntax.value[0]);
 
 	if (res !== none && res !== never) {
 		ctx.block.push(Instruction.drop());
 	}
 }
+
+
+
 
 
 function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
@@ -183,5 +199,11 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 	CompileExpr(ctx, value);
 	ctx.scope.cleanup(ctx);
 	ctx.block.push(Instruction.return());
-	ctx.hasReturned = true;
+	ctx.done = true;
+}
+
+function CompileRaise(ctx: Context, syntax: Syntax.Term_Raise) {
+	ctx.raiseType = CompileExpr(ctx, syntax.value[0]);
+	ctx.scope.cleanup(ctx);
+	ctx.done = true;
 }

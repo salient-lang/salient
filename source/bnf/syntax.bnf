@@ -71,12 +71,13 @@ function ::= func_head %w* ( block | ";" ) ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 
 block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
-	block_stmt ::= declare | assign | return | statement ;
+	block_stmt ::= declare | assign | return | raise | statement ;
 
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
 return ::= %"return" "_tail"? %w+ expr %( ";" w* );
+raise  ::= %"raise" %w+ expr %( ";" w* );
 
 #=============================
 #  Expression
