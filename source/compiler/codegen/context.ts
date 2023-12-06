@@ -5,13 +5,13 @@ import type { File, Namespace } from "../file.ts";
 import type { Scope } from "./scope.ts";
 
 import * as banned from "./banned.ts";
-import { Instruction, AnyInstruction } from "../../wasm/index.ts";
-import { Intrinsic, i16, i8, u16, u8 } from "../intrinsic.ts";
-import { AssertUnreachable, Yeet } from "../../helper.ts";
-import { CompileExpr } from "./expression/index.ts";
-import { OperandType } from "./expression/operand.ts";
-import { none, never } from "../intrinsic.ts";
-import { Block } from "../../wasm/instruction/control-flow.ts";
+import { Intrinsic, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
+import { Instruction, AnyInstruction } from "~/wasm/index.ts";
+import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { OperandType } from "~/compiler/codegen/expression/operand.ts";
+import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { none, never } from "~/compiler/intrinsic.ts";
+import { Block } from "~/wasm/instruction/control-flow.ts";
 
 export class Context {
 	file: File;

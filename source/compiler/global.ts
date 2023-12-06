@@ -1,7 +1,7 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type { File, Namespace } from "./file.ts";
-import { ReferenceRange, SourceView } from "../parser.ts";
+import { ReferenceRange, SourceView } from "~/parser.ts";
 
 export default class Global {
 	owner: File;

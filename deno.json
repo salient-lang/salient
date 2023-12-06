@@ -5,6 +5,9 @@
 		"strictNullChecks": true,
 		"lib": ["ESNext", "DOM"]
 	},
+	"imports": {
+		"~/": "./source/"
+	},
 	"lint": {
 		"include": ["source/"],
 		"exclude": ["source/bnf/"],

@@ -1,6 +1,6 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
-import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "../type.ts";
-import { Byte } from "../../helper.ts";
+import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "~/wasm/type.ts";
+import { Byte } from "~/helper.ts";
 
 
 export enum Type {

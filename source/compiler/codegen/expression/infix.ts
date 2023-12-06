@@ -1,12 +1,12 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "../../intrinsic.ts";
-import { OperandType, CompileArg } from "./operand.ts";
-import { ReferenceRange } from "../../../parser.ts";
-import { PrecedenceTree } from "./precedence.ts";
-import { Instruction } from "../../../wasm/index.ts";
-import { Context } from "./../context.ts";
-import { Yeet } from "../../../helper.ts";
+import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
+import { OperandType, CompileArg } from "~/compiler/codegen/expression/operand.ts";
+import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
+import { ReferenceRange } from "~/parser.ts";
+import { Instruction } from "~/wasm/index.ts";
+import { Context } from "~/compiler/codegen/context.ts";
+import { Yeet } from "~/helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: Intrinsic) {

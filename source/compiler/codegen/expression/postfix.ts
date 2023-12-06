@@ -1,13 +1,12 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type * as Syntax from "../../../bnf/syntax.d.ts";
-import Function from "../../function.ts";
-import { AssertUnreachable, Yeet } from "../../../helper.ts";
-import { Instruction } from "../../../wasm/index.ts";
-import { OperandType } from "./operand.ts";
-import { CompileArg } from "./operand.ts";
-import { Context } from "./../context.ts";
-import { CompileExpr } from "./index.ts";
+import type * as Syntax from "~/bnf/syntax.d.ts";
+import Function from "~/compiler/function.ts";
+import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { OperandType } from "~/compiler/codegen/expression/operand.ts";
+import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { Instruction } from "~/wasm/index.ts";
+import { Context } from "~/compiler/codegen/context.ts";
 
 
 export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[], type: OperandType, expect?: OperandType): OperandType {

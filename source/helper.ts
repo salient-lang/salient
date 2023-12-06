@@ -1,6 +1,6 @@
-import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "./bnf/syntax.d.ts";
-import type { ReferenceRange } from "./bnf/shared.d.ts";
-import { SourceView } from "./parser.ts";
+import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "~/bnf/syntax.d.ts";
+import type { ReferenceRange } from "~/bnf/shared.d.ts";
+import { SourceView } from "~/parser.ts";
 export type FlatAccess = (Term_Name | Term_Access_static | Term_Access_dynamic | Term_Access_comp)[];
 
 

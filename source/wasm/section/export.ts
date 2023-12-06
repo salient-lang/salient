@@ -1,6 +1,6 @@
-import { EncodeName, EncodeU32 } from "../type.ts";
-import { FuncRef } from "../funcRef.ts";
-import { MemoryRef } from "../memoryRef.ts";
+import { EncodeName, EncodeU32 } from "~/wasm/type.ts";
+import { MemoryRef } from "~/wasm/memoryRef.ts";
+import { FuncRef } from "~/wasm/funcRef.ts";
 
 
 interface Registry {

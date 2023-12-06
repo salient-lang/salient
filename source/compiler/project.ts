@@ -1,7 +1,7 @@
 import { dirname, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
 
-import Module from "../wasm/module.ts";
-import { File } from "./file.ts"
+import Module from "~/wasm/module.ts";
+import { File } from "~/compiler/file.ts"
 
 export default class Project {
 	files: File[];

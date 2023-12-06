@@ -1,5 +1,5 @@
-import type { Byte } from "../../helper.ts";
-import { EncodeI32, EncodeU32 } from "../type.ts";
+import type { Byte } from "~/helper.ts";
+import { EncodeI32, EncodeU32 } from "~/wasm/type.ts";
 
 
 const textEncoder = new TextEncoder();

@@ -1,9 +1,9 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import { ParseError, ReferenceRange, Reference } from "./bnf/shared.js";
-import * as Instance from "./bnf/syntax.js";
-import * as Syntax from "./bnf/syntax.d.ts";
-import { Yeet } from "./helper.ts";
+import { ParseError, ReferenceRange, Reference } from "~/bnf/shared.js";
+import * as Instance from "~/bnf/syntax.js";
+import * as Syntax from "~/bnf/syntax.d.ts";
+import { Yeet } from "~/helper.ts";
 
 await Instance.ready;
 

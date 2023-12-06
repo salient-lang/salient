@@ -1,13 +1,13 @@
 import { Unreachable, IfBlock, Block, Loop, NoOp, Br, Br_If, Return } from "./control-flow.ts";
 
-import { FuncRef } from "../funcRef.ts";
-import { EncodeU32 } from "../type.ts";
-import { Byte } from "../../helper.ts";
+import { EncodeU32 } from "~/wasm/type.ts";
+import { FuncRef } from "~/wasm/funcRef.ts";
+import { Byte } from "~/helper.ts";
 
-import varFuncs, { Variable } from "./variable.ts";
-import constFuncs, { Constant } from "./constant.ts";
-import memFuncs, { MemoryRegister } from "./memory.ts";
-import numFuncs, { NumericInstruction } from "./numeric.ts";
+import numFuncs,   { NumericInstruction } from "~/wasm/instruction/numeric.ts";
+import memFuncs,   { MemoryRegister } from "~/wasm/instruction/memory.ts";
+import constFuncs, { Constant } from "~/wasm/instruction/constant.ts";
+import varFuncs,   { Variable } from "~/wasm/instruction/variable.ts";
 
 export class Call {
 	x: FuncRef | number;

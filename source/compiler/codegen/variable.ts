@@ -1,6 +1,6 @@
-import { ReferenceRange } from "../../parser.ts";
-import { Intrinsic } from "../intrinsic.ts";
-import { Register } from "./registers.ts";
+import { ReferenceRange } from "~/parser.ts";
+import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { Register } from "~/compiler/codegen/registers.ts";
 
 export enum TypeSystem {
 	Affine,

@@ -1,4 +1,4 @@
-import { EncodeU32 } from "../type.ts";
+import { EncodeU32 } from "~/wasm/type.ts";
 
 
 export default class TableSection {
