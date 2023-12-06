@@ -1,10 +1,10 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type * as Syntax from "../../bnf/syntax.d.ts";
-import type { File, Namespace } from "../file.ts";
+import type * as Syntax from "~/bnf/syntax.d.ts";
+import type { File, Namespace } from "~/compiler/file.ts";
 import type { Scope } from "./scope.ts";
 
-import * as banned from "./banned.ts";
+import * as banned from "~/compiler/codegen/banned.ts";
 import { Intrinsic, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { AssertUnreachable, Yeet } from "~/helper.ts";
