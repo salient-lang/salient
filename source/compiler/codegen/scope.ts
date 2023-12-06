@@ -1,8 +1,8 @@
-import { RegisterAllocator } from "./registers.ts";
-import { ReferenceRange } from "../../parser.ts";
-import { Intrinsic } from "../intrinsic.ts";
-import { Variable } from "./variable.ts"
-import { Function } from "../../wasm/function.ts";
+import { RegisterAllocator } from "~/compiler/codegen/registers.ts";
+import { ReferenceRange } from "~/parser.ts";
+import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { Variable } from "~/compiler/codegen/variable.ts"
+import { Function } from "~/wasm/function.ts";
 
 export class Scope {
 	register: RegisterAllocator;

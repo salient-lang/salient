@@ -1,5 +1,5 @@
-import { LatentValue, type Byte } from "../helper.ts";
-import { EncodeU32 } from "./type.ts";
+import { LatentValue, type Byte } from "~/helper.ts";
+import { EncodeU32 } from "~/wasm/type.ts";
 
 export class MemoryRef extends LatentValue<number> {
 	external: boolean;

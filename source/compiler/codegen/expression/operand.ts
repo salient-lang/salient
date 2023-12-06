@@ -1,16 +1,16 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type * as Syntax from "../../../bnf/syntax.d.ts";
-import { CompileConstFloat, CompileConstInt } from "./constant.ts";
-import { AssertUnreachable, Yeet } from "../../../helper.ts";
-import { CompilePostfixes } from "./postfix.ts";
-import { Intrinsic, never, none } from "../../intrinsic.ts";
-import { CompilePrefix } from "./prefix.ts";
-import { Instruction } from "../../../wasm/index.ts";
-import { CompileExpr } from "./index.ts";
-import { VirtualType } from "../../intrinsic.ts";
-import { Namespace } from "../../file.ts";
-import { Context } from "./../context.ts";
+import type * as Syntax from "~/bnf/syntax.d.ts";
+import { CompileConstFloat, CompileConstInt } from "~/compiler/codegen/expression/constant.ts";
+import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
+import { Intrinsic, none } from "~/compiler/intrinsic.ts";
+import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
+import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
+import { Instruction } from "~/wasm/index.ts";
+import { Namespace } from "~/compiler/file.ts";
+import { Context } from "~/compiler/codegen/context.ts";
 
 
 export type OperandType = Intrinsic | Namespace | VirtualType;

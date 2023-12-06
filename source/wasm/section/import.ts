@@ -1,5 +1,5 @@
-import type { Byte } from "../../helper.ts";
-import { EncodeName, EncodeU32 } from "../type.ts";
+import type { Byte } from "~/helper.ts";
+import { EncodeName, EncodeU32 } from "~/wasm/type.ts";
 
 class Register {
 	mod:  string;

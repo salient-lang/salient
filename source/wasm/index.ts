@@ -1,6 +1,6 @@
-import Instruction, { Any } from "./instruction/index.ts";
-import * as Type from "./type.ts";
-import Module from "./module.ts";
+import * as Type from "~/wasm/type.ts";
+import Instruction, { Any } from "~/wasm/instruction/index.ts";
+import Module from "~/wasm/module.ts";
 
 export type AnyInstruction = Any;
 

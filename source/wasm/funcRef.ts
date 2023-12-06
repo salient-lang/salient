@@ -1,6 +1,6 @@
-import { LatentValue, type Byte } from "../helper.ts";
+import { LatentValue, type Byte } from "~/helper.ts";
 
-import { EncodeU32, Intrinsic } from "./type.ts";
+import { EncodeU32, Intrinsic } from "~/wasm/type.ts";
 
 export class FuncRef extends LatentValue<number> {
 	external: boolean;

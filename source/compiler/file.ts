@@ -1,16 +1,16 @@
 /// <reference lib="deno.ns" />
 
-import type { Term_Access, Term_Function, Term_Program } from "../bnf/syntax.d.ts";
+import type { Term_Access, Term_Function, Term_Program } from "~/bnf/syntax.d.ts";
 import type Project from "./project.ts";
 
-import { Intrinsic, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "./intrinsic.ts";
-import { FlatAccess, FlattenAccess } from "../helper.ts";
-import { AssertUnreachable } from "../bnf/shared.js";
-import { Parse } from "../parser.ts";
-import Structure from "./structure.ts";
-import Function from "./function.ts";
-import Global from "./global.ts";
-import Import from "./import.ts";
+import { Intrinsic, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "~/compiler/intrinsic.ts";
+import { FlatAccess, FlattenAccess } from "~/helper.ts";
+import { AssertUnreachable } from "~/bnf/shared.js";
+import { Parse } from "~/parser.ts";
+import Structure from "~/compiler/structure.ts";
+import Function from "~/compiler/function.ts";
+import Global from "~/compiler/global.ts";
+import Import from "~/compiler/import.ts";
 
 export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 

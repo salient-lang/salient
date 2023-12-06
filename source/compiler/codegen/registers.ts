@@ -1,6 +1,6 @@
-import { LocalRef } from "../../wasm/funcRef.ts";
-import { Function } from "../../wasm/function.ts";
-import * as Wasm from "../../wasm/index.ts";
+import { LocalRef } from "~/wasm/funcRef.ts";
+import { Function } from "~/wasm/function.ts";
+import * as Wasm from "~/wasm/index.ts";
 
 export class Register {
 	type: Wasm.Type.Intrinsic;

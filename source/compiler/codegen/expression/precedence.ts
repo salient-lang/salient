@@ -1,8 +1,8 @@
 /// <reference lib="deno.ns" />
-import { assertEquals, assertThrows } from "https://deno.land/std@0.201.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
-import type { Term_Expr, Term_Expr_arg, Term_Expr_infix, _Literal } from "../../../bnf/syntax.d.ts";
-import { ReferenceRange } from "../../../parser.ts";
+import type { Term_Expr, Term_Expr_arg, _Literal } from "~/bnf/syntax.d.ts";
+import { ReferenceRange } from "~/parser.ts";
 
 
 const precedence = {

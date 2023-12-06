@@ -1,5 +1,5 @@
-import { FuncRef } from "../funcRef.ts";
-import { EncodeU32 } from "../type.ts";
+import { EncodeU32 } from "~/wasm/type.ts";
+import { FuncRef } from "~/wasm/funcRef.ts";
 
 
 export default class StartSection {

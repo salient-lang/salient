@@ -1,13 +1,13 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type { Term_Access, Term_Function } from "../bnf/syntax.d.ts";
+import type { Term_Access, Term_Function } from "~/bnf/syntax.d.ts";
 import type { File, Namespace } from "./file.ts";
 
-import { ReferenceRange, SourceView } from "../parser.ts";
-import { Intrinsic } from "./intrinsic.ts";
-import { Context } from "./codegen/context.ts";
-import { FuncRef } from "../wasm/funcRef.ts";
-import { Scope } from "./codegen/scope.ts";
+import { ReferenceRange, SourceView } from "~/parser.ts";
+import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { Context } from "~/compiler/codegen/context.ts";
+import { FuncRef } from "~/wasm/funcRef.ts";
+import { Scope } from "~/compiler/codegen/scope.ts";
 
 
 class Argument {

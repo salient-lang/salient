@@ -1,5 +1,5 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
-import { Byte } from "../../helper.ts";
+import { Byte } from "~/helper.ts";
 
 export class NumericInstruction {
 	code: Byte;

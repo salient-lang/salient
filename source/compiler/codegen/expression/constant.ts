@@ -1,10 +1,10 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type * as Syntax from "../../../bnf/syntax.d.ts";
-import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "../../intrinsic.ts";
-import { Instruction } from "../../../wasm/index.ts";
-import { Context } from "./../context.ts";
-import { Yeet } from "../../../helper.ts";
+import type * as Syntax from "~/bnf/syntax.d.ts";
+import { Intrinsic, f32, f64, i16, i32, i64, i8, u16, u32, u64, u8 } from "~/compiler/intrinsic.ts";
+import { Instruction } from "~/wasm/index.ts";
+import { Context } from "~/compiler/codegen/context.ts";
+import { Yeet } from "~/helper.ts";
 
 export function CompileConstInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsic) {
 	const num = Number(syntax.value[0].value);

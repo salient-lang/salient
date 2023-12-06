@@ -4,9 +4,9 @@ import { resolve, join, relative } from "https://deno.land/std@0.201.0/path/mod.
 import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import Project from "./compiler/project.ts";
-import Function from "./compiler/function.ts";
-import { Yeet } from "./helper.ts";
+import Function from "~/compiler/function.ts";
+import Project from "~/compiler/project.ts";
+import { Yeet } from "~/helper.ts";
 
 if (Deno.args.includes("--version")) {
 	console.log("version: 0.0.0");
