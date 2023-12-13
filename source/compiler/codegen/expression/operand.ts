@@ -31,7 +31,7 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	}
 
 	if (prefix) res = CompilePrefix(ctx, prefix, res, expect);
-	if (postfix.length > 0) CompilePostfixes(ctx, postfix, res, expect);
+	if (postfix.length > 0) res = CompilePostfixes(ctx, postfix, res, expect);
 
 	return res;
 }
@@ -79,7 +79,7 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 		scopeElse.mergeBlock();
 
 		if (typeIf != typeElse) Yeet(
-			`${colors.red("Error")}: Type miss-match between if statement results\n`,
+			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.name} != ${typeElse.name}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
 	}
