@@ -3,7 +3,8 @@
 	"scopeName": "source.sa",
 	"patterns": [
 		{"include": "#comment"},
-		{"include": "#function"}
+		{"include": "#function"},
+		{"include": "#block"}
 	],
 	"repository": {
 		"comment": {
@@ -108,27 +109,19 @@
 		},
 
 		"function": {
-			"patterns": [
-				{
-					"name": "meta.function.sa",
-					"begin": "\\b(fn)\\s+(\\w+)\\s*\\((.*?)\\)\\s*((\\:)\\s+(\\w+))?\\s*{",
-					"beginCaptures": {
-						"1": { "name": "storage.type.function" },
-						"2": { "name": "entity.name.function" },
-						"3": {
-							"patterns": [
-								{ "include": "#function-parameter" }
-							]
-						},
-						"5": { "name": "keyword.operator" },
-						"6": { "name": "storage.type" }
-					},
-					"end": "}",
+			"name": "meta.function.sa",
+			"match": "\\b(fn)\\s+(\\w+)\\s*\\((.*?)\\)\\s*((\\:)\\s+(\\w+))?",
+			"captures": {
+				"1": { "name": "storage.type.function" },
+				"2": { "name": "entity.name.function" },
+				"3": {
 					"patterns": [
-						{ "include": "#function-body" }
+						{ "include": "#function-parameter" }
 					]
-				}
-			]
+				},
+				"5": { "name": "keyword.operator" },
+				"6": { "name": "storage.type" }
+			}
 		},
 		"function-parameter": {
 			"patterns": [
@@ -193,7 +186,23 @@
 				}
 			]
 		},
-		"function-body": {
+
+		"block": {
+			"name": "meta.block.sa",
+			"begin": "\\{",
+			"beginCaptures": {
+				"0": { "name": "punctuation.definition.block.sa" }
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": { "name": "punctuation.definition.block.sa" }
+			},
+			"patterns": [
+				{ "include": "#block_stmt" },
+				{ "include": "$self" }
+			]
+		},
+		"block_stmt": {
 			"patterns": [
 				{ "include": "#comment" },
 
@@ -201,7 +210,7 @@
 				{ "include": "#assign" },
 				{ "include": "#return" },
 
-				{ "include": "#call" }
+				{ "include": "#expression" }
 			]
 		},
 
@@ -283,9 +292,15 @@
 				{ "include": "#string" },
 				{ "include": "#call" },
 				{ "include": "#constant" },
+				{ "include": "#if-else" },
 				{ "include": "#variable" },
 				{ "include": "#comment" }
 			]
+		},
+
+		"if-else": {
+			"name": "keyword.control.conditional.sa",
+			"match": "\\b(if|else)\\b"
 		},
 
 
