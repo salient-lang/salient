@@ -8,6 +8,7 @@ import { Intrinsic } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
+import { Panic } from "~/helper.ts";
 
 
 class Argument {
@@ -126,8 +127,11 @@ export default class Function {
 		const body = this.ast.value[1];
 		if (body.type === "literal") throw new Error("Missing function body");
 
-		ctx.compile(body.value[0].value.map(x => x.value[0]));
+		ctx.compile(body.value[0].value);
 
+		if (!ctx.done) Panic(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`, {
+			path: ctx.file.path, name: ctx.file.name, ref: body.ref
+		})
 	}
 }
 
@@ -141,7 +145,7 @@ function LinkTypes(scope: File, syntax: Term_Access[]) {
 	for (const arg of syntax) {
 		const res = scope.get(arg);
 		if (res === null || !(res instanceof Intrinsic)) {
-			// Not yeet-ing, because we may want to display multiple failures at once
+			// Not Panic-ing, because we may want to display multiple failures at once
 			console.error(
 				`${colors.red("Error")}: Cannot find type\n`
 				+ SourceView(scope.path, scope.name, arg.ref)

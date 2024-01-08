@@ -12,8 +12,7 @@ Deno.test(`Signed integer Fibonacci test`, async () => {
 		}
 
 		fn fibonacci_tail(n: i32, a: i32, b: i32): i32 {
-			if (n <= 0) return a;
-			return fibonacci_tail(n - 1, b, a + b);
+			return if n <= 0 a else fibonacci_tail(n - 1, b, a + b);
 		}`
 	);
 

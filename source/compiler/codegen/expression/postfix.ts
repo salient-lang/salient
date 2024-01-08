@@ -2,7 +2,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Function from "~/compiler/function.ts";
-import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { AssertUnreachable, Panic } from "~/helper.ts";
 import { OperandType } from "~/compiler/codegen/expression/operand.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { Instruction } from "~/wasm/index.ts";
@@ -16,11 +16,11 @@ export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[
 
 		switch (act.type) {
 			case "expr_call": res = CompileCall(ctx, act, res); break;
-			case "expr_get": Yeet(
+			case "expr_get": Panic(
 				`${colors.red("Error")}: Unimplemented postfix operation ${act.type}\n`,
 				{ path: ctx.file.path, name: ctx.file.name, ref: act.ref }
 			); break;
-			case "expr_param": Yeet(
+			case "expr_param": Panic(
 				`${colors.red("Error")}: Unimplemented postfix operation ${act.type}\n`,
 				{ path: ctx.file.path, name: ctx.file.name, ref: act.ref }
 			); break;
@@ -33,14 +33,14 @@ export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[
 
 
 function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: OperandType, expect?: OperandType) {
-	if (!(operand instanceof Function)) Yeet(
+	if (!(operand instanceof Function)) Panic(
 		`${colors.red("Error")}: Cannot call on a non function value\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
 	operand.compile(); // check the function is compiled
 
-	if (operand.returns.length != 1) Yeet(
+	if (operand.returns.length != 1) Panic(
 		`${colors.red("Error")}: Cannot currently handle functions which don't return a single value\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
@@ -48,7 +48,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 	if (!operand.ref) throw new Error("A function somehow compiled with a reference generated");
 
 	const args = LineariseArgList(syntax.value[0]);
-	if (args.length != operand.arguments.length) Yeet(
+	if (args.length != operand.arguments.length) Panic(
 		`${colors.red("Error")}: Miss matched argument count\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
@@ -57,7 +57,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 		const signature = operand.arguments[i];
 		const res = CompileExpr(ctx, args[i], signature.type);
 
-		if (res !== signature.type) Yeet(
+		if (res !== signature.type) Panic(
 			`${colors.red("Error")}: Call argument type miss-match, expected ${signature.type.name} got ${res.name}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: args[i].ref }
 		);

@@ -30,7 +30,7 @@ export class Variable {
 		this.modifiedAt = ref;
 		this.isDefined  = false;
 		this.isGlobal   = false;
-		this.isLocal    = false;
+		this.isLocal    = true;
 		this.isClone    = false;
 
 		this.lastDefined = ref;
@@ -57,6 +57,17 @@ export class Variable {
 		this.isLocal  = false;
 		this.isClone  = false;
 		this.markDefined();
+	}
+
+	clone() {
+		const clone = new Variable(this.name, this.type, this.register, this.modifiedAt);
+		clone.lastDefined = this.lastDefined;
+		clone.isDefined   = this.isDefined;
+		clone.isGlobal    = this.isGlobal;
+		clone.isLocal     = false;
+		clone.isClone     = true;
+
+		return clone;
 	}
 
 	toBinary() {

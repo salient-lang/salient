@@ -41,7 +41,7 @@ export type SourceMap = {
 	ref:  ReferenceRange
 }
 
-export function Yeet(x: string, source?: SourceMap): never {
+export function Panic(x: string, source?: SourceMap): never {
 	if (source) {
 		console.error(x + SourceView(source.path, source.name, source.ref));
 	} else {

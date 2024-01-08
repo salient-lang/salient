@@ -6,7 +6,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import Function from "~/compiler/function.ts";
 import Project from "~/compiler/project.ts";
-import { Yeet } from "~/helper.ts";
+import { Panic } from "~/helper.ts";
 
 if (Deno.args.includes("--version")) {
 	console.log("version: 0.0.0");
@@ -14,25 +14,25 @@ if (Deno.args.includes("--version")) {
 }
 
 if (!Deno.args[0]) {
-	Yeet(`${colors.red("Error")}: Please provide an entry file`);
+	Panic(`${colors.red("Error")}: Please provide an entry file`);
 }
 
 const cwd = resolve("./");
 const root = join(cwd, Deno.args[0]);
 
 if (!existsSync(root)) {
-	Yeet(`${colors.red("Error")}: Cannot find entry ${colors.cyan(relative(cwd, root))}`);
+	Panic(`${colors.red("Error")}: Cannot find entry ${colors.cyan(relative(cwd, root))}`);
 }
 
 const project = new Project(root);
 if (project.failed) {
-	Yeet(`Compilation ${colors.red("Failed")}`);
+	Panic(`Compilation ${colors.red("Failed")}`);
 }
 
 const mainFile = project.import(root);
 const mainFunc = mainFile.namespace["main"];
 if (!(mainFunc instanceof Function)) {
-	Yeet(`Main namespace is not a function: ${mainFunc.constructor.name}`);
+	Panic(`Main namespace is not a function: ${mainFunc.constructor.name}`);
 }
 
 
