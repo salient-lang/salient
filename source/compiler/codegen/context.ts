@@ -7,7 +7,7 @@ import type { Scope } from "./scope.ts";
 import * as banned from "~/compiler/codegen/banned.ts";
 import { Intrinsic, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
-import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { AssertUnreachable, Panic } from "~/helper.ts";
 import { OperandType } from "~/compiler/codegen/expression/operand.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { none, never } from "~/compiler/intrinsic.ts";
@@ -64,7 +64,7 @@ export class Context {
 
 	cleanup() {
 		if (this.done) return;
-		this.scope.cleanup(this);
+		this.scope.cleanup();
 	}
 }
 
@@ -75,7 +75,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const expr = syntax.value[2].value[0];
 
 	if (banned.namespaces.includes(name))
-		Yeet(`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`, {
+		Panic(`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`, {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.value[0].value[0].ref
@@ -86,14 +86,14 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		typeRef = ctx.file.get(type.value[0]);
 
 		if (typeRef === null || !(typeRef instanceof Intrinsic))
-			Yeet(`${colors.red("Error")}: Cannot find type\n`, {
+			Panic(`${colors.red("Error")}: Cannot find type\n`, {
 				path: ctx.file.path,
 				name: ctx.file.name,
 				ref: type.ref
 			})
 
 		if (typeRef === i8 || typeRef === u8 || typeRef === i16 || typeRef === u16)
-			Yeet(`${colors.red("Error")}: Cannot explicitly use virtual integer types\n`, {
+			Panic(`${colors.red("Error")}: Cannot explicitly use virtual integer types\n`, {
 				path: ctx.file.path,
 				name: ctx.file.name,
 				ref: type.ref
@@ -102,7 +102,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 
 	if (!expr) {
 		if (!typeRef)
-			Yeet(`${colors.red("Error")}: Declared variables must have an explicit or an inferred type\n`, {
+			Panic(`${colors.red("Error")}: Declared variables must have an explicit or an inferred type\n`, {
 				path: ctx.file.path,
 				name: ctx.file.name,
 				ref: syntax.ref
@@ -110,7 +110,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 
 		const variable = ctx.scope.registerVariable(name, typeRef, syntax.ref);
 		if (!variable)
-			Yeet(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
+			Panic(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
 				path: ctx.file.path,
 				name: ctx.file.name,
 				ref: syntax.ref
@@ -121,22 +121,22 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 
 	const value = expr.value[0];
 	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
-	if (!typeRef && !resolveType) Yeet(
+	if (!typeRef && !resolveType) Panic(
 		`${colors.red("Error")}: Unable to determine type\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
-	if (typeRef && resolveType !== typeRef) Yeet(
+	if (typeRef && resolveType !== typeRef) Panic(
 		`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
 	)
-	if (!(resolveType instanceof Intrinsic)) Yeet(
+	if (!(resolveType instanceof Intrinsic)) Panic(
 		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
 	)
 
 	const variable = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
 	if (!variable)
-		Yeet(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
+		Panic(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.ref
@@ -150,21 +150,21 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 	const name  = syntax.value[0].value[0].value;
 	const value = syntax.value[1];
 
-	const variable = ctx.scope.getVariable(name);
+	const variable = ctx.scope.getVariable(name, false);
 	if (!variable)
-		Yeet(`${colors.red("Error")}: Undeclared variable ${name}\n`, {
+		Panic(`${colors.red("Error")}: Undeclared variable ${name}\n`, {
 			path: ctx.file.path,
 			name: ctx.file.name,
 			ref: syntax.ref
 		});
 
 	const resolveType = CompileExpr(ctx, value, variable.type);
-	if (resolveType !== variable.type) Yeet(
+	if (resolveType !== variable.type) Panic(
 		`${colors.red("Error")}: type ${variable.name} != type ${resolveType.name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
-	if (!(resolveType instanceof Intrinsic)) Yeet(
+	if (!(resolveType instanceof Intrinsic)) Panic(
 		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	)
@@ -190,20 +190,20 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 	const isTail = syntax.value[0].value.length > 0;
 	const value = syntax.value[1];
 
-	if (isTail) Yeet(`${colors.red("Error")}: Unimplemented tail call return\n`, {
+	if (isTail) Panic(`${colors.red("Error")}: Unimplemented tail call return\n`, {
 		path: ctx.file.path,
 		name: ctx.file.name,
 		ref: syntax.ref
 	});
 
 	CompileExpr(ctx, value);
-	ctx.scope.cleanup(ctx);
+	ctx.scope.cleanup();
 	ctx.block.push(Instruction.return());
 	ctx.done = true;
 }
 
 function CompileRaise(ctx: Context, syntax: Syntax.Term_Raise) {
 	ctx.raiseType = CompileExpr(ctx, syntax.value[0]);
-	ctx.scope.cleanup(ctx);
+	ctx.scope.cleanup();
 	ctx.done = true;
 }

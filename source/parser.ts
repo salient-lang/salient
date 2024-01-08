@@ -3,16 +3,16 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import { ParseError, ReferenceRange, Reference } from "~/bnf/shared.js";
 import * as Instance from "~/bnf/syntax.js";
 import * as Syntax from "~/bnf/syntax.d.ts";
-import { Yeet } from "~/helper.ts";
+import { Panic } from "~/helper.ts";
 
 await Instance.ready;
 
 export function Parse(data: string, path: string, name: string): Syntax.Term_Program {
 	const res = Instance.Parse_Program(data, true);
 
-	if (res instanceof ParseError) Yeet(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
+	if (res instanceof ParseError) Panic(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
 
-	if (res.isPartial) Yeet(
+	if (res.isPartial) Panic(
 		colors.red("Syntax Error") + "\n",
 		{
 			path, name,

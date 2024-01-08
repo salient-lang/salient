@@ -2,7 +2,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
-import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { AssertUnreachable, Panic } from "~/helper.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 
@@ -33,12 +33,12 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))
-		Yeet(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
+		Panic(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
 	if (!Number.isInteger(num))
-		Yeet(`${colors.red("Error")}: Invalid integer ${syntax.value[0].value}\n`, {
+		Panic(`${colors.red("Error")}: Invalid integer ${syntax.value[0].value}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
@@ -48,18 +48,18 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (size === 8) {
 		ctx.block.push(Instruction.const.i64(num));
 		if (unsigned) {
-			if (num > 2**64) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+			if (num > 2**64) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 			});
 
 			return u64
 		}
 
-		if (num > 2**63) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+		if (num > 2**63) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		if (num < -(2**63)) Yeet(`${colors.red("Error")}: Value too small for size\n`, {
+		if (num < -(2**63)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
@@ -69,18 +69,18 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (size === 2) {
 		ctx.block.push(Instruction.const.i32(num));
 		if (unsigned) {
-			if (num > 2**16) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+			if (num > 2**16) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 			});
 
 			return u16
 		}
 
-		if (num > 2**15) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+		if (num > 2**15) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		if (num < -(2**15)) Yeet(`${colors.red("Error")}: Value too small for size\n`, {
+		if (num < -(2**15)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
@@ -90,18 +90,18 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (size === 1) {
 		ctx.block.push(Instruction.const.i32(num));
 		if (unsigned) {
-			if (num > 2**8) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+			if (num > 2**8) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 			});
 
 			return u8
 		}
 
-		if (num > 2**7) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+		if (num > 2**7) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		if (num < -(2**7)) Yeet(`${colors.red("Error")}: Value too small for size\n`, {
+		if (num < -(2**7)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
@@ -110,18 +110,18 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 
 	ctx.block.push(Instruction.const.i32(num));
 	if (unsigned) {
-		if (num > 2**32) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+		if (num > 2**32) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
 		return u32
 	}
 
-	if (num > 2**31) Yeet(`${colors.red("Error")}: Value too big for size\n`, {
+	if (num > 2**31) Panic(`${colors.red("Error")}: Value too big for size\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 	});
 
-	if (num < -(2**31)) Yeet(`${colors.red("Error")}: Value too small for size\n`, {
+	if (num < -(2**31)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 	});
 	return i32;
@@ -131,7 +131,7 @@ function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsi
 	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))
-		Yeet(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
+		Panic(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 

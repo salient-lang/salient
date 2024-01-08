@@ -99,4 +99,4 @@ arg_list ::= ( expr %w* ","? %w* )* ;
 
 if ::= %("if" w*) expr %w* expr %w* ( %"else" %w* expr )? ;
 
-statement ::= expr %(w* ";" w*) ;
+statement ::= expr %(w* ";"? w*) ;

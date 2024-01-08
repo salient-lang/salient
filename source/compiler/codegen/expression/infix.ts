@@ -6,18 +6,18 @@ import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import { Yeet } from "~/helper.ts";
+import { Panic } from "~/helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: Intrinsic) {
 	const a = CompilePrecedence(ctx, lhs, expect);
-	if (!(a instanceof Intrinsic)) Yeet(
+	if (!(a instanceof Intrinsic)) Panic(
 		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
 	const b = CompilePrecedence(ctx, rhs, a);
-	if (!(b instanceof Intrinsic)) Yeet(
+	if (!(b instanceof Intrinsic)) Panic(
 		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
@@ -41,7 +41,7 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 		case ">=": return CompileGe (ctx, a, b, ref);
 
 
-		default: Yeet(`${colors.red("Error")}: Unimplemented infix operation "${op}"\n`, {
+		default: Panic(`${colors.red("Error")}: Unimplemented infix operation "${op}"\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref
 		});
 	}
@@ -55,7 +55,7 @@ function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: Intrinsic
 
 
 function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot add unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot add unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -79,13 +79,13 @@ function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot subtract unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot subtract unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -109,7 +109,7 @@ function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
@@ -118,7 +118,7 @@ function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot multiply unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot multiply unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -142,13 +142,13 @@ function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -180,13 +180,13 @@ function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot remainder unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot remainder unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -254,7 +254,7 @@ function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
@@ -264,7 +264,7 @@ function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot && unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot && unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -286,13 +286,13 @@ function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot || unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot || unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -315,13 +315,13 @@ function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot ^ unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot ^ unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -344,7 +344,7 @@ function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return lhs;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
@@ -354,7 +354,7 @@ function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot == unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot == unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -386,13 +386,13 @@ function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 		return bool;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot != unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot != unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -424,13 +424,13 @@ function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 		return bool;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot < unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot < unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -462,13 +462,13 @@ function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 		return bool;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot <= unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot <= unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -500,13 +500,13 @@ function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 		return bool;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot > unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot > unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -538,13 +538,13 @@ function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 		return bool;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }
 
 function CompileGe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
-	if (lhs !== rhs) Yeet(`${colors.red("Error")}: Cannot >= unmatched types ${lhs.name} != ${rhs.name}\n`, {
+	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot >= unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 
@@ -576,7 +576,7 @@ function CompileGe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 		return bool;
 	}
 
-	Yeet(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
+	Panic(`${colors.red("Error")}: Unhandled type ${lhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
 }

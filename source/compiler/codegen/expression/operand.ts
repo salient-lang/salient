@@ -1,7 +1,7 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
-import { AssertUnreachable, Yeet } from "~/helper.ts";
+import { AssertUnreachable, Panic } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
 import { Intrinsic, bool } from "~/compiler/intrinsic.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
@@ -42,17 +42,17 @@ function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect
 
 function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic) {
 	const name = syntax.value[0].value;
-	const variable = ctx.scope.getVariable(name);
+	const variable = ctx.scope.getVariable(name, true);
 	if (!variable) {
 		const found = ctx.file.access(name);
-		if (found === null) Yeet(`${colors.red("Error")}: Undeclared term ${name}\n`, {
+		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${name}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
 		return found;
 	}
 
-	if (!variable.isDefined) Yeet(`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`, {
+	if (!variable.isDefined) Panic(`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 	});
 
@@ -62,7 +62,7 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: Intrinsic)
 
 function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 	const cond = CompileExpr(ctx, syntax.value[0]);
-	if (cond !== bool) Yeet(
+	if (cond !== bool) Panic(
 		`${colors.red("Error")}: Invalid comparison type ${cond.name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
 	);
@@ -78,13 +78,13 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: Intrinsic) {
 		typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
 		scopeElse.mergeBlock();
 
-		if (typeIf != typeElse) Yeet(
+		if (typeIf != typeElse) Panic(
 			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.name} != ${typeElse.name}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
 	}
 
-	if (!(typeIf instanceof Intrinsic || typeIf instanceof VirtualType)) Yeet(
+	if (!(typeIf instanceof Intrinsic || typeIf instanceof VirtualType)) Panic(
 		`${colors.red("Error")}: Invalid output type from if expression ${typeIf.name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
