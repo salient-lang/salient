@@ -31,7 +31,7 @@ export function isByte(value: number): value is Byte {
 
 
 export function AssertUnreachable(x: never): never {
-	throw new Error("Unreachable code path reachable");
+	throw new Error("Unreachable code path reached");
 }
 
 

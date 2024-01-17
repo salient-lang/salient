@@ -4,8 +4,7 @@ import type { Term_Access, Term_Function, Term_Program } from "~/bnf/syntax.d.ts
 import type Project from "./project.ts";
 
 import { Intrinsic, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "~/compiler/intrinsic.ts";
-import { FlatAccess, FlattenAccess } from "~/helper.ts";
-import { AssertUnreachable } from "~/bnf/shared.js";
+import { AssertUnreachable, FlatAccess, FlattenAccess } from "~/helper.ts";
 import { Parse } from "~/parser.ts";
 import Structure from "~/compiler/structure.ts";
 import Function from "~/compiler/function.ts";

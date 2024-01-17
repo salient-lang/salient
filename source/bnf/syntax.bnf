@@ -1,7 +1,5 @@
 program ::= %w* ( stmt_top %w* )* ;
-	stmt_top ::=
-		function ;
-
+	stmt_top ::= function | structure ;
 
 
 #=============================
@@ -13,6 +11,8 @@ nl ::= "\r\n" | "\n" ;
 digit ::= "0" -> "9" ;
 	digit_nz ::= "1" -> "9" ;
 letter ::= "a" -> "z" | "A" -> "Z" ;
+
+terminate ::= ( w* ";" w* );
 
 
 
@@ -58,8 +58,18 @@ access ::= name ( %w* accessor )* ;
 	access_comp    ::= %"#[]";
 
 declare ::= %( "let" w* ) name %w* (%":" %w* access %w*)? ( %("=" w*) expr )? %(w* ";" w*) ;
-assign  ::= name %( w* "=" w*) expr %( w* ";" w* ) ;
+assign  ::= name %( w* "=" w*) expr %terminate ;
 
+
+
+#=============================
+#  Storage
+#=============================
+structure ::= %("struct" w*) ...name %w* struct_type? %( "{" w* ) struct_stmt* %( w* "}" w* );
+	struct_type   ::= %( ":" w* ) ...name %w* ;
+	struct_stmt   ::= struct_attr | struct_spread ;
+		struct_attr   ::= ...name %( w* ":" w* ) access %terminate ;
+		struct_spread ::= %( "..." ) access %terminate ;
 
 
 #=============================
@@ -99,4 +109,4 @@ arg_list ::= ( expr %w* ","? %w* )* ;
 
 if ::= %("if" w*) expr %w* expr %w* ( %"else" %w* expr )? ;
 
-statement ::= expr %(w* ";"? w*) ;
+statement ::= expr %terminate ;
