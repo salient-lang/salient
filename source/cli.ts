@@ -5,7 +5,7 @@ import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import Function from "~/compiler/function.ts";
-import Project from "~/compiler/project.ts";
+import Package from "./compiler/package.ts";
 import { Panic } from "~/helper.ts";
 
 if (Deno.args.includes("--version")) {
@@ -24,7 +24,7 @@ if (!existsSync(root)) {
 	Panic(`${colors.red("Error")}: Cannot find entry ${colors.cyan(relative(cwd, root))}`);
 }
 
-const project = new Project(root);
+const project = new Package(root);
 if (project.failed) {
 	Panic(`Compilation ${colors.red("Failed")}`);
 }

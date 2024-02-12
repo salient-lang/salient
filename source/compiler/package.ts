@@ -3,7 +3,7 @@ import { dirname, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
 import Module from "~/wasm/module.ts";
 import { File } from "~/compiler/file.ts"
 
-export default class Project {
+export default class Package {
 	files: File[];
 	cwd: string;
 

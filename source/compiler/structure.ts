@@ -1,21 +1,42 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import type { File, Namespace } from "./file.ts";
-import { ReferenceRange, SourceView } from "~/parser.ts";
+import type { Term_Structure } from "~/bnf/syntax.d.ts";
+import type { File, Namespace } from "~/compiler/file.ts";
+import { SourceView } from "~/parser.ts";
+import { Panic } from "~/helper.ts";
 
 export default class Structure {
 	owner: File;
 	name: string;
+	ast: Term_Structure;
 
-	constructor(owner: File) {
+	storage: "sparse" | "aligned" | "linear" | "compact";
+
+	constructor(owner: File, ast: Term_Structure) {
 		this.owner = owner;
-		this.name = "UNKNOWN";
-		// this.name = ast.value[0].value[0].value;
-		// this.ast = ast;
+		this.name = ast.value[0].value;
+		this.ast = ast;
+
+		const declaredStorage = ast.value[1].value[0]?.value[0].value;
+		switch (declaredStorage) {
+			case undefined:
+				this.storage = "sparse";
+				break;
+			case "sparse": case "aligned": case "linear": case "compact":
+				this.storage = declaredStorage;
+				break;
+			default:
+				Panic(
+					`${colors.red("Error")}: Invalid structure layout ${declaredStorage}\n`
+					+ this.declarationView()
+				);
+		}
 	}
 
+	link() {}
+
 	declarationView(): string {
-		return SourceView(this.owner.path, this.owner.name, ReferenceRange.blank());
+		return SourceView(this.owner.path, this.owner.name, this.ast.ref);
 	}
 
 	merge(other: Namespace) {
@@ -25,6 +46,6 @@ export default class Structure {
 			+ other.declarationView()
 		);
 
-		// this.owner.markFailure();
+		this.owner.markFailure();
 	}
 }

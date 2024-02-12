@@ -1,9 +1,10 @@
-import { TypeSystem, Variable } from "~/compiler/codegen/variable.ts"
 import { RegisterAllocator } from "~/compiler/codegen/registers.ts";
 import { ReferenceRange } from "~/parser.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { MakeVariable } from "~/compiler/codegen/variable.ts";
+import { SolidType } from "~/compiler/codegen/expression/type.ts";
+import { TypeSystem } from "~/compiler/codegen/variable.ts"
 import { Function } from "~/wasm/function.ts";
-import { Context } from "~/compiler/codegen/context.ts";
+import { Variable } from "~/compiler/codegen/variable.ts";
 
 export class Scope {
 	_parent: Scope | null;
@@ -26,11 +27,12 @@ export class Scope {
 		this._localRegs = 0;
 	}
 
-	registerArgument(name: string, type: Intrinsic, ref: ReferenceRange) {
-		this.vars[name] = new Variable(
+	registerArgument(name: string, type: SolidType, ref: ReferenceRange) {
+		this.vars[name] = MakeVariable(
 			name, type,
-			this.register.allocate(type.bitcode, true),
-		ref);
+			this.register,
+			ref
+		);
 
 		this.vars[name].markArgument();
 		this._localRegs = this.register._regs.length;
@@ -38,13 +40,14 @@ export class Scope {
 		return this.vars[name];
 	}
 
-	registerVariable(name: string, type: Intrinsic, ref: ReferenceRange) {
+	registerVariable(name: string, type: SolidType, ref: ReferenceRange) {
 		if (this.vars[name]) return null;
 
-		this.vars[name] = new Variable(
+		this.vars[name] = MakeVariable(
 			name, type,
-			this.register.allocate(type.bitcode),
-		ref);
+			this.register,
+			ref
+		);
 
 		return this.vars[name];
 	}

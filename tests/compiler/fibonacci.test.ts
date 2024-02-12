@@ -1,11 +1,11 @@
 /// <reference lib="deno.ns" />
 import { fail, assertNotEquals, assert, assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 import * as CompilerFunc from "../../source/compiler/function.ts";
-import Project from "../../source/compiler/project.ts";
+import Package from "../../source/compiler/package.ts";
 import { FuncRef } from "../../source/wasm/funcRef.ts";
 
 Deno.test(`Signed integer Fibonacci test`, async () => {
-	const project = new Project("./");
+	const project = new Package("./");
 	const mainFile = project.importRaw(`
 		fn fibonacci(n: i32): i32 {
 			return fibonacci_tail(n, 0, 1);

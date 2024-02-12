@@ -5,6 +5,7 @@ import type { File, Namespace } from "~/compiler/file.ts";
 import type { Scope } from "./scope.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
+import Structure from "~/compiler/structure.ts";
 import { Intrinsic, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
@@ -85,7 +86,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	if (type) {
 		typeRef = ctx.file.get(type.value[0]);
 
-		if (typeRef === null || !(typeRef instanceof Intrinsic))
+		if (typeRef === null || !(typeRef instanceof Intrinsic) && !(typeRef instanceof Structure))
 			Panic(`${colors.red("Error")}: Cannot find type\n`, {
 				path: ctx.file.path,
 				name: ctx.file.name,

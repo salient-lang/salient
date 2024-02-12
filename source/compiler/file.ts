@@ -1,7 +1,7 @@
 /// <reference lib="deno.ns" />
 
-import type { Term_Access, Term_Function, Term_Program } from "~/bnf/syntax.d.ts";
-import type Project from "./project.ts";
+import type Package from "./package.ts";
+import type { Term_Access, Term_Function, Term_Program, Term_Structure } from "~/bnf/syntax.d.ts";
 
 import { Intrinsic, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "~/compiler/intrinsic.ts";
 import { AssertUnreachable, FlatAccess, FlattenAccess } from "~/helper.ts";
@@ -14,13 +14,13 @@ import Import from "~/compiler/import.ts";
 export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 
 export class File {
-	owner: Project;
+	owner: Package;
 	name: string;
 	path: string;
 
 	namespace: { [key: string]: Namespace };
 
-	constructor(owner: Project, path: string, name: string, data: string) {
+	constructor(owner: Package, path: string, name: string, data: string) {
 		this.owner = owner;
 		this.name = name;
 		this.path = path;
@@ -69,7 +69,8 @@ function Ingest(file: File, syntax: Term_Program) {
 
 		switch (inner.type) {
 			case "function": IngestFunction(file, inner); break;
-			default: AssertUnreachable(inner.type);
+			case "structure": IngestStructure(file, inner); break;
+			default: AssertUnreachable(inner);
 		}
 	}
 }
@@ -89,4 +90,16 @@ function IngestFunction(file: File, syntax: Term_Function) {
 	}
 
 	throw new Error(`Cannot merge a function with a non-function ${func.name}`);
+}
+
+function IngestStructure(file: File, syntax: Term_Structure) {
+	const struct = new Structure(file, syntax);
+
+	const existing = file.namespace[struct.name];
+	if (!existing) {
+		file.namespace[struct.name] = struct;
+		return;
+	}
+
+	throw new Error(`Structures cannot share a namespace`);
 }

@@ -1,7 +1,7 @@
 /// <reference lib="deno.ns" />
 import { fail, assertEquals, assertNotEquals, assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
 import * as CompilerFunc from "../../source/compiler/function.ts";
-import Project from "../../source/compiler/project.ts";
+import Package from "../../source/compiler/package.ts";
 import { FuncRef } from "../../source/wasm/funcRef.ts";
 
 const decoder = new TextDecoder();
@@ -14,7 +14,7 @@ fn main(): f32 {
 }`;
 
 Deno.test(`Numeric logic test`, async () => {
-	const project = new Project("./");
+	const project = new Package("./");
 	const mainFile = project.importRaw(source);
 
 

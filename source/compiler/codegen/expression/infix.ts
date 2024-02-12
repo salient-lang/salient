@@ -4,12 +4,13 @@ import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from 
 import { OperandType, CompileArg } from "~/compiler/codegen/expression/operand.ts";
 import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
 import { ReferenceRange } from "~/parser.ts";
+import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/helper.ts";
 
 
-export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: Intrinsic) {
+export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType) {
 	const a = CompilePrecedence(ctx, lhs, expect);
 	if (!(a instanceof Intrinsic)) Panic(
 		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
@@ -47,14 +48,14 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 	}
 }
 
-function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: Intrinsic): OperandType {
+function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType): OperandType {
 	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect);
 	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect);
 }
 
 
 
-function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileAdd(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot add unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -84,7 +85,7 @@ function CompileAdd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 	});
 }
 
-function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileSub(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot subtract unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -117,7 +118,7 @@ function CompileSub(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 
-function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileMul(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot multiply unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -147,7 +148,7 @@ function CompileMul(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 	});
 }
 
-function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileDiv(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -185,7 +186,7 @@ function CompileDiv(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 	});
 }
 
-function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileRem(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot remainder unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -263,7 +264,7 @@ function CompileRem(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 
-function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileAnd(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot && unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -291,7 +292,7 @@ function CompileAnd(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 	});
 }
 
-function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileOr(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot || unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -320,7 +321,7 @@ function CompileOr(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 	});
 }
 
-function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileXor(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot ^ unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -353,7 +354,7 @@ function CompileXor(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 
 
 
-function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileEq(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot == unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -391,7 +392,7 @@ function CompileEq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 	});
 }
 
-function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileNeq(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot != unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -429,7 +430,7 @@ function CompileNeq(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: Reference
 	});
 }
 
-function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileLt(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot < unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -467,7 +468,7 @@ function CompileLt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 	});
 }
 
-function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileLe(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot <= unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -505,7 +506,7 @@ function CompileLe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 	});
 }
 
-function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileGt(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot > unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});
@@ -543,7 +544,7 @@ function CompileGt(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceR
 	});
 }
 
-function CompileGe(ctx: Context, lhs: Intrinsic, rhs: Intrinsic, ref: ReferenceRange) {
+function CompileGe(ctx: Context, lhs: SolidType, rhs: SolidType, ref: ReferenceRange) {
 	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot >= unmatched types ${lhs.name} != ${rhs.name}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref
 	});

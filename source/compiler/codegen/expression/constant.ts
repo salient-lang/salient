@@ -4,9 +4,11 @@ import type * as Syntax from "~/bnf/syntax.d.ts";
 import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
 import { Instruction } from "~/wasm/index.ts";
+import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 
-export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: Intrinsic) {
+export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType) {
+	if (!(expect instanceof Intrinsic)) expect = undefined;
 	const val = syntax.value[0];
 	switch (val.type) {
 		case "boolean": return CompileBool(ctx, val);

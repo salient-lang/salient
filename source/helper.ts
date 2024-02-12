@@ -69,7 +69,7 @@ export class LatentValue<T> {
 		this._value === null;
 	}
 
-	resolve(val: T, force: boolean = false) {
+	resolve(val: T, force = false) {
 		if (this._value !== null && !force)
 			throw new Error("Attempt to re-resolve already resolved latent value");
 
