@@ -1,9 +1,11 @@
 import { dirname, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
 
+import type Project from "~/compiler/project.ts";
 import Module from "~/wasm/module.ts";
 import { File } from "~/compiler/file.ts"
 
 export default class Package {
+	project: Project;
 	files: File[];
 	cwd: string;
 
@@ -11,7 +13,8 @@ export default class Package {
 
 	failed: boolean;
 
-	constructor(base: string) {
+	constructor(project: Project, base: string) {
+		this.project = project;
 		this.failed = false;
 		this.files = [];
 		this.cwd = dirname(base);
@@ -36,6 +39,6 @@ export default class Package {
 	}
 
 	markFailure() {
-		this.failed = true;
+		this.project.markFailure();
 	}
 }

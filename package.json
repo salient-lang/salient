@@ -10,9 +10,9 @@
 	"scripts": {
 		"build": "run-s build:*",
 		"build:syntax": "npx bnf-compile ./source/bnf/",
-		"build:compiler": "deno compile --output salient.exe --allow-read --allow-write --allow-env --allow-run --allow-sys ./source/cli.ts",
+		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
 		"test": "deno test",
-		"compile": "deno run --allow-read --allow-write --allow-env --allow-run --allow-sys ./source/cli.ts"
+		"compile": "deno run -A ./source/cli.ts"
 	},
 	"bin": {
 		"salient": "bin/cli.js"

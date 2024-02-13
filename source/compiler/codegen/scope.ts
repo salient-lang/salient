@@ -1,4 +1,4 @@
-import { RegisterAllocator } from "~/compiler/codegen/registers.ts";
+import { RegisterAllocator } from "./allocation/registers.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { MakeVariable } from "~/compiler/codegen/variable.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";

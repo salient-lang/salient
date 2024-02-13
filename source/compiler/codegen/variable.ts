@@ -1,10 +1,10 @@
 import Structure from "~/compiler/structure.ts";
-import { RegisterAllocator } from "~/compiler/codegen/registers.ts";
+import { RegisterAllocator } from "./allocation/registers.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Intrinsic } from "~/compiler/intrinsic.ts";
-import { Register } from "~/compiler/codegen/registers.ts";
+import { Register } from "./allocation/registers.ts";
 import { u32 } from "~/compiler/intrinsic.ts";
 
 export enum TypeSystem {
