@@ -52,27 +52,27 @@ export function Panic(x: string, source?: SourceMap): never {
 
 
 export class LatentValue<T> {
-	_value: T | null;
+	private value: T | null;
 
 	constructor() {
-		this._value = null;
+		this.value = null;
 	}
 
 	get () {
-		if (this._value === null)
+		if (this.value === null)
 			throw new Error("Attempting to read latent value before it's been resolved");
 
-		return this._value;
+		return this.value;
 	}
 
 	clear() {
-		this._value === null;
+		this.value === null;
 	}
 
 	resolve(val: T, force = false) {
-		if (this._value !== null && !force)
+		if (this.value !== null && !force)
 			throw new Error("Attempt to re-resolve already resolved latent value");
 
-		this._value = val;
+		this.value = val;
 	}
 }
