@@ -14,9 +14,9 @@ export enum TypeSystem {
 
 export type Variable = IntrinsicVariable | StructVariable;
 
-export function MakeVariable(name: string, type: SolidType, register: RegisterAllocator, ref: ReferenceRange) {
-	if (type instanceof Intrinsic) return new IntrinsicVariable(name, type, register, ref);
-	if (type instanceof Structure) return new StructVariable(name, type, register, ref);
+export function MakeVariable(name: string, type: SolidType, register: RegisterAllocator, isArg: boolean, ref: ReferenceRange) {
+	if (type instanceof Intrinsic) return new IntrinsicVariable(name, type, register, isArg, ref);
+	if (type instanceof Structure) return new StructVariable(name, type, register, isArg, ref);
 	AssertUnreachable(type);
 }
 
@@ -35,18 +35,18 @@ export class IntrinsicVariable {
 	modifiedAt: ReferenceRange;
 
 
-	constructor(name: string, type: Intrinsic, register: RegisterAllocator | Register, ref: ReferenceRange) {
+	constructor(name: string, type: Intrinsic, register: RegisterAllocator | Register, isArg: boolean, ref: ReferenceRange) {
 		this.name = name;
 		this.type = type;
 		this.storage    = TypeSystem.Normal;
 		this.modifiedAt = ref;
-		this.isDefined  = false;
-		this.isGlobal   = false;
-		this.isLocal    = true;
+		this.isDefined  = isArg;
 		this.isClone    = false;
+		this.isGlobal   = false;
+		this.isLocal    = !isArg;
 
 		this.register = register instanceof RegisterAllocator
-			? register.allocate(type.bitcode)
+			? register.allocate(type.bitcode, isArg)
 			: register;
 
 		this.lastDefined = ref;
@@ -68,15 +68,8 @@ export class IntrinsicVariable {
 		this.markDefined();
 	}
 
-	markArgument() {
-		this.isGlobal = false;
-		this.isLocal  = false;
-		this.isClone  = false;
-		this.markDefined();
-	}
-
 	clone() {
-		const clone = new IntrinsicVariable(this.name, this.type, this.register, this.modifiedAt);
+		const clone = new IntrinsicVariable(this.name, this.type, this.register, !this.isLocal, this.modifiedAt);
 		clone.lastDefined = this.lastDefined;
 		clone.isDefined   = this.isDefined;
 		clone.isGlobal    = this.isGlobal;
@@ -108,14 +101,14 @@ export class StructVariable {
 
 	mask: { [key: string]: Variable };
 
-	constructor(name: string, type: Structure, register: RegisterAllocator | Register, ref: ReferenceRange) {
+	constructor(name: string, type: Structure, register: RegisterAllocator | Register, isArg: boolean, ref: ReferenceRange) {
 		this.name = name;
 		this.type = type;
 		this.storage    = TypeSystem.Normal;
 		this.modifiedAt = ref;
 		this.isDefined  = false;
 		this.isGlobal   = false;
-		this.isLocal    = true;
+		this.isLocal    = !isArg;
 		this.isClone    = false;
 		this.mask = {};
 
@@ -150,7 +143,7 @@ export class StructVariable {
 	}
 
 	clone() {
-		const clone = new StructVariable(this.name, this.type, this.register, this.modifiedAt);
+		const clone = new StructVariable(this.name, this.type, this.register, !this.isLocal, this.modifiedAt);
 		clone.lastDefined = this.lastDefined;
 		clone.isDefined   = this.isDefined;
 		clone.isGlobal    = this.isGlobal;

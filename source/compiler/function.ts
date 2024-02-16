@@ -110,8 +110,7 @@ export default class Function {
 		if (!this.isLinked)  return;      // Failed to link
 		this.isCompiled = true;
 
-		const project = this.getFile().owner;
-
+		const project = this.getFile().owner.project;
 		const func = project.module.makeFunction(
 			this.arguments.map(x => x.type.bitcode),
 			this.returns.map(x => x.bitcode)

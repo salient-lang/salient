@@ -59,7 +59,7 @@ Deno.test(`Numeric logic test`, async () => {
 
 		// Call the _start function
 		if (typeof exports._start === "function") {
-			const out = (exports._start as Function)() as any;
+			(exports._start as Function)() as any;
 		} else {
 			fail(`Expected _start to be a function`);
 		}

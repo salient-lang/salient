@@ -31,10 +31,10 @@ export class Scope {
 		this.vars[name] = MakeVariable(
 			name, type,
 			this.register,
+			true,
 			ref
 		);
 
-		this.vars[name].markArgument();
 		this._localRegs = this.register._regs.length;
 
 		return this.vars[name];
@@ -46,6 +46,7 @@ export class Scope {
 		this.vars[name] = MakeVariable(
 			name, type,
 			this.register,
+			false,
 			ref
 		);
 

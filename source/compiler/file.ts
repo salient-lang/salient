@@ -56,6 +56,10 @@ export class File {
 		return this.namespace[target.value[0].value];
 	}
 
+	getModule() {
+		return this.owner.project.module;
+	}
+
 	access(name: string): Namespace | null {
 		return this.namespace[name] || null;
 	}

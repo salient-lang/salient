@@ -7,10 +7,10 @@ import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
 import { Intrinsic, bool } from "~/compiler/intrinsic.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
-import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
+import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Namespace } from "~/compiler/file.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 
@@ -91,9 +91,8 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
-	const typeIdx = (typeIf instanceof VirtualType || typeIf instanceof Structure)
-		? 0x40
-		: ctx.file.owner.module.makeType([], [typeIf.bitcode]);
+	let typeIdx = 0x40;
+	if (typeIf instanceof Intrinsic) typeIdx = ctx.file.getModule().makeType([], [typeIf.bitcode]);
 
 	ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
 	return typeIf;
