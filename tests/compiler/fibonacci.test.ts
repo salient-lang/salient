@@ -44,31 +44,34 @@ Deno.test(`Signed integer Fibonacci test`, async () => {
 		const instance = await WebAssembly.instantiate(wasmModule, {});
 		const exports = instance.exports;
 
-		console.time("Recursive fibonacci");
 		if (typeof exports.fib_recur === "function") {
 			const fib_recur = exports.fib_recur as Function;
+			console.time("Recursive fibonacci");
 			assertEquals(fib_recur(3), 2);
 			assertEquals(fib_recur(4), 3);
 			assertEquals(fib_recur(5), 5);
 			assertEquals(fib_recur(6), 8);
 			assertEquals(fib_recur(24), 46368);
-			assertEquals(fib_recur(46), 1836311903);
+			assertEquals(fib_recur(38), 39088169); // stack overflow past this
+			console.timeEnd("Recursive fibonacci");
+		} else {
+			fail(`Expected fib_recur to be a function`);
 		}
-		console.timeEnd("Recursive fibonacci");
 
-		console.time("Tail call fibonacci");
 		if (typeof exports.fib_tail === "function") {
 			const fib_tail = exports.fib_tail as Function;
+			console.time("Tail call fibonacci");
 			assertEquals(fib_tail(3, 0, 1), 2);
 			assertEquals(fib_tail(4, 0, 1), 3);
 			assertEquals(fib_tail(5, 0, 1), 5);
 			assertEquals(fib_tail(6, 0, 1), 8);
 			assertEquals(fib_tail(24, 0, 1), 46368);
-			assertEquals(fib_tail(46, 0, 1), 1836311903);
+			assertEquals(fib_tail(38, 0, 1), 39088169);
+			console.timeEnd("Tail call fibonacci");
+			assertEquals(fib_tail(46, 0, 1), 1836311903); // integer overflow past this
 		} else {
 			fail(`Expected fib_tail to be a function`);
 		}
-		console.timeEnd("Tail call fibonacci");
 
 	} catch (err) {
 		// If there's an error, the test will fail

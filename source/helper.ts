@@ -76,3 +76,11 @@ export class LatentValue<T> {
 		this.value = val;
 	}
 }
+
+export function AlignUpInteger(x: number, multiple: number) {
+	return Math.ceil(x / multiple) * multiple;
+}
+
+export function AlignDownInteger(x: number, multiple: number) {
+	return Math.floor(x / multiple) * multiple;
+}

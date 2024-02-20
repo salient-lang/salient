@@ -28,7 +28,6 @@ Deno.test(`Numeric logic test`, async () => {
 	project.module.exportFunction("_start", mainFunc.ref as FuncRef);
 
 	let stdout = "";
-
 	let memory: WebAssembly.Memory;
 
 	const imports = {

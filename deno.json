@@ -27,6 +27,6 @@
 	"lock": false,
 	"nodeModulesDir": true,
 	"test": {
-		"include": ["tests/*/*", "source/*/*"]
+		"include": ["tests/*/*", "source/compiler/**", "source/wasm/**"]
 	}
 }

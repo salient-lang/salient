@@ -40,6 +40,9 @@ mainFunc.compile();
 
 if (project.failed) Panic(`Compilation ${colors.red("Failed")}`);
 
+if (!mainFunc.ref) Panic(`Main function not compiled correctly`);
+project.module.exportFunction("main", mainFunc.ref);
+
 await Deno.writeFile("out.wasm", project.module.toBinary());
 
 const command = new Deno.Command(

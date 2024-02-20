@@ -1,4 +1,7 @@
-import { AssertUnreachable, LatentValue } from "~/helper.ts";
+/// <reference lib="deno.ns" />
+import { assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
+
+import { AssertUnreachable, AlignUpInteger, AlignDownInteger, LatentValue } from "~/helper.ts";
 
 /**
  * Used for calculating the relative stack location of variables within a function stack
@@ -21,14 +24,17 @@ class Region {
 	}
 }
 
-enum StackEventType { allocation, free, branch };
+enum StackAlignment { front, none, back };
+enum StackEventType { allocation, free };
 class StackEvent {
 	type: StackEventType;
 	entity: StackAllocation | StackCheckpoint;
+	ignore: boolean;
 
 	constructor(born: StackEventType, entity: StackAllocation | StackCheckpoint) {
 		this.type = born;
 		this.entity = entity;
+		this.ignore = false;
 	}
 }
 
@@ -52,6 +58,7 @@ class StackCheckpoint {
 	allocate(size: number, align: number) {
 		const alloc = new StackAllocation(this, size, align);
 		this.timeline.push(new StackEvent(StackEventType.allocation, alloc));
+		this.local.push(alloc);
 
 		return alloc;
 	}
@@ -64,11 +71,12 @@ class StackCheckpoint {
 	}
 
 	private bind(alloc: StackAllocation) {
-		this.timeline.push(new StackEvent(StackEventType.allocation, alloc))
+		this.timeline.push(new StackEvent(StackEventType.allocation, alloc));
+		this.local.push(alloc);
 	}
 
-	events() {
-		return this.timeline.values();
+	hasAllocations() {
+		return this.local.length > 0;
 	}
 
 	rewind() {
@@ -77,7 +85,17 @@ class StackCheckpoint {
 		if (this.firstRewind) {
 			for (const alloc of this.local) {
 				if (alloc.isAlias()) continue;
+
 				this.previous.bind(alloc);
+
+				// Ignore the allocation of this in the timeline
+				// As it's been pushed up
+				for (let i=this.timeline.length; 0 <= i; i--) {
+					if (this.timeline[i].entity === alloc) {
+						this.timeline[i].ignore =  true;
+						break;
+					}
+				}
 			}
 			this.local.length = 0;
 		} else {
@@ -90,13 +108,25 @@ class StackCheckpoint {
 
 	restore() {
 		if (this.local.length !== 0) throw new Error("Must run rewind before restore");
+
+		// Merge up timelines
+		if (this.previous) {
+			for (const evt of this.timeline) {
+				if (evt.ignore) continue;
+				this.previous.timeline.push(evt);
+			}
+		}
+
 		this.owner.restore(this);
+	}
+
+	events() {
+		return this.timeline.values();
 	}
 }
 
 export class StackAllocator {
-	private checkpointRef?: StackCheckpoint;
-
+	private checkpointRef: StackCheckpoint;
 	private latentSize: LatentValue<number>; // Final size of the stack
 
 	constructor() {
@@ -110,11 +140,13 @@ export class StackAllocator {
 	}
 
 	checkpoint() {
-		return new StackCheckpoint(this, this.checkpointRef);
+		this.checkpointRef = new StackCheckpoint(this, this.checkpointRef);
+		return this.checkpointRef;
 	}
 
 	restore(checkpoint: StackCheckpoint) {
 		if (this.checkpointRef != checkpoint) throw new Error(`In correct stack checkpoint restore order`);
+		if (!checkpoint.previous) throw new Error(`Cannot restore from a root checkpoint`);
 		this.checkpointRef = checkpoint.previous;
 	}
 
@@ -129,85 +161,122 @@ export class StackAllocator {
 
 	resolve() {
 		if (!this.checkpointRef) return;
+		if (this.checkpointRef.hasAllocations()) throw new Error(`Stack leak: Some stack values are still allocated after stack frame end`);
 
-		const table = new Array<Region>();
+		const table: Region[] = [];
 		let offset = 0;
 		let size = 0;
 
 		function allocate(alloc: StackAllocation) {
 			// Already allocated, likely due to stack promotion
-			if (alloc.inUse) return;
+			if (alloc.inUse) throw new Error("Double allocation on stack allocation");
 
 			// short circuit
 			if (alloc.size == 0 || alloc.isAlias()) return offset;
 
-			// Look for an available region
-			let chunkSize = Infinity;
-			let chunk: Region | null = null;
-			for (const region of table) {
-				const trySize = region.tail - region.head;
-				if (alloc.size <= trySize && trySize < chunkSize) {
-					chunkSize = trySize;
-					chunk = region;
-				}
-			}
+			// Look for the first available region
+			for (let i=0; i<table.length; i++) {
+				const region = table[i];
+				const chunkSize = region.tail - region.head;
 
-			// Place new allocation in the front of the region
-			if (chunk) {
-				alloc.getOffset().resolve(chunk.head);
-				chunk.head += size;
+				const head = AlignUpInteger(region.head, alloc.align);
+				const paddingFront = head - region.head;
+
+				const tail  = AlignDownInteger(region.tail-alloc.size, alloc.align);
+				const paddingBack  = (region.tail-alloc.size) - tail;
+
+				// Won't fit in chunk
+				const padding = Math.min(paddingFront, paddingBack);
+				if (padding + alloc.size > chunkSize) continue;
+
+				let start, end: number;
+				let placed = false;
+				if (paddingFront <= paddingBack) {
+					start = head;
+					end = start + alloc.size
+
+					if (paddingFront == 0) {
+						region.head += alloc.size;
+						placed = true;
+					}
+				} else {
+					end = tail;
+					start = end - alloc.size;
+
+					if (paddingBack == 0) {
+						region.tail -= alloc.size;
+						placed = true;
+					}
+				}
+
+				if (!placed) {
+					table.splice(i+1, 0, new Region(end, region.tail));
+					region.tail = start;
+				}
+
+				alloc.getOffset().resolve(start);
+				alloc.inUse = true;
+				return;
 			}
 
 			// Extend the stack to fit the new allocation
-			const ptr = offset;
-			offset += alloc.size;
+			const head = AlignUpInteger(offset, alloc.align);
+			const padding = head-offset;
+			if (padding > 0) table.push(new Region(offset, head));
+
+			alloc.getOffset().resolve(head);
+			alloc.inUse = true;
+			offset += alloc.size + padding;
 			size = Math.max(size, offset);
-			return ptr;
+
 		}
 
 		function free(alloc: StackAllocation) {
-			if (!alloc.inUse) throw new Error("Double free on stack allocation")
+			if (!alloc.inUse) throw new Error("Double free on stack allocation");
 			if (alloc.size == 0 || alloc.isAlias()) return offset;
 
 			const head = alloc.getOffset().get();
 			const tail = head + alloc.size;
 
-			for (let i=0; i<table.length; i++) {
-				const chunk = table[i];
-				if (tail === chunk.head) {
-					chunk.head = head;
+			if (table.length === 0) {
+				table.push(new Region(head, tail));
+				return;
+			}
 
-					// Now overlaps with prev free region
-					const prev = table[i-1];
-					if (prev && prev.tail >= chunk.head) {
-						chunk.tail = prev.tail;
-						table.splice(i-1, 1);
-					}
-				} else if (chunk.tail === head) {
-					chunk.tail = tail;
+			let chunkI = table.findIndex(chunk => chunk.head >= head);
+			if (chunkI == -1) chunkI = table.length-1;
 
-					// Now overlaps with next free region
-					const next = table[i+1];
-					if (next && chunk.head >= next.head) {
-						chunk.tail = next.tail;
-						table.splice(i+1, 1);
-					}
+			const prev = table[chunkI];
+			const next = table[chunkI+1];
+			let found = false;
+			if (prev.tail === head) {
+				prev.tail = tail;
+				found = true;
+				return;
+			}
+
+			if (next && tail === next.head) {
+				next.head = head;
+				found = true;
+			}
+
+			if (found) { // attempt defrag
+				if (next && prev.tail == next.head) {
+					prev.tail = next.tail;
+					table.splice(chunkI+1, 1);
 				}
+			} else { // make new frag
+				table.splice(chunkI+1, 0, new Region(head, tail));
 			}
 		}
 
-		function recurse(timeline: IterableIterator<StackEvent>) {
-			for (const event of timeline) {
-				switch (event.type) {
-					case StackEventType.allocation: event.entity instanceof StackAllocation && allocate(event.entity); break;
-					case StackEventType.free:       event.entity instanceof StackAllocation && free(event.entity); break;
-					case StackEventType.branch:     event.entity instanceof StackCheckpoint && recurse(event.entity.events());
-						break;
-					default: AssertUnreachable(event.type);
-				}
+		for (const event of this.checkpointRef.events()) {
+			switch (event.type) {
+				case StackEventType.allocation: event.entity instanceof StackAllocation && allocate(event.entity); break;
+				case StackEventType.free:       event.entity instanceof StackAllocation && free(event.entity); break;
+				default: AssertUnreachable(event.type);
 			}
 		}
-		recurse(this.checkpointRef.events());
 
 		this.latentSize.resolve(size);
 	}
@@ -221,6 +290,7 @@ export class StackAllocation {
 	readonly align: number;
 	readonly size: number;
 	inUse: boolean;
+	tag?: string;
 
 	constructor(owner: StackCheckpoint, size: number, align: number = 1) {
 		this.latent = new LatentValue();
@@ -261,19 +331,71 @@ export class StackAllocation {
 
 
 
-/// <reference lib="deno.ns" />
-import { fail, assertNotEquals, assert, assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
-Deno.test(`Stack Allocator`, () => {
+Deno.test(`Simple Stack Allocation`, () => {
 	const stack = new StackAllocator();
 
 	const a = stack.allocate(1, 1);
 	const b = stack.allocate(4, 1);
 	const c = stack.allocate(2, 1);
 
+	a.free();
+	b.free();
+	c.free();
+
 	stack.resolve();
 
-	console.log(a.getOffset().get());
-	console.log(b.getOffset().get());
-	console.log(c.getOffset().get());
+	a.getOffset().get();
+	b.getOffset().get();
+	c.getOffset().get();
+});
+
+Deno.test(`Region Reuse`, () => {
+	const stack = new StackAllocator();
+
+	const a = stack.allocate(1, 1);
+
+	const b = stack.allocate(4, 1);
+	const c = stack.allocate(4, 1);
+	b.free();
+
+	const d = stack.allocate(2, 1);
+	a.free();
+	c.free();
+	d.free();
+
+	stack.resolve();
+
+	const ptrA = a.getOffset().get();
+	const ptrB = b.getOffset().get();
+	const ptrC = c.getOffset().get();
+	const ptrD = d.getOffset().get();
+	assert(ptrA < ptrB);
+	assert(ptrB < ptrC);
+	assert(ptrB == ptrD);
+});
+
+Deno.test(`Nested Stack Allocation`, () => {
+	const stack = new StackAllocator();
+
+	const a = stack.allocate(1, 1);
+
+	const check = stack.checkpoint();
+	const b = stack.allocate(4, 1);
+	b.free();
+	check.rewind();
+	check.restore();
+
+	const c = stack.allocate(2, 1);
+	a.free();
+	c.free();
+
+	stack.resolve();
+
+	const ptrA = a.getOffset().get();
+	const ptrB = b.getOffset().get();
+	const ptrC = c.getOffset().get();
+	assert(ptrA < ptrB);
+	assert(ptrA < ptrC);
+	assert(ptrB == ptrC);
 });
