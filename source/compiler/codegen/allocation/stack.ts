@@ -24,7 +24,6 @@ class Region {
 	}
 }
 
-enum StackAlignment { front, none, back };
 enum StackEventType { allocation, free };
 class StackEvent {
 	type: StackEventType;
@@ -65,18 +64,24 @@ class StackCheckpoint {
 
 	free(alloc: StackAllocation) {
 		const index = this.local.findIndex(l => l === alloc);
-		if (index !== -1) this.local.splice(index, 1);
+		if (index === -1) throw new Error(`Attempting to free${alloc?.tag ? ` tag[${alloc?.tag}]` : ""} non-local allocation`);
 
 		this.timeline.push(new StackEvent(StackEventType.free, alloc));
+		this.local.splice(index, 1);
 	}
 
 	private bind(alloc: StackAllocation) {
 		this.timeline.push(new StackEvent(StackEventType.allocation, alloc));
 		this.local.push(alloc);
+		alloc._move(this);
 	}
 
 	hasAllocations() {
 		return this.local.length > 0;
+	}
+
+	getAllocationCount() {
+		return this.local.length;
 	}
 
 	rewind() {
@@ -90,9 +95,9 @@ class StackCheckpoint {
 
 				// Ignore the allocation of this in the timeline
 				// As it's been pushed up
-				for (let i=this.timeline.length; 0 <= i; i--) {
+				for (let i=this.timeline.length-1; 0 <= i; i--) {
 					if (this.timeline[i].entity === alloc) {
-						this.timeline[i].ignore =  true;
+						this.timeline[i].ignore = true;
 						break;
 					}
 				}
@@ -161,7 +166,9 @@ export class StackAllocator {
 
 	resolve() {
 		if (!this.checkpointRef) return;
-		if (this.checkpointRef.hasAllocations()) throw new Error(`Stack leak: Some stack values are still allocated after stack frame end`);
+		if (this.checkpointRef.hasAllocations()) throw new Error(
+			`Stack leak: ${this.checkpointRef.getAllocationCount()} stack values are still allocated after stack frame end`
+		);
 
 		const table: Region[] = [];
 		let offset = 0;
@@ -182,8 +189,8 @@ export class StackAllocator {
 				const head = AlignUpInteger(region.head, alloc.align);
 				const paddingFront = head - region.head;
 
-				const tail  = AlignDownInteger(region.tail-alloc.size, alloc.align);
-				const paddingBack  = (region.tail-alloc.size) - tail;
+				const tail = AlignDownInteger(region.tail-alloc.size, alloc.align);
+				const paddingBack = (region.tail-alloc.size) - tail;
 
 				// Won't fit in chunk
 				const padding = Math.min(paddingFront, paddingBack);
@@ -290,6 +297,8 @@ export class StackAllocation {
 	readonly align: number;
 	readonly size: number;
 	inUse: boolean;
+
+	// for debug purposes
 	tag?: string;
 
 	constructor(owner: StackCheckpoint, size: number, align: number = 1) {
@@ -311,6 +320,9 @@ export class StackAllocation {
 			: this.latent;
 	}
 
+	_move(to: StackCheckpoint) {
+		this.owner = to;
+	}
 	free(): void {
 		if (this.alias) throw new Error("Cannot free an aliased allocation, please free the primary");
 
@@ -335,9 +347,9 @@ export class StackAllocation {
 Deno.test(`Simple Stack Allocation`, () => {
 	const stack = new StackAllocator();
 
-	const a = stack.allocate(1, 1);
-	const b = stack.allocate(4, 1);
-	const c = stack.allocate(2, 1);
+	const a = stack.allocate(1, 1); a.tag = "A";
+	const b = stack.allocate(4, 1); b.tag = "B";
+	const c = stack.allocate(2, 1); c.tag = "C";
 
 	a.free();
 	b.free();
@@ -353,13 +365,13 @@ Deno.test(`Simple Stack Allocation`, () => {
 Deno.test(`Region Reuse`, () => {
 	const stack = new StackAllocator();
 
-	const a = stack.allocate(1, 1);
+	const a = stack.allocate(1, 1); a.tag = "A";
 
-	const b = stack.allocate(4, 1);
-	const c = stack.allocate(4, 1);
+	const b = stack.allocate(4, 1); b.tag = "B";
+	const c = stack.allocate(4, 1); c.tag = "C";
 	b.free();
 
-	const d = stack.allocate(2, 1);
+	const d = stack.allocate(2, 1); d.tag = "D";
 	a.free();
 	c.free();
 	d.free();
@@ -378,15 +390,15 @@ Deno.test(`Region Reuse`, () => {
 Deno.test(`Nested Stack Allocation`, () => {
 	const stack = new StackAllocator();
 
-	const a = stack.allocate(1, 1);
+	const a = stack.allocate(1, 1); a.tag = "A";
 
 	const check = stack.checkpoint();
-	const b = stack.allocate(4, 1);
+	const b = stack.allocate(4, 1); b.tag = "B";
 	b.free();
 	check.rewind();
 	check.restore();
 
-	const c = stack.allocate(2, 1);
+	const c = stack.allocate(2, 1); c.tag = "C";
 	a.free();
 	c.free();
 
@@ -398,4 +410,42 @@ Deno.test(`Nested Stack Allocation`, () => {
 	assert(ptrA < ptrB);
 	assert(ptrA < ptrC);
 	assert(ptrB == ptrC);
+});
+
+Deno.test(`Branch Merging`, () => {
+	const stack = new StackAllocator();
+
+	const a = stack.allocate(1, 1); a.tag = "A";
+
+	// if {
+		const check = stack.checkpoint();
+		const b = stack.allocate(4, 1); b.tag = "B";
+		const c = stack.allocate(4, 1); c.tag = "C";
+		b.free();
+		check.rewind();
+	// } else {
+		const d = stack.allocate(4, 1); d.tag = "D";
+		d.makeAlias(c);
+		check.rewind();
+	// }
+	check.restore();
+
+	const e = stack.allocate(2, 1); e.tag = "E";
+	a.free();
+	e.free();
+	c.free();
+
+	stack.resolve();
+
+	const ptrA = a.getOffset().get();
+	const ptrB = b.getOffset().get();
+	const ptrC = c.getOffset().get();
+	const ptrD = d.getOffset().get();
+	const ptrE = e.getOffset().get();
+
+	assert(ptrA < ptrB);
+	assert(ptrB > ptrC);
+	assert(ptrC == ptrD);
+	assert(ptrC < ptrE);
+	assert(ptrA < ptrE);
 });
