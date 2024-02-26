@@ -116,6 +116,9 @@ export class StructVariable {
 			? register.allocate(u32.bitcode)
 			: register;
 
+		// Ensure the type is actually linked
+		type.link();
+
 		this.lastDefined = ref;
 	}
 

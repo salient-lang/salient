@@ -6,6 +6,7 @@ export type SolidType = Intrinsic | Structure;
 
 export function IsSolidType(a: Namespace): a is SolidType {
 	if (a instanceof CompositeType) return true;
+	if (a instanceof Structure) return true;
 	if (a instanceof Intrinsic) return true;
 
 	return false;

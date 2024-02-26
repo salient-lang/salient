@@ -3,11 +3,13 @@ import * as Types from "~/wasm/type.ts";
 export class Intrinsic {
 	bitcode: number;
 	name: string;
+	align: number;
 	size: number;
 
 	constructor(name: string, bitcode: number, size: number) {
 		this.name = name;
 		this.bitcode = bitcode;
+		this.align = size;
 		this.size = size;
 	}
 
