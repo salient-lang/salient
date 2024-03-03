@@ -1,8 +1,10 @@
+import { assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
+
 import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "~/bnf/syntax.d.ts";
 import type { ReferenceRange } from "~/bnf/shared.d.ts";
 import { SourceView } from "~/parser.ts";
-export type FlatAccess = (Term_Name | Term_Access_static | Term_Access_dynamic | Term_Access_comp)[];
 
+export type FlatAccess = (Term_Name | Term_Access_static | Term_Access_dynamic | Term_Access_comp)[];
 
 export function FlattenAccess(syntax: Term_Access): FlatAccess {
 	return [
@@ -42,11 +44,8 @@ export type SourceMap = {
 }
 
 export function Panic(x: string, source?: SourceMap): never {
-	if (source) {
-		console.error(x + SourceView(source.path, source.name, source.ref));
-	} else {
-		console.error(x);
-	}
+	if (source) console.error(x + SourceView(source.path, source.name, source.ref));
+	else        console.error(x);
 	Deno.exit(1);
 }
 
@@ -78,9 +77,19 @@ export class LatentValue<T> {
 }
 
 export function AlignUpInteger(x: number, multiple: number) {
-	return Math.ceil(x / multiple) * multiple;
+	assert(multiple !== 0, "Cannot align by zero");
+
+	const remainder = x % multiple;
+	return remainder !== 0
+		? x + (multiple - remainder)
+		: x;
 }
 
 export function AlignDownInteger(x: number, multiple: number) {
-	return Math.floor(x / multiple) * multiple;
+	assert(multiple !== 0, "Cannot align by zero");
+
+	const remainder = x % multiple;
+	return remainder !== 0
+		? x - remainder
+		: x;
 }
