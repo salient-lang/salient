@@ -21,14 +21,15 @@ export type OperandType = Intrinsic | Namespace | VirtualType;
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
 	const prefix  = syntax.value[0].value[0];
 	const postfix = syntax.value[2].value;
-	const val = syntax.value[1];
+	const val = syntax.value[1].value[0];
 	let res: OperandType;
 	switch (val.type) {
-		case "constant":       res = CompileConstant(ctx, val, expect); break;
-		case "expr_brackets":  res = CompileBrackets(ctx, val, expect); break;
-		case "block":          res = CompileBlock(ctx, val, expect);    break;
-		case "name":           res = CompileName(ctx, val, expect);     break;
-		case "if":             res = CompileIf(ctx, val, expect);       break;
+		case "container":      res = CompileContainer(ctx, val, expect); break;
+		case "constant":       res = CompileConstant(ctx, val, expect);  break;
+		case "expr_brackets":  res = CompileBrackets(ctx, val, expect);  break;
+		case "block":          res = CompileBlock(ctx, val, expect);     break;
+		case "name":           res = CompileName(ctx, val);              break;
+		case "if":             res = CompileIf(ctx, val, expect);        break;
 		default: AssertUnreachable(val);
 	}
 
@@ -38,11 +39,18 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	return res;
 }
 
+function CompileContainer(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
+	Panic(
+		`${colors.red("Error")}: Unimplemented container parsing\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+	});
+}
+
 function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: SolidType) {
 	return CompileExpr(ctx, syntax.value[0], expect);
 }
 
-function CompileName(ctx: Context, syntax: Syntax.Term_Name, expect?: SolidType) {
+function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 	const name = syntax.value[0].value;
 	const variable = ctx.scope.getVariable(name, true);
 	if (!variable) {

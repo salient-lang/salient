@@ -639,6 +639,94 @@ export declare function Parse_Struct_spread (i: string, refMapping?: boolean): _
 	isPartial: boolean
 }
 
+export type Term_Container = {
+	type: 'container',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		{ type: '(...)?', value: [] | [{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Container_item,
+		{ type: '(...)*', value: Array<{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Container_item
+	]
+}>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}
+export declare function Parse_Container (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Container,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Container_item = {
+	type: 'container_item',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Container_map | Term_Container_value)
+	]
+}
+export declare function Parse_Container_item (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Container_item,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Container_map = {
+	type: 'container_map',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Name,
+		Term_Expr
+	]
+}
+export declare function Parse_Container_map (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Container_map,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Container_value = {
+	type: 'container_value',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr
+	]
+}
+export declare function Parse_Container_value (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Container_value,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
 export type Term_Function = {
 	type: 'function',
 	start: number,
@@ -991,12 +1079,29 @@ export type Term_Expr_arg = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		{ type: '(...)?', value: [] | [Term_Expr_prefix], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		(Term_Constant | Term_Expr_brackets | Term_If | Term_Name | Term_Block),
+		Term_Expr_val,
 		{ type: '(...)*', value: Array<Term_Expr_postfix>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_arg (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Expr_arg,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Expr_val = {
+	type: 'expr_val',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Constant | Term_Expr_brackets | Term_Block | Term_Container | Term_If | Term_Name)
+	]
+}
+export declare function Parse_Expr_val (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Expr_val,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

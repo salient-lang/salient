@@ -58,8 +58,7 @@ export class LatentValue<T> {
 	}
 
 	get () {
-		if (this.value === null)
-			throw new Error("Attempting to read latent value before it's been resolved");
+		if (this.value === null) throw new Error("Attempting to read latent value before it's been resolved");
 
 		return this.value;
 	}
@@ -73,6 +72,25 @@ export class LatentValue<T> {
 			throw new Error("Attempt to re-resolve already resolved latent value");
 
 		this.value = val;
+	}
+}
+
+export class LatentOffset {
+	private base: LatentValue<number>;
+	private offset: number;
+
+	constructor(base: LatentValue<number> | LatentOffset, offset: number) {
+		if (base instanceof LatentOffset) {
+			this.offset = base.offset + offset;
+			this.base = base.base;
+		} else {
+			this.offset = offset;
+			this.base = base;
+		}
+	}
+
+	get () {
+		return this.base.get() + this.offset;
 	}
 }
 

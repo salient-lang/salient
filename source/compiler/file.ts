@@ -13,6 +13,17 @@ import Import from "~/compiler/import.ts";
 
 export type Namespace = Function | Import | Global | Structure | Intrinsic ;
 
+// deno-lint-ignore no-explicit-any
+export function IsNamespace(val: any): val is Namespace {
+	if (val instanceof Function) return true;
+	if (val instanceof Global) return true;
+	if (val instanceof Import) return true;
+	if (val instanceof Intrinsic) return true;
+	if (val instanceof Structure) return true;
+
+	return false;
+}
+
 export class File {
 	owner: Package;
 	name: string;

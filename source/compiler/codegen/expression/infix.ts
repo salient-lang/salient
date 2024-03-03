@@ -4,13 +4,16 @@ import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from 
 import { OperandType, CompileArg } from "~/compiler/codegen/expression/operand.ts";
 import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
 import { ReferenceRange } from "~/parser.ts";
-import { SolidType } from "~/compiler/codegen/expression/type.ts";
+import { IsSolidType } from "~/compiler/codegen/expression/type.ts";
 import { Instruction } from "~/wasm/index.ts";
+import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType) {
+	if (op === "as") return CompileAs(ctx, lhs, rhs, ref);
+
 	const a = CompilePrecedence(ctx, lhs, expect);
 	if (!(a instanceof Intrinsic)) Panic(
 		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
@@ -51,6 +54,24 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType): OperandType {
 	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect);
 	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect);
+}
+
+
+
+function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree, ref: ReferenceRange): OperandType {
+	const goal = CompilePrecedence(ctx, rhs);
+	if (!IsSolidType(goal)) Panic(
+		`${colors.red("Error")}: Cannot type coerce to non-solid type\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
+	});
+
+	const a = CompilePrecedence(ctx, lhs, goal);
+	if (a !== goal) Panic(
+		`${colors.red("Error")}: Type coerce is currently unimplemented\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
+	});
+
+	return a;
 }
 
 

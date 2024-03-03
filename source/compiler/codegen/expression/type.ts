@@ -1,13 +1,13 @@
 import Structure from "~/compiler/structure.ts";
 import { Intrinsic } from "~/compiler/intrinsic.ts";
-import { Namespace } from "~/compiler/file.ts";
 
 export type SolidType = Intrinsic | Structure;
 
-export function IsSolidType(a: Namespace): a is SolidType {
+// deno-lint-ignore no-explicit-any
+export function IsSolidType(a: any): a is SolidType {
 	if (a instanceof CompositeType) return true;
-	if (a instanceof Structure) return true;
 	if (a instanceof Intrinsic) return true;
+	if (a instanceof Structure) return true;
 
 	return false;
 }

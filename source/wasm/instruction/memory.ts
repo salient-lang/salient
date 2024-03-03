@@ -1,6 +1,7 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
 import { EncodeU32 } from "~/wasm/type.ts";
 import { Byte } from "~/helper.ts";
+import { LatentOffset } from "~/helper.ts";
 
 
 export enum Type {
@@ -34,7 +35,7 @@ export enum Type {
 
 export class MemoryRegister {
 	type   : Type;
-	offset : number;
+	offset : number | LatentOffset;
 	align  : number;
 
 	constructor(type: Type, offset: number, align: number) {
@@ -47,7 +48,11 @@ export class MemoryRegister {
 		return [
 			this.type,
 			...EncodeU32(this.align),
-			...EncodeU32(this.offset),
+			...EncodeU32(
+				this.offset instanceof LatentOffset
+					? this.offset.get()
+					: this.offset
+			),
 		];
 	}
 }
