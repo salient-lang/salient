@@ -192,6 +192,11 @@ export default class Structure {
 		this.linked = true;
 	}
 
+	get(name: string) {
+		this.link(); // ensure struct is linked
+		return this.attributes.find(x => x.name == name);
+	}
+
 	declarationView(): string {
 		return SourceView(this.owner.path, this.owner.name, this.ast.ref);
 	}

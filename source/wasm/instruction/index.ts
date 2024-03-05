@@ -50,8 +50,22 @@ const shared_NoOp = new NoOp();
 const wrapper = {
 	const: constFuncs,
 	...varFuncs,
-	...memFuncs,
-	...numFuncs,
+	i32: {
+		...memFuncs.i32,
+		...numFuncs.i32,
+	},
+	i64: {
+		...memFuncs.i64,
+		...numFuncs.i32,
+	},
+	f32: {
+		...numFuncs.f32,
+		...memFuncs.f32,
+	},
+	f64: {
+		...numFuncs.f64,
+		...memFuncs.f64,
+	},
 
 	unreachable: () => shared_Unreachable,
 	return     : () => shared_Return,

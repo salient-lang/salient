@@ -12,6 +12,12 @@ export function IsSolidType(a: any): a is SolidType {
 	return false;
 }
 
+export function IsContainerType(a: any): boolean {
+	if (a instanceof Structure) return true;
+
+	return false;
+}
+
 export class CompositeType {
 	type: Structure
 

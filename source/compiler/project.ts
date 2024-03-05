@@ -11,6 +11,8 @@ export default class Project {
 		this.module = new Module();
 		this.packages = [];
 		this.failed = false;
+
+		this.module.addMemory(0, 1);
 	}
 
 	markFailure() {

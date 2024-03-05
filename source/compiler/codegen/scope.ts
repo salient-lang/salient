@@ -5,11 +5,13 @@ import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { TypeSystem } from "~/compiler/codegen/variable.ts"
 import { Function } from "~/wasm/function.ts";
 import { Variable } from "~/compiler/codegen/variable.ts";
+import { StackAllocator } from "~/compiler/codegen/allocation/stack.ts";
 
 export class Scope {
 	_parent: Scope | null;
 	_localRegs: number;
 	register: RegisterAllocator;
+	stack:    StackAllocator;
 	vars: { [key: string]: Variable };
 
 	constructor(ctx: Function | Scope) {
@@ -23,8 +25,9 @@ export class Scope {
 			this.register = new RegisterAllocator(ctx);
 		}
 
-		this.vars = {};
 		this._localRegs = 0;
+		this.stack = new StackAllocator();
+		this.vars = {};
 	}
 
 	registerArgument(name: string, type: SolidType, ref: ReferenceRange) {
@@ -79,7 +82,6 @@ export class Scope {
 	cleanup() {
 		for (const name in this.vars) {
 			if (!this.vars[name].isLocal) continue;
-
 			this.vars[name].register.free();
 		}
 	}

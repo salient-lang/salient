@@ -130,10 +130,16 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
 	)
-	if (!(resolveType instanceof Intrinsic)) Panic(
-		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
-	)
+
+	if (!(resolveType instanceof Intrinsic)) {
+		// TODO
+		// Panic(
+		// 	`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
+		// 	{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
+		// )
+
+		return;
+	}
 
 	const variable = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
 	if (!variable)
@@ -199,6 +205,8 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 
 	CompileExpr(ctx, value);
 	ctx.scope.cleanup();
+	console.log(ctx.scope.stack);
+	ctx.scope.stack.resolve();
 	ctx.block.push(Instruction.return());
 	ctx.done = true;
 }
