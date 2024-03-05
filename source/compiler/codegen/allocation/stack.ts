@@ -174,13 +174,15 @@ export class StackAllocator {
 		let offset = 0;
 		let size = 0;
 
-		function allocate(alloc: StackAllocation) {
+		function allocate(alloc: StackAllocation): void {
 			// Already allocated, likely due to stack promotion
 			if (alloc.inUse) throw new Error("Double allocation on stack allocation");
+			if (alloc.isAlias()) return;
+
 			alloc.inUse = true;
 
 			// short circuit
-			if (alloc.size == 0 || alloc.isAlias()) return alloc.getOffset().resolve(offset);
+			if (alloc.size == 0) return alloc.getOffset().resolve(offset);
 
 			// Look for the first available region
 			for (let i=0; i<table.length; i++) {
@@ -237,11 +239,12 @@ export class StackAllocator {
 
 		}
 
-		function free(alloc: StackAllocation) {
+		function free(alloc: StackAllocation): void {
 			if (!alloc.inUse) throw new Error("Double free on stack allocation");
-			alloc.inUse = false;
+			if (alloc.isAlias()) return;
 
-			if (alloc.size == 0 || alloc.isAlias()) return offset;
+			alloc.inUse = false;
+			if (alloc.size == 0) return;
 
 			const head = alloc.getOffset().get();
 			const tail = head + alloc.size;
