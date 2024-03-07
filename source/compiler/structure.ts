@@ -194,7 +194,12 @@ export default class Structure {
 
 	get(name: string) {
 		this.link(); // ensure struct is linked
-		return this.attributes.find(x => x.name == name);
+		const out = this.attributes.find(x => x.name == name);
+		return out;
+	}
+
+	getTypeName() {
+		return this.name;
 	}
 
 	declarationView(): string {

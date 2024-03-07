@@ -5,14 +5,14 @@ import { Byte } from "~/helper.ts";
 
 
 export class GlobalRegister {
-	index: number;
+	idx: number;
 	type: Intrinsic;
 	mutable: boolean;
 	expr: Constant;
 
 	constructor(type: Intrinsic, mutable: boolean, expr: Constant, index: number) {
 		this.type = type;
-		this.index = index;
+		this.idx = index;
 		this.mutable = mutable;
 		this.expr = expr;
 	}

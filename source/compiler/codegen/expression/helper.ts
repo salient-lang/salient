@@ -1,12 +1,12 @@
 import { Instruction, Type } from "~/wasm/index.ts";
 import { LatentOffset } from "~/helper.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/helper.ts";
 
 export function Store(ctx: Context, type: SolidType, offset: number | LatentOffset) {
-	if (!(type instanceof Intrinsic)) Panic("Unimplemented");
+	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
 
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.store(offset, 1)); break;
@@ -22,7 +22,7 @@ export function Store(ctx: Context, type: SolidType, offset: number | LatentOffs
 
 
 export function Load(ctx: Context, type: SolidType, offset: number | LatentOffset) {
-	if (!(type instanceof Intrinsic)) Panic("Unimplemented");
+	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
 
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.load(offset, 1)); break;

@@ -4,7 +4,7 @@ import type { Term_Access, Term_Function } from "~/bnf/syntax.d.ts";
 import type { File, Namespace } from "./file.ts";
 
 import { ReferenceRange, SourceView } from "~/parser.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
@@ -13,10 +13,10 @@ import { Panic } from "~/helper.ts";
 
 class Argument {
 	name: string;
-	type: Intrinsic;
+	type: IntrinsicType;
 	ref: ReferenceRange;
 
-	constructor(name: string, type: Intrinsic, ref: ReferenceRange) {
+	constructor(name: string, type: IntrinsicType, ref: ReferenceRange) {
 		this.name = name;
 		this.type = type;
 		this.ref  = ref;
@@ -35,7 +35,7 @@ export default class Function {
 	isLinked:   boolean;
 
 	arguments: Argument[];
-	returns:   Intrinsic[];
+	returns:   IntrinsicType[];
 
 	constructor(owner: File, ast: Term_Function) {
 		this.owner = owner;
@@ -53,6 +53,10 @@ export default class Function {
 
 	getFile() {
 		return this.owner;
+	}
+
+	getTypeName() {
+		return "function";
 	}
 
 	declarationView(): string {
@@ -138,12 +142,12 @@ export default class Function {
 
 
 function LinkTypes(scope: File, syntax: Term_Access[]) {
-	const out: Intrinsic[] = [];
+	const out: IntrinsicType[] = [];
 
 	let failed = false;
 	for (const arg of syntax) {
 		const res = scope.get(arg);
-		if (res === null || !(res instanceof Intrinsic)) {
+		if (res === null || !(res instanceof IntrinsicType)) {
 			// Not Panic-ing, because we may want to display multiple failures at once
 			console.error(
 				`${colors.red("Error")}: Cannot find type\n`

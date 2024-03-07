@@ -2,24 +2,17 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { IsContainerType, LinearType, SolidType, OperandType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
+import { AssertUnreachable, Panic, LatentOffset } from "~/helper.ts";
+import { IntrinsicType, IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
-import { IsContainerType } from "~/compiler/codegen/expression/type.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
-import { Intrinsic, bool } from "~/compiler/intrinsic.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
-import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
-import { SolidType } from "~/compiler/codegen/expression/type.ts";
-import { Namespace } from "~/compiler/file.ts";
+import { IsNamespace } from "~/compiler/file.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Store } from "~/compiler/codegen/expression/helper.ts";
-import { IsSolidType } from "~/compiler/codegen/expression/type.ts";
-import { LatentOffset } from "~/helper.ts";
-
-
-export type OperandType = Intrinsic | Namespace | VirtualType;
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
@@ -124,18 +117,24 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 	});
 
 	ctx.block.push(Instruction.local.get(variable.register.ref));
-	return variable.type;
+	return variable.type instanceof IntrinsicType
+		? variable.type.value
+		: variable.type;
 }
 
 function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {
 	const cond = CompileExpr(ctx, syntax.value[0]);
-	if (cond !== bool) Panic(
-		`${colors.red("Error")}: Invalid comparison type ${cond.name}\n`,
+	if (cond instanceof LinearType && cond.type !== bool.value) Panic(
+		`${colors.red("Error")}: Invalid comparison type ${cond.type.getTypeName()}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
 	);
 
 	const scopeIf = ctx.child();
 	const typeIf = CompileExpr(scopeIf, syntax.value[1], expect);
+	if (IsNamespace(typeIf)) Panic(
+		`${colors.red("Error")}: Unsupported namespace yielded from if block\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
 	scopeIf.mergeBlock();
 
 	let typeElse:  OperandType | null = null;
@@ -143,21 +142,26 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {
 	if (syntax.value[2].value[0]) {
 		scopeElse = ctx.child();
 		typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
+
+		if (IsNamespace(typeElse)) Panic(
+			`${colors.red("Error")}: Unsupported namespace yielded from else block\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		);
 		scopeElse.mergeBlock();
 
 		if (typeIf != typeElse) Panic(
-			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.name} != ${typeElse.name}\n`,
+			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.getTypeName()} != ${typeElse.getTypeName()}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
 	}
 
-	if (!(typeIf instanceof Intrinsic || typeIf instanceof VirtualType || typeIf instanceof Structure)) Panic(
-		`${colors.red("Error")}: Invalid output type from if expression ${typeIf.name}\n`,
+	let typeIdx = 0x40;
+	if (typeIf instanceof IntrinsicValue) typeIdx = ctx.file.getModule().makeType([], [typeIf.type.bitcode]);
+	else if (typeIf instanceof VirtualType) typeIdx = 0x40;
+	else if (typeIf instanceof LinearType) Panic(
+		`${colors.red("Error")}: Unsupported structure raising\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
-
-	let typeIdx = 0x40;
-	if (typeIf instanceof Intrinsic) typeIdx = ctx.file.getModule().makeType([], [typeIf.bitcode]);
 
 	ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
 	return typeIf;

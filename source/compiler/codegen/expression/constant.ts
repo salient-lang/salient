@@ -1,14 +1,15 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
-import { Intrinsic, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
+import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 
-export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType) {
-	if (!(expect instanceof Intrinsic)) expect = undefined;
+export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType): IntrinsicValue {
+	if (!(expect instanceof IntrinsicType)) expect = undefined;
 	const val = syntax.value[0];
 	switch (val.type) {
 		case "boolean": return CompileBool(ctx, val);
@@ -28,10 +29,10 @@ export function CompileBool(ctx: Context, syntax: Syntax.Term_Boolean) {
 	}
 
 	ctx.block.push(Instruction.const.i32(num));
-	return bool;
+	return bool.value;
 }
 
-function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsic) {
+function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: IntrinsicType) {
 	const num = Number(syntax.value[0].value);
 
 	if (isNaN(num))
@@ -54,7 +55,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 			});
 
-			return u64
+			return u64.value;
 		}
 
 		if (num > 2**63) Panic(`${colors.red("Error")}: Value too big for size\n`, {
@@ -65,7 +66,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		return i64;
+		return i64.value;
 	}
 
 	if (size === 2) {
@@ -75,7 +76,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 			});
 
-			return u16
+			return u16.value;
 		}
 
 		if (num > 2**15) Panic(`${colors.red("Error")}: Value too big for size\n`, {
@@ -86,7 +87,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		return i16;
+		return i16.value;
 	}
 
 	if (size === 1) {
@@ -96,7 +97,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 			});
 
-			return u8
+			return u8.value;
 		}
 
 		if (num > 2**7) Panic(`${colors.red("Error")}: Value too big for size\n`, {
@@ -107,7 +108,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		return i8;
+		return i8.value;
 	}
 
 	ctx.block.push(Instruction.const.i32(num));
@@ -116,7 +117,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
-		return u32
+		return u32.value;
 	}
 
 	if (num > 2**31) Panic(`${colors.red("Error")}: Value too big for size\n`, {
@@ -126,22 +127,23 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (num < -(2**31)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 	});
-	return i32;
+
+	return i32.value;
 }
 
-function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsic) {
+function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: IntrinsicType) {
 	const num = Number(syntax.value[0].value);
 
-	if (isNaN(num))
-		Panic(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+	if (isNaN(num)) Panic(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+	});
 
 	if (expect === f64) {
 		ctx.block.push(Instruction.const.f64(num));
-		return f64;
+		return f64.value;
 	}
 
 	ctx.block.push(Instruction.const.f32(num));
-	return f32;
+
+	return f32.value;
 }

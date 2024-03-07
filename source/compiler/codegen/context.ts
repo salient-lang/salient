@@ -6,10 +6,10 @@ import type { Scope } from "./scope.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
-import { Intrinsic, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
-import { OperandType } from "~/compiler/codegen/expression/operand.ts";
+import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { none, never } from "~/compiler/intrinsic.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
@@ -86,7 +86,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	if (type) {
 		typeRef = ctx.file.get(type.value[0]);
 
-		if (typeRef === null || !(typeRef instanceof Intrinsic) && !(typeRef instanceof Structure))
+		if (typeRef === null || !(typeRef instanceof IntrinsicType) && !(typeRef instanceof Structure))
 			Panic(`${colors.red("Error")}: Cannot find type\n`, {
 				path: ctx.file.path,
 				name: ctx.file.name,
@@ -127,11 +127,11 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 	if (typeRef && resolveType !== typeRef) Panic(
-		`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.name}\n`,
+		`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.getTypeName()}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
 	)
 
-	if (!(resolveType instanceof Intrinsic)) {
+	if (!(resolveType instanceof IntrinsicType)) {
 		// TODO
 		// Panic(
 		// 	`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
@@ -167,11 +167,11 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 
 	const resolveType = CompileExpr(ctx, value, variable.type);
 	if (resolveType !== variable.type) Panic(
-		`${colors.red("Error")}: type ${variable.name} != type ${resolveType.name}\n`,
+		`${colors.red("Error")}: type ${variable.name} != type ${resolveType.getTypeName()}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
-	if (!(resolveType instanceof Intrinsic)) Panic(
+	if (!(resolveType instanceof IntrinsicType)) Panic(
 		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	)

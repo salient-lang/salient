@@ -3,7 +3,7 @@
 import type Package from "./package.ts";
 import type { Term_Access, Term_Function, Term_Program, Term_Structure } from "~/bnf/syntax.d.ts";
 
-import { Intrinsic, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "~/compiler/intrinsic.ts";
 import { AssertUnreachable, FlatAccess, FlattenAccess } from "~/helper.ts";
 import { Parse } from "~/parser.ts";
 import Structure from "~/compiler/structure.ts";
@@ -11,14 +11,14 @@ import Function from "~/compiler/function.ts";
 import Global from "~/compiler/global.ts";
 import Import from "~/compiler/import.ts";
 
-export type Namespace = Function | Import | Global | Structure | Intrinsic ;
+export type Namespace = Function | Import | Global | Structure | IntrinsicType ;
 
 // deno-lint-ignore no-explicit-any
 export function IsNamespace(val: any): val is Namespace {
 	if (val instanceof Function) return true;
 	if (val instanceof Global) return true;
 	if (val instanceof Import) return true;
-	if (val instanceof Intrinsic) return true;
+	if (val instanceof IntrinsicType) return true;
 	if (val instanceof Structure) return true;
 
 	return false;

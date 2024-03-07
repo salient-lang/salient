@@ -1,16 +1,19 @@
-import Structure from "~/compiler/structure.ts";
-import { StackAllocation } from "~/compiler/codegen/allocation/stack.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
-import { Register } from "~/compiler/codegen/allocation/registers.ts";
-import { ReferenceRange } from "~/parser.ts";
 import { assert } from "https://deno.land/std@0.201.0/assert/assert.ts";
 
-export type SolidType = Intrinsic | Structure;
+import Structure from "~/compiler/structure.ts";
+import { IntrinsicValue, IntrinsicType, VirtualType } from "~/compiler/intrinsic.ts";
+import { StackAllocation } from "~/compiler/codegen/allocation/stack.ts";
+import { ReferenceRange } from "~/parser.ts";
+import { IsNamespace } from "~/compiler/file.ts";
+import { Namespace } from "~/compiler/file.ts";
+
+
+export type OperandType = LinearType | IntrinsicValue | Namespace | VirtualType;
+export type SolidType = IntrinsicType | Structure;
 
 // deno-lint-ignore no-explicit-any
 export function IsSolidType(a: any): a is SolidType {
-	if (a instanceof CompositeType) return true;
-	if (a instanceof Intrinsic) return true;
+	if (a instanceof IntrinsicType) return true;
 	if (a instanceof Structure) return true;
 
 	return false;
@@ -23,7 +26,7 @@ export function IsContainerType(a: any): boolean {
 	return false;
 }
 
-enum BasePointerType { global, local };
+export enum BasePointerType { global, local };
 export class BasePointer {
 	type: BasePointerType;
 	id: number;
@@ -45,29 +48,29 @@ export class LinearType {
 	private retain: boolean;
 
 	private attributes: Map<string, LinearType>;
-	readonly type: Intrinsic | Structure;
+	readonly type: Structure | IntrinsicValue;
 
-	readonly alloc?: Register | StackAllocation;
+	readonly alloc: StackAllocation;
 	readonly offset: number;
-	readonly base?: BasePointer;
+	readonly base: BasePointer;
 
-	// constructor(a: LinearType['type'], b: LinearType['alloc'], c: BasePointer | undefined)
-	// constructor(a: LinearType['type'], b: number, c: LinearType)
-	constructor(a: LinearType['type'], b: LinearType['alloc'] | number, c?: BasePointer | LinearType) {
-		if (c instanceof LinearType) {
-			assert(typeof b === "number", "should be number");
+	// constructor(type: LinearType['type'], alloc: LinearType['alloc'], base: BasePointer)
+	// constructor(type: LinearType['type'], parent: LinearType, offset: number)
+	constructor(a: LinearType['type'], b: StackAllocation | LinearType, c: BasePointer | number) {
+		if (b instanceof LinearType) {
+			assert(typeof c === "number", "should be number");
 
 			this.consumedAt = undefined;
 			this.composable = true;
 			this.retain = false;
 
-			this.parent = c;
-			this.type = c.type;
-			this.base = c.base;
-			this.alloc = c.alloc;
-			this.offset = c.offset + b;
+			this.parent = b;
+			this.type = b.type;
+			this.base = b.base;
+			this.alloc = b.alloc;
+			this.offset = b.offset + c;
 		} else {
-			assert(typeof b !== "number", "should be alloc");
+			assert(c instanceof BasePointer, "should be base pointer");
 
 			this.consumedAt = undefined;
 			this.composable = true;
@@ -82,12 +85,12 @@ export class LinearType {
 		this.attributes = new Map();
 	}
 
-	static make(a: LinearType['type'], b: LinearType['alloc'], c?: BasePointer) {
-		return new LinearType(a, b, c);
+	static make(type: LinearType['type'], alloc: LinearType['alloc'], base: BasePointer) {
+		return new LinearType(type, alloc, base);
 	}
 
 	static from(parent: LinearType, type: LinearType['type'], offset: number) {
-		return new LinearType(type, offset, parent);
+		return new LinearType(type, parent, offset);
 	}
 
 	private cascadeCompose() {
@@ -159,16 +162,25 @@ export class LinearType {
 		const member = this.type.get(name);
 		if (!member) return null;
 
-		const next = LinearType.from(this, member.type, member.offset);
+		const next = LinearType.from(
+			this,
+			member.type instanceof IntrinsicType ? member.type.value : member.type,
+			member.offset
+		);
 		this.attributes.set(name, next);
 		return next;
 	}
-}
 
-export class CompositeType {
-	type: Structure
+	getTypeName() {
+		return this.type.getTypeName();
+	}
 
-	constructor(type: Structure) {
-		this.type = type;
+	like(other: OperandType): boolean {
+		if (other instanceof LinearType) return this.type === other.type;
+		if (other instanceof IntrinsicValue) return this.type === other;
+		if (other instanceof IntrinsicType)  return this.type === other.value;
+		if (IsNamespace(other)) return this.type === other;
+
+		return false;
 	}
 }

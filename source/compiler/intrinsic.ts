@@ -1,20 +1,61 @@
 import * as Types from "~/wasm/type.ts";
+import { OperandType } from "~/compiler/codegen/expression/type.ts";
+import { LinearType } from "~/compiler/codegen/expression/type.ts";
 
-export class Intrinsic {
-	bitcode: number;
-	name: string;
-	align: number;
-	size: number;
+export class IntrinsicType {
+	readonly bitcode: number;
+	readonly name: string;
+	readonly align: number;
+	readonly size: number;
+
+	// Used to differentiate i8 the type, and i8 the value
+	readonly value: IntrinsicValue;
 
 	constructor(name: string, bitcode: number, size: number) {
 		this.name = name;
 		this.bitcode = bitcode;
 		this.align = size;
 		this.size = size;
+
+		this.value = new IntrinsicValue(this);
 	}
 
 	declarationView() {
 		return "0 | Native Intrinsic";
+	}
+
+	getTypeName() {
+		return this.name;
+	}
+
+	like (other: OperandType) {
+		if (other instanceof LinearType) return other.like(this);
+		if (other instanceof IntrinsicType) return this === other;
+		if (other instanceof IntrinsicValue) return this.value === other;
+		if (other instanceof VirtualType) return false;
+
+		return false;
+	}
+}
+
+export class IntrinsicValue {
+	type: IntrinsicType;
+
+	constructor(type: IntrinsicType) {
+		this.type = type;
+	}
+
+	getTypeName() {
+		return this.type.name;
+	}
+
+	like (other: OperandType) {
+		if (other instanceof LinearType) return other.like(this);
+		if (other instanceof IntrinsicType) return this.type === other;
+		if (other instanceof IntrinsicValue) return this === other;
+		if (other instanceof VirtualType) return false;
+
+		return false;
 	}
 }
 
@@ -25,24 +66,35 @@ export class VirtualType {
 		this.name = name;
 	}
 
+	getTypeName() {
+		return this.name;
+	}
+
 	declarationView() {
 		return "0 | Virtual Type";
+	}
+
+	like (other: OperandType) {
+		if (other instanceof LinearType) return other.like(this);
+		if (other instanceof VirtualType) return false;
+
+		return false;
 	}
 }
 
 
-export const bool = new Intrinsic("bool", Types.Intrinsic.i32, 1);
+export const bool = new IntrinsicType("bool", Types.Intrinsic.i32, 1);
 
-export const  u8 = new Intrinsic( "u8", Types.Intrinsic.i32, 1);
-export const  i8 = new Intrinsic( "i8", Types.Intrinsic.i32, 1);
-export const i16 = new Intrinsic("i16", Types.Intrinsic.i32, 2);
-export const u16 = new Intrinsic("u16", Types.Intrinsic.i32, 2);
-export const i32 = new Intrinsic("i32", Types.Intrinsic.i32, 4);
-export const u32 = new Intrinsic("u32", Types.Intrinsic.i32, 4);
-export const i64 = new Intrinsic("i64", Types.Intrinsic.i64, 8);
-export const u64 = new Intrinsic("u64", Types.Intrinsic.i64, 8);
-export const f32 = new Intrinsic("f32", Types.Intrinsic.f32, 4);
-export const f64 = new Intrinsic("f64", Types.Intrinsic.f64, 8);
+export const  u8 = new IntrinsicType( "u8", Types.Intrinsic.i32, 1);
+export const  i8 = new IntrinsicType( "i8", Types.Intrinsic.i32, 1);
+export const i16 = new IntrinsicType("i16", Types.Intrinsic.i32, 2);
+export const u16 = new IntrinsicType("u16", Types.Intrinsic.i32, 2);
+export const i32 = new IntrinsicType("i32", Types.Intrinsic.i32, 4);
+export const u32 = new IntrinsicType("u32", Types.Intrinsic.i32, 4);
+export const i64 = new IntrinsicType("i64", Types.Intrinsic.i64, 8);
+export const u64 = new IntrinsicType("u64", Types.Intrinsic.i64, 8);
+export const f32 = new IntrinsicType("f32", Types.Intrinsic.f32, 4);
+export const f64 = new IntrinsicType("f64", Types.Intrinsic.f64, 8);
 
 export const never = new VirtualType("never");
 export const none  = new VirtualType("none");

@@ -3,7 +3,7 @@ import { RegisterAllocator } from "./allocation/registers.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Register } from "./allocation/registers.ts";
 import { u32 } from "~/compiler/intrinsic.ts";
 
@@ -15,14 +15,14 @@ export enum TypeSystem {
 export type Variable = IntrinsicVariable | StructVariable;
 
 export function MakeVariable(name: string, type: SolidType, register: RegisterAllocator, isArg: boolean, ref: ReferenceRange) {
-	if (type instanceof Intrinsic) return new IntrinsicVariable(name, type, register, isArg, ref);
+	if (type instanceof IntrinsicType) return new IntrinsicVariable(name, type, register, isArg, ref);
 	if (type instanceof Structure) return new StructVariable(name, type, register, isArg, ref);
 	AssertUnreachable(type);
 }
 
 export class IntrinsicVariable {
 	name: string;
-	type: Intrinsic;
+	type: IntrinsicType;
 	storage: TypeSystem;
 	register: Register;
 
@@ -35,7 +35,7 @@ export class IntrinsicVariable {
 	modifiedAt: ReferenceRange;
 
 
-	constructor(name: string, type: Intrinsic, register: RegisterAllocator | Register, isArg: boolean, ref: ReferenceRange) {
+	constructor(name: string, type: IntrinsicType, register: RegisterAllocator | Register, isArg: boolean, ref: ReferenceRange) {
 		this.name = name;
 		this.type = type;
 		this.storage    = TypeSystem.Normal;
