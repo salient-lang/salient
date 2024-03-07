@@ -1,6 +1,3 @@
-/// <reference lib="deno.ns" />
-import { assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
-
 import type { Term_Expr, Term_Expr_arg, _Literal } from "~/bnf/syntax.d.ts";
 import { ReferenceRange } from "~/parser.ts";
 
@@ -21,7 +18,7 @@ const precedence = {
 	"||": 12,
 } as { [key: string]: number };
 
-function GetPrecedence (a: string, b: string) {
+export function GetPrecedence (a: string, b: string) {
 	const A = precedence[a];
 	const B = precedence[b];
 	if (A == undefined && B == undefined) {
@@ -101,9 +98,3 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 
 	return root;
 }
-
-Deno.test("Check precedence of two operators", () => {
-	assertEquals(GetPrecedence("+", "*"), 1);
-	assertEquals(GetPrecedence("+", "-"), 0);
-	assertEquals(GetPrecedence("*", "+"), -1);
-});
