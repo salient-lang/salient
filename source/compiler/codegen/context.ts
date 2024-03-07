@@ -205,7 +205,6 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 
 	CompileExpr(ctx, value);
 	ctx.scope.cleanup();
-	console.log(ctx.scope.stack);
 	ctx.scope.stack.resolve();
 	ctx.block.push(Instruction.return());
 	ctx.done = true;

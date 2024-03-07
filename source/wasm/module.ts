@@ -6,6 +6,7 @@ import { Intrinsic } from "~/wasm/type.ts";
 import { Function } from "~/wasm/function.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Byte } from "~/helper.ts";
+import { Constant } from "~/wasm/instruction/constant.ts";
 
 
 
@@ -14,6 +15,7 @@ export default class Module {
 	typeSect   : Section.Type;
 	importSect : Section.Import;
 	memorySect : Section.Memory;
+	globalSect : Section.Global;
 	exportSect : Section.Export;
 	dataSect   : Section.Data;
 
@@ -25,6 +27,7 @@ export default class Module {
 		this.typeSect   = new Section.Type();
 		this.importSect = new Section.Import();
 		this.memorySect = new Section.Memory();
+		this.globalSect = new Section.Global();
 		this.exportSect = new Section.Export();
 		this.dataSect   = new Section.Data();
 		this.entryFunc = null;
@@ -67,6 +70,10 @@ export default class Module {
 		return func;
 	}
 
+	registerGlobal(type: Intrinsic, mut: boolean, expr: Constant) {
+		return this.globalSect.bind(type, mut, expr);
+	}
+
 	bindFunction(func: Function) {
 		if (this.funcs.includes(func))
 			return;
@@ -103,7 +110,7 @@ export default class Module {
 		);
 		// table*    : tablesec
 		buffer.push(...this.memorySect.toBinary(0))  // mem*      : memsec
-		// global*   : globalsec
+		buffer.push(...this.globalSect.toBinary())   // global*   : globalsec
 		buffer.push(...this.exportSect.toBinary())   // export*   : exportsec
 
 		if (this.entryFunc) {
