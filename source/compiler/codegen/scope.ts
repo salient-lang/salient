@@ -1,11 +1,13 @@
-import { RegisterAllocator } from "./allocation/registers.ts";
-import { ReferenceRange } from "~/parser.ts";
-import { MakeVariable } from "~/compiler/codegen/variable.ts";
-import { SolidType } from "~/compiler/codegen/expression/type.ts";
-import { TypeSystem } from "~/compiler/codegen/variable.ts"
-import { Function } from "~/wasm/function.ts";
-import { Variable } from "~/compiler/codegen/variable.ts";
+import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+
+import { IntrinsicVariable, StructVariable, Variable } from "~/compiler/codegen/variable.ts";
+import { AssertUnreachable, Panic } from "~/helper.ts";
+import { RegisterAllocator } from "~/compiler/codegen/allocation/registers.ts";
 import { StackAllocator } from "~/compiler/codegen/allocation/stack.ts";
+import { IntrinsicValue } from "~/compiler/intrinsic.ts";
+import { ReferenceRange } from "~/parser.ts";
+import { LinearType } from "~/compiler/codegen/expression/type.ts";
+import { Function } from "~/wasm/function.ts";
 
 export class Scope {
 	_parent: Scope | null;
@@ -30,28 +32,39 @@ export class Scope {
 		this.vars = {};
 	}
 
-	registerArgument(name: string, type: SolidType, ref: ReferenceRange) {
-		this.vars[name] = MakeVariable(
-			name, type,
-			this.register,
-			true,
-			ref
-		);
+	registerArgument(name: string, type: IntrinsicValue | LinearType, ref: ReferenceRange) {
+		if (this.vars[name]) throw new Error(`Attempting to rebind variable ${name}`);
+
+		if (type instanceof IntrinsicValue) {
+			this.vars[name] = new IntrinsicVariable(
+				name, type.type,
+				this.register.allocate(type.type.bitcode, true),
+				ref
+			);
+			this.vars[name].markDefined();
+		} else if (type instanceof LinearType) {
+			Panic( `${colors.red("Error")}: Structs as arguments are currently unsupported\n` );
+			// this.vars[name] = new StructVariable(name, type);
+			// this.vars[name].markDefined();
+		} else AssertUnreachable(type);
 
 		this._localRegs = this.register._regs.length;
 
 		return this.vars[name];
 	}
 
-	registerVariable(name: string, type: SolidType, ref: ReferenceRange) {
-		if (this.vars[name]) return null;
+	registerVariable(name: string, type: IntrinsicValue | LinearType, ref: ReferenceRange) {
+		if (this.vars[name]) throw new Error(`Attempting to rebind variable ${name}`);
 
-		this.vars[name] = MakeVariable(
-			name, type,
-			this.register,
-			false,
-			ref
-		);
+		if (type instanceof IntrinsicValue) {
+			this.vars[name] = new IntrinsicVariable(
+				name, type.type,
+				this.register.allocate(type.type.bitcode, false),
+				ref
+			);
+		} else if (type instanceof LinearType) {
+			this.vars[name] = new StructVariable(name, type);
+		} else AssertUnreachable(type);
 
 		return this.vars[name];
 	}
@@ -66,7 +79,7 @@ export class Scope {
 			if (readOnly) return inherited;
 
 			// Don't both cloning if the value can't be consumed in this scope
-			if (inherited.storage === TypeSystem.Normal) return inherited;
+			if (inherited instanceof LinearType) return inherited;
 
 			this.vars[name] = inherited.clone();
 		}
@@ -74,15 +87,17 @@ export class Scope {
 		return null;
 	}
 
+	hasVariable(name: string) {
+		return !!this.vars[name];
+	}
+
 	child() {
 		return new Scope(this);
 	}
 
-
 	cleanup() {
 		for (const name in this.vars) {
-			if (!this.vars[name].isLocal) continue;
-			this.vars[name].register.free();
+			this.vars[name].cleanup();
 		}
 	}
 }

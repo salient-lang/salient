@@ -123,7 +123,7 @@ export default class Function {
 
 		const scope = new Scope(func);
 		for (const arg of this.arguments) {
-			scope.registerArgument(arg.name, arg.type, arg.ref)
+			scope.registerArgument(arg.name, arg.type.value, arg.ref)
 		}
 
 		const ctx = new Context(this.getFile(), scope, func.code);

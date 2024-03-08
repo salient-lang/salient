@@ -1,18 +1,18 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
-import Structure from "~/compiler/structure.ts";
-import { IsContainerType, LinearType, SolidType, OperandType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
-import { AssertUnreachable, Panic, LatentOffset } from "~/helper.ts";
-import { IntrinsicType, IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
+import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicVariable, StructVariable } from "~/compiler/codegen/variable.ts";
+import { IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
+import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
+import { AssertUnreachable, Panic } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
-import { Instruction } from "~/wasm/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
+import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import { Store } from "~/compiler/codegen/expression/helper.ts";
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
@@ -37,63 +37,14 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 }
 
 function CompileContainer(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
-	if (!expect) Panic(
-		`${colors.red("Error")}: Unsupported untyped container creation\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
-
-	if (!IsContainerType(expect)) Panic(
-		`${colors.red("Error")}: Expecting non-container type, unknown container resolution type\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
-
-	if (expect instanceof Structure) expect.link();
-	const alloc = ctx.scope.stack.allocate(expect.size, expect.align);
-
-	function* iterator() {
-		const base = syntax.value[0].value[0];
-		if (!base) return;
-
-		// first
-		yield base.value[0];
-
-		// comma chained
-		for (const next of base.value[1].value) yield next.value[0];
+	switch (syntax.value[0].value[0]?.value[0].value[0].type) {
+		case "container_map":   return StructBuilder(ctx, syntax, expect);
+		case "container_value": return ArrayBuilder(ctx, syntax, expect);
+		default: Panic(
+			`Unable to determine container type`, {
+			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+		});
 	}
-
-	for (const item of iterator()) {
-		const elm = item.value[0];
-		if (elm.type === "container_value") Panic(
-			`${colors.red("Error")}: Arrays are currently unsupported container types\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
-		});
-
-		const name = elm.value[0].value[0].value;
-		if (!(expect instanceof Structure)) Panic(
-			`${colors.red("Error")}: Cannot assign .${name} to an array\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
-		});
-
-		const attr = expect.get(name);
-		if (!attr) Panic(
-			`${colors.red("Error")}: Unknown attribute ${name} in struct ${expect.name}\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
-		});
-
-		ctx.block.push(Instruction.const.i32(0));
-		const expr = CompileExpr(ctx, elm.value[1], attr.type);
-		if (!IsSolidType(expr)) Panic(
-			`${colors.red("Error")}: Must be a solid type\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
-		});
-
-		Store(ctx, expr, new LatentOffset(alloc.getOffset(), attr.offset));
-	}
-
-	// TODO: Proper consumption and freeing of allocation
-	alloc.free();
-
-	return expect;
 }
 
 function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: SolidType) {
@@ -112,14 +63,18 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 		return found;
 	}
 
-	if (!variable.isDefined) Panic(`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
+	if (variable instanceof IntrinsicVariable) {
+		if (!variable.isDefined) Panic(
+			`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		);
 
-	ctx.block.push(Instruction.local.get(variable.register.ref));
-	return variable.type instanceof IntrinsicType
-		? variable.type.value
-		: variable.type;
+
+		ctx.block.push(Instruction.local.get(variable.register.ref));
+		return variable.type.value;
+	} else if (variable instanceof StructVariable) {
+		return variable.type;
+	} else AssertUnreachable(variable);
 }
 
 function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {

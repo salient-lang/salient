@@ -172,7 +172,14 @@ export class LinearType {
 	}
 
 	getTypeName() {
+		if (this.type instanceof Structure) return this.type.name;
+
 		return this.type.getTypeName();
+	}
+
+	getBaseType() {
+		if (this.type instanceof Structure) return this.type;
+		return this.type.type;
 	}
 
 	like(other: OperandType): boolean {

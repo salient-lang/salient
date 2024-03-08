@@ -25,7 +25,7 @@ export class IntrinsicType {
 	}
 
 	getTypeName() {
-		return this.name;
+		return "type " + this.name;
 	}
 
 	like (other: OperandType) {

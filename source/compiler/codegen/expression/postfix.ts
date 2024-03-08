@@ -7,7 +7,6 @@ import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
-import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 
 

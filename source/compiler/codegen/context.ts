@@ -6,13 +6,17 @@ import type { Scope } from "./scope.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
-import { IntrinsicType, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, IntrinsicValue, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
 import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { none, never } from "~/compiler/intrinsic.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
+import { LinearType } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicVariable } from "~/compiler/codegen/variable.ts";
+import { StructVariable } from "~/compiler/codegen/variable.ts";
+import { Variable } from "~/compiler/codegen/variable.ts";
 
 export class Context {
 	file: File;
@@ -75,82 +79,78 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const type = syntax.value[1].value[0];
 	const expr = syntax.value[2].value[0];
 
-	if (banned.namespaces.includes(name))
-		Panic(`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`, {
-			path: ctx.file.path,
-			name: ctx.file.name,
-			ref: syntax.value[0].value[0].ref
-		})
+	if (banned.namespaces.includes(name)) Panic(
+		`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].value[0].ref }
+	)
+
+	if (ctx.scope.hasVariable(name)) Panic(`${colors.red("Error")}: Variable ${name} is already declared\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
 
 	let typeRef: Namespace | null = null;
 	if (type) {
 		typeRef = ctx.file.get(type.value[0]);
 
-		if (typeRef === null || !(typeRef instanceof IntrinsicType) && !(typeRef instanceof Structure))
-			Panic(`${colors.red("Error")}: Cannot find type\n`, {
-				path: ctx.file.path,
-				name: ctx.file.name,
-				ref: type.ref
-			})
+		if (typeRef === null || !(typeRef instanceof IntrinsicType) && !(typeRef instanceof Structure)) Panic(
+			`${colors.red("Error")}: Cannot find type\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
+		)
 
-		if (typeRef === i8 || typeRef === u8 || typeRef === i16 || typeRef === u16)
-			Panic(`${colors.red("Error")}: Cannot explicitly use virtual integer types\n`, {
-				path: ctx.file.path,
-				name: ctx.file.name,
-				ref: type.ref
-			})
+		if (typeRef === i8 || typeRef === u8 || typeRef === i16 || typeRef === u16) Panic(
+			`${colors.red("Error")}: Cannot explicitly use virtual integer types\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
+		)
 	}
 
 	if (!expr) {
-		if (!typeRef)
-			Panic(`${colors.red("Error")}: Declared variables must have an explicit or an inferred type\n`, {
-				path: ctx.file.path,
-				name: ctx.file.name,
-				ref: syntax.ref
-			})
+		if (!typeRef) Panic(
+			`${colors.red("Error")}: Declared variables must have an explicit or an inferred type\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		)
 
-		const variable = ctx.scope.registerVariable(name, typeRef, syntax.ref);
-		if (!variable)
-			Panic(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
-				path: ctx.file.path,
-				name: ctx.file.name,
-				ref: syntax.ref
-			});
+		if (typeRef instanceof Structure) {
+			typeRef.link();
+			const alloc = ctx.scope.stack.allocate(typeRef.size, typeRef.align);
+			const linear = LinearType.make(typeRef, alloc, ctx.file.owner.project.stackBase);
+
+			ctx.scope.registerVariable(name, linear, syntax.ref);
+		} else {
+			ctx.scope.registerVariable(name, typeRef.value, syntax.ref);
+		}
 
 		return;
 	}
 
 	const value = expr.value[0];
 	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
-	if (!typeRef && !resolveType) Panic(
-		`${colors.red("Error")}: Unable to determine type\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-	);
-	if (typeRef && resolveType !== typeRef) Panic(
-		`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.getTypeName()}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
-	)
 
-	if (!(resolveType instanceof IntrinsicType)) {
-		// TODO
-		// Panic(
-		// 	`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
-		// 	{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
-		// )
+	// Check expected, and inferred matches
+	if (typeRef) {
+		let baseType = resolveType;
 
-		return;
+		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
+		if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
+
+		if (typeRef !== baseType) Panic(
+			`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.getTypeName()}\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
+		)
 	}
 
-	const variable = ctx.scope.registerVariable(name, typeRef || resolveType, syntax.ref);
-	if (!variable)
-		Panic(`${colors.red("Error")}: Variable ${name} is already declared\n`, {
-			path: ctx.file.path,
-			name: ctx.file.name,
-			ref: syntax.ref
-		});
+	if (!(resolveType instanceof IntrinsicValue || resolveType instanceof LinearType)) Panic(
+		`${colors.red("Error")}: Cannot assign to non-runtime type ${resolveType.getTypeName()}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	)
+
+	const variable = ctx.scope.registerVariable(name, resolveType, syntax.ref);
 	variable.markDefined();
 
-	ctx.block.push(Instruction.local.set(variable.register.ref));
+	if (variable instanceof IntrinsicVariable) {
+		ctx.block.push(Instruction.local.set(variable.register.ref));
+	} else if (variable instanceof StructVariable) {
+		// No-op for struct as value is already written to stack allocator addr
+	} else AssertUnreachable(variable);
 }
 
 function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
@@ -158,25 +158,35 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 	const value = syntax.value[1];
 
 	const variable = ctx.scope.getVariable(name, false);
-	if (!variable)
-		Panic(`${colors.red("Error")}: Undeclared variable ${name}\n`, {
-			path: ctx.file.path,
-			name: ctx.file.name,
-			ref: syntax.ref
-		});
-
-	const resolveType = CompileExpr(ctx, value, variable.type);
-	if (resolveType !== variable.type) Panic(
-		`${colors.red("Error")}: type ${variable.name} != type ${resolveType.getTypeName()}\n`,
+	if (!variable) Panic(
+		`${colors.red("Error")}: Undeclared variable ${name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
-	if (!(resolveType instanceof IntrinsicType)) Panic(
-		`${colors.red("Error")}: Cannot assign variable to non-intrinsic type\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-	)
+	const resolveType = CompileExpr(ctx, value, variable.getBaseType());
 
-	ctx.block.push(Instruction.local.set(variable.register.ref));
+	// Check expected, and inferred match
+	if (variable.type) {
+		let baseType = resolveType;
+
+		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
+		if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
+
+		if (variable.type !== baseType) Panic(
+			`${colors.red("Error")}: type ${variable.type.getTypeName()} != type ${resolveType.getTypeName()}\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		)
+	}
+
+	if (variable instanceof IntrinsicVariable) {
+		ctx.block.push(Instruction.local.set(variable.register.ref));
+	} else if (variable instanceof StructVariable) {
+		// TODO: drop previous value
+		// TODO: move operation
+		console.warn(`Warn: Unimplemented struct re-assign causing unsafe no-op`);
+	} else AssertUnreachable(variable);
+
+
 	variable.markDefined();
 }
 

@@ -84,7 +84,7 @@ export default class Structure {
 
 					const scope = this.owner;
 					const type = scope.get(line.value[1]);
-					if (type === null) {
+					if (!type) {
 						console.error(
 							`${colors.red("Error")}: Unable to resolve type\n`
 							+ SourceView(this.owner.path, this.owner.name, line.value[1].ref)
@@ -199,7 +199,7 @@ export default class Structure {
 	}
 
 	getTypeName() {
-		return this.name;
+		return "type " + this.name;
 	}
 
 	declarationView(): string {
