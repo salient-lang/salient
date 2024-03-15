@@ -993,7 +993,7 @@ export type Term_Expr_infix = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(_Literal & {value: "\x26\x26"} | _Literal & {value: "\x7c\x7c"} | _Literal & {value: "\x5e"} | _Literal & {value: "\x3d\x3d"} | _Literal & {value: "\x21\x3d"} | _Literal & {value: "\x3c\x3d"} | _Literal & {value: "\x3e\x3d"} | _Literal & {value: "\x3c"} | _Literal & {value: "\x3e"} | _Literal & {value: "\x25"} | _Literal & {value: "\x2a"} | _Literal & {value: "\x2f"} | _Literal & {value: "\x2b"} | _Literal & {value: "\x2d"} | _Literal & {value: "as"} | _Literal & {value: "instanceof"} | _Literal & {value: "\x2d\x3e"})
+		(_Literal & {value: "\x26\x26"} | _Literal & {value: "\x7c\x7c"} | _Literal & {value: "\x5e"} | _Literal & {value: "\x3d\x3d"} | _Literal & {value: "\x21\x3d"} | _Literal & {value: "\x3c\x3d"} | _Literal & {value: "\x3e\x3d"} | _Literal & {value: "\x3c"} | _Literal & {value: "\x3e"} | _Literal & {value: "\x25"} | _Literal & {value: "\x2a"} | _Literal & {value: "\x2f"} | _Literal & {value: "\x2b"} | _Literal & {value: "\x2d"} | _Literal & {value: "as"} | _Literal & {value: "instanceof"} | _Literal & {value: "\x2e"} | _Literal & {value: "\x2d\x3e"})
 	]
 }
 export declare function Parse_Expr_infix (i: string, refMapping?: boolean): _Shared.ParseError | {

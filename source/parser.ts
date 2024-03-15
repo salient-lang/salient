@@ -12,20 +12,23 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 
 	if (res instanceof ParseError) Panic(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
 
-	if (res.isPartial) Panic(
-		colors.red("Syntax Error") + "\n",
-		{
-			path, name,
-			ref: res.reach
-				? new ReferenceRange(res.root.ref.end, res.reach)
-				: ReferenceRange.blank()
-		}
-	);
+	if (res.isPartial) {
+		console.error(res);
+		Panic(
+			colors.red("Syntax Error") + "\n",
+			{
+				path, name,
+				ref: res.reach
+					? new ReferenceRange(res.root.ref.end, res.reach)
+					: ReferenceRange.blank()
+			}
+		)
+	};
 
 	return res.root as Syntax.Term_Program;
 }
 
-export function SourceView(path: string, name: string, range: ReferenceRange) {
+export function SourceView(path: string, name: string, range: ReferenceRange, compact?: boolean) {
 	const source = ReadByteRange(path, range.start.index-200, range.end.index+200);
 	if (source === null) return `${name}: ${range.toString()}\n`;
 
@@ -53,7 +56,7 @@ export function SourceView(path: string, name: string, range: ReferenceRange) {
 			+ eLine + " | " + finish;
 	}
 
-	body += `\n  ${name}: ${range.toString()}\n`;
+	body += compact ? "\n" : `\n  ${name}: ${range.toString()}\n`;
 
 	return body;
 }

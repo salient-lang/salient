@@ -60,15 +60,15 @@ export class LinearType {
 		if (b instanceof LinearType) {
 			assert(typeof c === "number", "should be number");
 
-			this.consumedAt = undefined;
 			this.composable = true;
 			this.retain = false;
+			this.type = a;
 
 			this.parent = b;
-			this.type = b.type;
 			this.base = b.base;
 			this.alloc = b.alloc;
 			this.offset = b.offset + c;
+			this.consumedAt = b.consumedAt;
 		} else {
 			assert(c instanceof BasePointer, "should be base pointer");
 
@@ -119,11 +119,17 @@ export class LinearType {
 		if (this.composable) return null;
 
 		if (this.consumedAt) {
-			reasons.push(this.consumedAt);
-			for (const [_, child] of this.attributes) {
-				child.getCompositionErrors(reasons);
-			}
+			const reasonGiven = reasons.findIndex(x => x.start.index === this.consumedAt?.start.index) !== -1;
+
+			// You've been consumed, you have no children
+			if (reasonGiven) return;
+			reasons.push(this.consumedAt)
+			return reasons;
 		};
+
+		for (const [_, child] of this.attributes) {
+			child.getCompositionErrors(reasons);
+		}
 
 		if (reasons.length === 0) return null;
 

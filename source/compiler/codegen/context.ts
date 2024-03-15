@@ -9,14 +9,13 @@ import Structure from "~/compiler/structure.ts";
 import { IntrinsicType, IntrinsicValue, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
+import { IntrinsicVariable } from "~/compiler/codegen/variable.ts";
+import { StructVariable } from "~/compiler/codegen/variable.ts";
 import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { none, never } from "~/compiler/intrinsic.ts";
-import { Block } from "~/wasm/instruction/control-flow.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicVariable } from "~/compiler/codegen/variable.ts";
-import { StructVariable } from "~/compiler/codegen/variable.ts";
-import { Variable } from "~/compiler/codegen/variable.ts";
+import { Block } from "~/wasm/instruction/control-flow.ts";
 
 export class Context {
 	file: File;
@@ -144,8 +143,6 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	)
 
 	const variable = ctx.scope.registerVariable(name, resolveType, syntax.ref);
-	variable.markDefined();
-
 	if (variable instanceof IntrinsicVariable) {
 		ctx.block.push(Instruction.local.set(variable.register.ref));
 	} else if (variable instanceof StructVariable) {
@@ -180,6 +177,7 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 
 	if (variable instanceof IntrinsicVariable) {
 		ctx.block.push(Instruction.local.set(variable.register.ref));
+		variable.markDefined();
 	} else if (variable instanceof StructVariable) {
 		// TODO: drop previous value
 		// TODO: move operation

@@ -3,11 +3,14 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Function from "~/compiler/function.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
+import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
+import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+
 
 
 export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[], type: OperandType, expect?: OperandType): OperandType {
@@ -69,6 +72,11 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 			`${colors.red("Error")}: Call argument type miss-match, expected ${signature.type.name} got ${res.getTypeName()}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: args[i].ref }
 		);
+
+
+		// Special post-processing for linear types
+		if (!(res instanceof LinearType)) continue;
+		ResolveLinearType(ctx, res, args[i].ref);
 	}
 
 	ctx.block.push(Instruction.call(operand.ref));

@@ -1,7 +1,8 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
+import Structure from "~/compiler/structure.ts";
 import { IntrinsicValue, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
-import { OperandType, SolidType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
+import { OperandType, SolidType, IsSolidType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { Instruction } from "~/wasm/index.ts";
@@ -11,17 +12,18 @@ import { Panic } from "~/helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType): OperandType {
-	if (op === "as") return CompileAs(ctx, lhs, rhs, ref);
+	if (op === "as") return CompileAs(ctx, lhs, rhs);
+	if (op === ".")  return CompileStaticAccess(ctx, lhs, rhs, expect);
 
 	const a = CompilePrecedence(ctx, lhs, expect);
 	if (!(a instanceof IntrinsicValue)) Panic(
-		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
+		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
 	const b = CompilePrecedence(ctx, rhs, a.type);
 	if (!(b instanceof IntrinsicValue)) Panic(
-		`${colors.red("Error")}: Cannot apply infix operation to non-variable\n`, {
+		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-variable\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
 
@@ -57,7 +59,7 @@ function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType
 
 
 
-function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree, ref: ReferenceRange): OperandType {
+function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree): OperandType {
 	const goal = CompilePrecedence(ctx, rhs);
 	if (!IsSolidType(goal)) Panic(
 		`${colors.red("Error")}: Cannot type coerce to non-solid type\n`, {
@@ -71,6 +73,39 @@ function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree, ref: 
 	});
 
 	return a;
+}
+
+
+function CompileStaticAccess(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree, expect?: SolidType): OperandType {
+	const a = CompilePrecedence(ctx, lhs, expect);
+	if (!(a instanceof LinearType)) Panic(
+		`${colors.red("Error")}: Cannot static access into a non-struct value\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
+	});
+	if (!(a.type instanceof Structure)) Panic(
+		`${colors.red("Error")}: Cannot static access off an intrinsic value\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
+	});
+
+	if (rhs.type !== "expr_arg") Panic(
+		`${colors.red("Error")}: Expected an expression argument for a static access\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
+	});
+
+	const inner = rhs.value[1].value[0];
+	if (inner.type !== "name") Panic(
+		`${colors.red("Error")}: A name must be given for static access, not this\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
+	});
+
+	const name = inner.value[0].value;
+	const attr = a.get(name);
+	if (!attr) Panic(
+		`${colors.red("Error")}: Unknown attribute ${name} on ${a.getTypeName()}\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
+	});
+
+	return attr;
 }
 
 

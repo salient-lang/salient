@@ -3,7 +3,7 @@ import { ReferenceRange } from "~/parser.ts";
 
 
 const precedence = {
-	"->": 1,
+	".": 1, "->": 1,
 	"*" : 3, "/" : 3, "%" : 3,
 	"+" : 4, "-" : 4,
 	"<<": 5, ">>": 5,
