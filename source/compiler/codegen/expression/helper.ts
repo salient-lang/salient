@@ -10,25 +10,7 @@ import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/helper.ts";
 
-export function Store(ctx: Context, type: SolidType, base: BasePointer, offset: number | LatentOffset) {
-	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
-
-	const temp = ctx.scope.register.allocate(i32.bitcode, false);
-	ctx.block.push(Instruction.local.set(temp.ref));
-
-	switch (base.type) {
-		case BasePointerType.global: ctx.block.push(Instruction.global.get(base.id)); break;
-		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base.id)); break;
-		default: AssertUnreachable(base.type);
-	}
-
-	ctx.block.push(Instruction.local.get(temp.ref));
-	temp.free();
-
-	DumbStore(ctx, type, offset);
-}
-
-export function DumbStore(ctx: Context, type: SolidType, offset: number | LatentOffset) {
+export function Store(ctx: Context, type: SolidType, offset: number | LatentOffset) {
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.store(offset, 0)); break;
 		case "u64": case "i64": ctx.block.push(Instruction.i64.store(offset, 0)); break;
@@ -45,17 +27,11 @@ export function DumbStore(ctx: Context, type: SolidType, offset: number | Latent
 export function Load(ctx: Context, type: SolidType, base: BasePointer, offset: number | LatentOffset) {
 	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
 
-	const temp = ctx.scope.register.allocate(i32.bitcode, false);
-	ctx.block.push(Instruction.local.set(temp.ref));
-
 	switch (base.type) {
 		case BasePointerType.global: ctx.block.push(Instruction.global.get(base.id)); break;
 		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base.id)); break;
 		default: AssertUnreachable(base.type);
 	}
-
-	ctx.block.push(Instruction.local.get(temp.ref));
-	temp.free();
 
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.load(offset, 0)); break;

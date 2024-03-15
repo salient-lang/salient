@@ -13,6 +13,7 @@ import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import Structure from "~/compiler/structure.ts";
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
@@ -40,11 +41,14 @@ function CompileContainer(ctx: Context, syntax: Syntax.Term_Container, expect?: 
 	switch (syntax.value[0].value[0]?.value[0].value[0].type) {
 		case "container_map":   return StructBuilder(ctx, syntax, expect);
 		case "container_value": return ArrayBuilder(ctx, syntax, expect);
-		default: Panic(
-			`Unable to determine container type`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
 	}
+
+	if (expect instanceof Structure) return StructBuilder(ctx, syntax, expect);
+
+	Panic(
+		`Unable to determine container type\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
+	})
 }
 
 function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: SolidType) {

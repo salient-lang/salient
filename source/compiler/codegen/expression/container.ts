@@ -56,14 +56,10 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 		});
 		seen.push(name);
 
-		ctx.block.push(Instruction.const.i32(0));
+		ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackBase.id));
 		const expr = CompileExpr(ctx, elm.value[1], attr.type);
 		if (expr instanceof IntrinsicValue) {
-			Store(
-				ctx, expr.type,
-				ctx.file.owner.project.stackBase,
-				new LatentOffset(alloc.getOffset(), attr.offset)
-			);
+			Store(ctx, expr.type, new LatentOffset(alloc.getOffset(), attr.offset) );
 		} else Panic(
 			`${colors.red("Error")}: Only intrinsics are currently supported\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
@@ -81,6 +77,8 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 }
 
 export function ArrayBuilder(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
+	// TODO: Update CompileContainer to derive container type when possible
+
 	if (!expect) Panic(
 		`${colors.red("Error")}: Unsupported untyped container creation\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref

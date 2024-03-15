@@ -17,7 +17,7 @@ import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { none, never } from "~/compiler/intrinsic.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
-import { DumbStore } from "~/compiler/codegen/expression/helper.ts";
+import { Store } from "~/compiler/codegen/expression/helper.ts";
 
 export class Context {
 	file: File;
@@ -231,12 +231,16 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 	)
 
 	if (target.type instanceof IntrinsicValue) {
-		DumbStore(ctx, target.type.type, target.offset);
+		Store(ctx, target.type.type, target.offset);
+		target.markAssigned();
 	} else {
 		// TODO: drop previous value
 		console.warn(`Warn: Unimplemented struct re-assign causing unsafe no-op`);
 
 		// TODO: move operation
+
+		target.markAssigned();
+		console.log(target);
 		Panic(
 			`${colors.red("Error")}: Unimplemented struct move operation\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
