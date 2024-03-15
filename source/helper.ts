@@ -111,3 +111,39 @@ export function AlignDownInteger(x: number, multiple: number) {
 		? x - remainder
 		: x;
 }
+
+
+
+
+const _timer: { [key: string]: { start: number, end: number } } = {};
+export function TimerStart(key: string) {
+	const now = Date.now();
+	_timer[key] = { start: now, end: now-1 };
+}
+
+export function TimerEnd(key: string) {
+	const now = Date.now();
+	if (!_timer[key]) return;
+	_timer[key].end = now;
+}
+
+export function DisplayTimers() {
+	const lines: string[][] = [];
+	const max = [0, 0];
+	for (const key in _timer) {
+		const entry = _timer[key];
+		const line = [key, (entry.end - entry.start)+"ms"];
+
+		max[0] = Math.max(max[0], line[0].length);
+		max[1] = Math.max(max[1], line[1].length);
+
+		lines.push(line);
+	}
+
+	let str = "Timers:";
+	for (const line of lines) {
+		str += `\n  ${line[0].padEnd(max[0])}  ${line[1].padStart(max[1])}`;
+	}
+
+	console.info(str);
+}
