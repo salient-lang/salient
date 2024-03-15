@@ -540,7 +540,7 @@ export type Term_Assign = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Name,
+		Term_Access,
 		Term_Expr
 	]
 }
@@ -842,7 +842,7 @@ export type Term_Block_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Declare | Term_Assign | Term_Return | Term_Raise | Term_Statement)
+		(Term_Assign | Term_Declare | Term_Return | Term_Raise | Term_Statement)
 	]
 }
 export declare function Parse_Block_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {

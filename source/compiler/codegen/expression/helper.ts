@@ -25,6 +25,10 @@ export function Store(ctx: Context, type: SolidType, base: BasePointer, offset: 
 	ctx.block.push(Instruction.local.get(temp.ref));
 	temp.free();
 
+	DumbStore(ctx, type, offset);
+}
+
+export function DumbStore(ctx: Context, type: SolidType, offset: number | LatentOffset) {
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.store(offset, 0)); break;
 		case "u64": case "i64": ctx.block.push(Instruction.i64.store(offset, 0)); break;

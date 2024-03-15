@@ -92,6 +92,18 @@ function CompileStaticAccess(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceT
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
 
+	const prefix = rhs.value[0].value[0];
+	if (prefix) Panic(
+		`${colors.red("Error")}: Prefix values are not supported here\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: prefix.ref
+	});
+
+	const postfix = rhs.value[2].value;
+	if (postfix.length > 0) Panic(
+		`${colors.red("Error")}: Postfix values are not supported here\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.value[2].ref
+	});
+
 	const inner = rhs.value[1].value[0];
 	if (inner.type !== "name") Panic(
 		`${colors.red("Error")}: A name must be given for static access, not this\n`, {

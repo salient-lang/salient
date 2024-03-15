@@ -7,6 +7,7 @@ import type { Scope } from "./scope.ts";
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
 import { IntrinsicType, IntrinsicValue, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
+import { BasePointerType, BasePointer } from "~/compiler/codegen/expression/type.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
 import { IntrinsicVariable } from "~/compiler/codegen/variable.ts";
@@ -16,6 +17,7 @@ import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { none, never } from "~/compiler/intrinsic.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
+import { DumbStore } from "~/compiler/codegen/expression/helper.ts";
 
 export class Context {
 	file: File;
@@ -151,7 +153,8 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 }
 
 function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
-	const name  = syntax.value[0].value[0].value;
+	const accessors = syntax.value[0].value[1];
+	const name  = syntax.value[0].value[0].value[0].value;
 	const value = syntax.value[1];
 
 	const variable = ctx.scope.getVariable(name, false);
@@ -160,32 +163,85 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
-	const resolveType = CompileExpr(ctx, value, variable.getBaseType());
+	// Guard: Handle simple intrinsics and exit
+	if (variable instanceof IntrinsicVariable) {
+		if (accessors.value.length > 0) Panic(
+			`${colors.red("Error")}: Cannot access into an intrinsic value\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: accessors.ref }
+		);
 
-	// Check expected, and inferred match
-	if (variable.type) {
+		const resolveType = CompileExpr(ctx, value, variable.getBaseType());
+
+		// Check expected, and inferred match
 		let baseType = resolveType;
-
-		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
 		if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
+		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
 
 		if (variable.type !== baseType) Panic(
 			`${colors.red("Error")}: type ${variable.type.getTypeName()} != type ${resolveType.getTypeName()}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		)
-	}
 
-	if (variable instanceof IntrinsicVariable) {
 		ctx.block.push(Instruction.local.set(variable.register.ref));
 		variable.markDefined();
-	} else if (variable instanceof StructVariable) {
+		return;
+	}
+
+	let target = variable.type;
+	for (const syn of accessors.value) {
+		const access = syn.value[0].value[0];
+
+		switch (access.type) {
+			case "access_static": {
+				const name = access.value[0].value;
+				const attr = target.get(name);
+				if (!attr) Panic(
+					`${colors.red("Error")}: Unknown attribute ${name} on ${target.getTypeName()}\n`,
+					{ path: ctx.file.path, name: ctx.file.name, ref: access.ref }
+				);
+
+				target = attr;
+				break;
+			}
+			default: Panic(
+				`${colors.red("Error")}: Access type currently not supported\n`,
+				{ path: ctx.file.path, name: ctx.file.name, ref: access.ref }
+			)
+		}
+	}
+
+	if (target.type instanceof IntrinsicValue) {
+		switch (target.base.type) {
+			case BasePointerType.global: ctx.block.push(Instruction.global.get(target.base.id)); break;
+			case BasePointerType.local:  ctx.block.push(Instruction.local.get(target.base.id)); break;
+			default: AssertUnreachable(target.base.type);
+		}
+	}
+
+	const resolveType = CompileExpr(ctx, value, target.getBaseType());
+
+	// Check expected, and inferred match
+	let baseType = resolveType;
+	if ( resolveType instanceof LinearType ) baseType = resolveType.type;
+	if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
+
+	if (!target.like(baseType)) Panic(
+		`${colors.red("Error")}: type ${target.type.getTypeName()} != type ${resolveType.getTypeName()}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	)
+
+	if (target.type instanceof IntrinsicValue) {
+		DumbStore(ctx, target.type.type, target.offset);
+	} else {
 		// TODO: drop previous value
-		// TODO: move operation
 		console.warn(`Warn: Unimplemented struct re-assign causing unsafe no-op`);
-	} else AssertUnreachable(variable);
 
-
-	variable.markDefined();
+		// TODO: move operation
+		Panic(
+			`${colors.red("Error")}: Unimplemented struct move operation\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		)
+	}
 }
 
 
