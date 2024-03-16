@@ -36,6 +36,10 @@ export class IntrinsicType {
 
 		return false;
 	}
+
+	getBitcode() {
+		return this.bitcode;
+	}
 }
 
 export class IntrinsicValue {

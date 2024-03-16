@@ -10,6 +10,8 @@ import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { none } from "~/compiler/intrinsic.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 
 
 
@@ -44,15 +46,26 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 
 	operand.compile(); // check the function is compiled
 
-	if (operand.returns.length != 1) Panic(
-		`${colors.red("Error")}: Cannot currently handle functions which don't return a single value\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-	);
-
 	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
 
-	// TODO: Rewrite this to allocate the return struct
-	// const linear = LinearType.make(operand.returns[0], ..., ...);
+	let returnType;
+	if (operand.returns.length == 0) {
+		returnType = none;
+	} else if (operand.returns.length == 1) {
+		const primary = operand.returns[0];
+		if (primary instanceof IntrinsicType) {
+			returnType = primary.value;
+		} else {
+			const alloc = ctx.scope.stack.allocate(primary.size, primary.align);
+			returnType = LinearType.make(primary, alloc, ctx.file.owner.project.stackBase);
+
+			ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackReg.idx))
+			ctx.block.push(Instruction.const.i32(alloc.getOffset()));
+		}
+	} else Panic(
+		`${colors.red("Error")}: Multi-return is currently unsupported\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
 
 	const args = LineariseArgList(syntax.value[0]);
 	if (args.length != operand.arguments.length) Panic(
@@ -81,7 +94,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 
 	ctx.block.push(Instruction.call(operand.ref));
 
-	return operand.returns[0].value;
+	return returnType;
 }
 
 function LineariseArgList(args: Syntax.Term_Arg_list) {

@@ -75,6 +75,13 @@ export class LatentValue<T> {
 	}
 }
 
+export type LatentLike<T> = LatentValue<T> | T;
+
+export function ReadLatentLike<T>(v: LatentLike<T>) {
+	if (v instanceof LatentValue) return v.get();
+	return v;
+}
+
 export class LatentOffset {
 	private base: LatentValue<number>;
 	private offset: number;

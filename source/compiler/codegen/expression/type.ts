@@ -6,9 +6,12 @@ import { StackAllocation } from "~/compiler/codegen/allocation/stack.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Namespace } from "~/compiler/file.ts";
+import { Intrinsic } from "~/wasm/type.ts";
+import { LocalRef } from "~/wasm/funcRef.ts";
 
 
-export type OperandType = LinearType | IntrinsicValue | Namespace | VirtualType;
+export type OperandType = RuntimeType | Namespace | SolidType | VirtualType;
+export type RuntimeType = LinearType | IntrinsicValue;
 export type SolidType = IntrinsicType | Structure;
 
 // deno-lint-ignore no-explicit-any
@@ -20,20 +23,30 @@ export function IsSolidType(a: any): a is SolidType {
 }
 
 // deno-lint-ignore no-explicit-any
+export function IsRuntimeType(a: any): a is RuntimeType {
+	if (a instanceof IntrinsicValue) return true;
+	if (a instanceof LinearType) return true;
+
+	return false;
+}
+
+// deno-lint-ignore no-explicit-any
 export function IsContainerType(a: any): boolean {
 	if (a instanceof Structure) return true;
 
 	return false;
 }
 
-export enum BasePointerType { global, local };
-export class BasePointer {
-	type: BasePointerType;
-	id: number;
 
-	constructor(type: BasePointerType, id: number) {
-		this.type = type;
-		this.id = id;
+
+
+export enum BasePointerType { global, local };
+export class BasePointer extends LocalRef {
+	locality: BasePointerType;
+
+	constructor(type: Intrinsic, locality: BasePointerType) {
+		super(type);
+		this.locality = locality;
 	}
 }
 
@@ -50,13 +63,13 @@ export class LinearType {
 	private attributes: Map<string, LinearType>;
 	readonly type: Structure | IntrinsicValue;
 
-	readonly alloc: StackAllocation;
+	readonly alloc: StackAllocation | null;
 	readonly offset: number;
 	readonly base: BasePointer;
 
 	// constructor(type: LinearType['type'], alloc: LinearType['alloc'], base: BasePointer)
 	// constructor(type: LinearType['type'], parent: LinearType, offset: number)
-	constructor(a: LinearType['type'], b: StackAllocation | LinearType, c: BasePointer | number) {
+	constructor(a: LinearType['type'], b: LinearType['alloc'] | LinearType, c: BasePointer | number) {
 		if (b instanceof LinearType) {
 			assert(typeof c === "number", "should be number");
 

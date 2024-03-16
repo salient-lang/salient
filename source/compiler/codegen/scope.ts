@@ -1,12 +1,11 @@
-import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
-
+import Structure from "~/compiler/structure.ts";
 import { IntrinsicVariable, StructVariable, Variable } from "~/compiler/codegen/variable.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { SolidType, LinearType, BasePointer } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicType, IntrinsicValue } from "~/compiler/intrinsic.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { RegisterAllocator } from "~/compiler/codegen/allocation/registers.ts";
 import { StackAllocator } from "~/compiler/codegen/allocation/stack.ts";
-import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { ReferenceRange } from "~/parser.ts";
-import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Function } from "~/wasm/function.ts";
 
 export class Scope {
@@ -32,20 +31,23 @@ export class Scope {
 		this.vars = {};
 	}
 
-	registerArgument(name: string, type: IntrinsicValue | LinearType, ref: ReferenceRange) {
+	registerArgument(name: string, type: SolidType, ref: ReferenceRange) {
 		if (this.vars[name]) throw new Error(`Attempting to rebind variable ${name}`);
 
-		if (type instanceof IntrinsicValue) {
+		if (type instanceof IntrinsicType) {
 			this.vars[name] = new IntrinsicVariable(
-				name, type.type,
-				this.register.allocate(type.type.bitcode, true),
+				name, type,
+				this.register.allocate(type.bitcode, true),
 				ref
 			);
 			this.vars[name].markDefined();
-		} else if (type instanceof LinearType) {
-			Panic( `${colors.red("Error")}: Structs as arguments are currently unsupported\n` );
-			// this.vars[name] = new StructVariable(name, type);
-			// this.vars[name].markDefined();
+		} else if (type instanceof Structure) {
+			const reg = this.register.allocate(type.getBitcode(), true);
+
+			// TODO(@ajanibilby): fix immediately, don't bypass the reg allocator like this
+			const linear = LinearType.make(type, null, new BasePointer(type.getBitcode(), this._localRegs));
+			this.vars[name] = new StructVariable(name, linear);
+			this.vars[name].markDefined();
 		} else AssertUnreachable(type);
 
 		this._localRegs = this.register._regs.length;

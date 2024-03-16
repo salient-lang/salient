@@ -18,6 +18,9 @@ import { none, never } from "~/compiler/intrinsic.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
 import { Store } from "~/compiler/codegen/expression/helper.ts";
+import { IsSolidType } from "~/compiler/codegen/expression/type.ts";
+import { RuntimeType } from "~/compiler/codegen/expression/type.ts";
+import { IsRuntimeType } from "~/compiler/codegen/expression/type.ts";
 
 export class Context {
 	file: File;
@@ -126,9 +129,14 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const value = expr.value[0];
 	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
 
+	if (!IsRuntimeType(resolveType)) Panic(
+		`${colors.red("Error")}: Cannot assign to a non solid type\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: value.ref }
+	)
+
 	// Check expected, and inferred matches
 	if (typeRef) {
-		let baseType = resolveType;
+		let baseType: OperandType = resolveType;
 
 		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
 		if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
@@ -138,11 +146,6 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
 		)
 	}
-
-	if (!(resolveType instanceof IntrinsicValue || resolveType instanceof LinearType)) Panic(
-		`${colors.red("Error")}: Cannot assign to non-runtime type ${resolveType.getTypeName()}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-	)
 
 	const variable = ctx.scope.registerVariable(name, resolveType, syntax.ref);
 	if (variable instanceof IntrinsicVariable) {
@@ -211,10 +214,10 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 	}
 
 	if (target.type instanceof IntrinsicValue) {
-		switch (target.base.type) {
-			case BasePointerType.global: ctx.block.push(Instruction.global.get(target.base.id)); break;
-			case BasePointerType.local:  ctx.block.push(Instruction.local.get(target.base.id)); break;
-			default: AssertUnreachable(target.base.type);
+		switch (target.base.locality) {
+			case BasePointerType.global: ctx.block.push(Instruction.global.get(target.base)); break;
+			case BasePointerType.local:  ctx.block.push(Instruction.local.get(target.base)); break;
+			default: AssertUnreachable(target.base.locality);
 		}
 	}
 

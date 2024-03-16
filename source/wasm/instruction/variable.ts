@@ -34,8 +34,8 @@ export class Variable {
 
 const wrapper = {
 	global: {
-		get: (x: number) => new Variable(Type.globalGet, x),
-		set: (x: number) => new Variable(Type.globalSet, x)
+		get: (x: LocalRef | number) => new Variable(Type.globalGet, x),
+		set: (x: LocalRef | number) => new Variable(Type.globalSet, x)
 	},
 	local: {
 		get: (x: LocalRef | number) => new Variable(Type.localGet, x),

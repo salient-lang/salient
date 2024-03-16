@@ -27,10 +27,10 @@ export function Store(ctx: Context, type: SolidType, offset: number | LatentOffs
 export function Load(ctx: Context, type: SolidType, base: BasePointer, offset: number | LatentOffset) {
 	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
 
-	switch (base.type) {
-		case BasePointerType.global: ctx.block.push(Instruction.global.get(base.id)); break;
-		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base.id)); break;
-		default: AssertUnreachable(base.type);
+	switch (base.locality) {
+		case BasePointerType.global: ctx.block.push(Instruction.global.get(base)); break;
+		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base)); break;
+		default: AssertUnreachable(base.locality);
 	}
 
 	switch (type.name) {
@@ -62,6 +62,15 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	const base = type.type;
 	if (base instanceof IntrinsicValue) {
 		Load(ctx, base.type, ctx.file.owner.project.stackBase, type.offset);
+	} else {
+		switch (type.base.locality) {
+			case BasePointerType.global: ctx.block.push(Instruction.global.get(type.base)); break;
+			case BasePointerType.local:  ctx.block.push(Instruction.local.get(type.base)); break;
+			default: AssertUnreachable(type.base.locality);
+		}
+
+		ctx.block.push(Instruction.const.i32(type.offset));
+		ctx.block.push(Instruction.i32.add());
 	}
 	return base;
 }

@@ -6,6 +6,7 @@ import { AssertUnreachable, Panic } from "~/helper.ts";
 import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
 import { ReferenceRange } from "~/bnf/shared.d.ts";
 import { SourceView } from "~/parser.ts";
+import { i32 } from "~/compiler/intrinsic.ts";
 
 export default class Structure {
 	owner: File;
@@ -214,5 +215,9 @@ export default class Structure {
 		);
 
 		this.owner.markFailure();
+	}
+
+	getBitcode() {
+		return i32.bitcode;
 	}
 }

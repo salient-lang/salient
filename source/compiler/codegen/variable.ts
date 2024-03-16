@@ -107,7 +107,7 @@ export class StructVariable {
 
 	cleanup() {
 		if (this.isClone) return;
-		this.type.alloc.free();
+		if (this.type.alloc) this.type.alloc.free();
 	}
 
 	// toBinary() {
