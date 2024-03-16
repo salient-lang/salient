@@ -28,8 +28,8 @@ export function Load(ctx: Context, type: SolidType, base: BasePointer, offset: n
 	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
 
 	switch (base.locality) {
-		case BasePointerType.global: ctx.block.push(Instruction.global.get(base)); break;
-		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base)); break;
+		case BasePointerType.global: ctx.block.push(Instruction.global.get(base.ref)); break;
+		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base.ref)); break;
 		default: AssertUnreachable(base.locality);
 	}
 
@@ -64,8 +64,8 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 		Load(ctx, base.type, ctx.file.owner.project.stackBase, type.offset);
 	} else {
 		switch (type.base.locality) {
-			case BasePointerType.global: ctx.block.push(Instruction.global.get(type.base)); break;
-			case BasePointerType.local:  ctx.block.push(Instruction.local.get(type.base)); break;
+			case BasePointerType.global: ctx.block.push(Instruction.global.get(type.base.ref)); break;
+			case BasePointerType.local:  ctx.block.push(Instruction.local.get(type.base.ref)); break;
 			default: AssertUnreachable(type.base.locality);
 		}
 

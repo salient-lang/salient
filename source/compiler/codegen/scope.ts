@@ -7,6 +7,7 @@ import { RegisterAllocator } from "~/compiler/codegen/allocation/registers.ts";
 import { StackAllocator } from "~/compiler/codegen/allocation/stack.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { Function } from "~/wasm/function.ts";
+import { BasePointerType } from "~/compiler/codegen/expression/type.ts";
 
 export class Scope {
 	_parent: Scope | null;
@@ -44,8 +45,7 @@ export class Scope {
 		} else if (type instanceof Structure) {
 			const reg = this.register.allocate(type.getBitcode(), true);
 
-			// TODO(@ajanibilby): fix immediately, don't bypass the reg allocator like this
-			const linear = LinearType.make(type, null, new BasePointer(type.getBitcode(), this._localRegs));
+			const linear = LinearType.make(type, null, new BasePointer(BasePointerType.local, reg.ref));
 			this.vars[name] = new StructVariable(name, linear);
 			this.vars[name].markDefined();
 		} else AssertUnreachable(type);

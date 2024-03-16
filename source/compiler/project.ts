@@ -24,8 +24,7 @@ export default class Project {
 			true,
 			Instruction.const.i32(0)
 		);
-		this.stackBase = new BasePointer(Intrinsic.i32, BasePointerType.global);
-		this.stackBase.resolve(this.stackReg.idx);
+		this.stackBase = new BasePointer(BasePointerType.global, this.stackReg.ref);
 
 		this.module.addMemory(0, 1);
 	}

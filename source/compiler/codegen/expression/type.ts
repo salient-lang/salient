@@ -6,7 +6,6 @@ import { StackAllocation } from "~/compiler/codegen/allocation/stack.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Namespace } from "~/compiler/file.ts";
-import { Intrinsic } from "~/wasm/type.ts";
 import { LocalRef } from "~/wasm/funcRef.ts";
 
 
@@ -41,12 +40,17 @@ export function IsContainerType(a: any): boolean {
 
 
 export enum BasePointerType { global, local };
-export class BasePointer extends LocalRef {
+export class BasePointer {
 	locality: BasePointerType;
+	ref: LocalRef;
 
-	constructor(type: Intrinsic, locality: BasePointerType) {
-		super(type);
+	constructor(locality: BasePointerType, ref: LocalRef) {
 		this.locality = locality;
+		this.ref = ref;
+	}
+
+	get () {
+		return this.ref.get();
 	}
 }
 

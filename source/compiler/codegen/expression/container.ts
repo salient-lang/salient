@@ -56,7 +56,7 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 		});
 		seen.push(name);
 
-		ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackBase));
+		ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackBase.ref));
 		const expr = CompileExpr(ctx, elm.value[1], attr.type);
 		if (expr instanceof IntrinsicValue) {
 			Store(ctx, expr.type, new LatentOffset(alloc.getOffset(), attr.offset) );

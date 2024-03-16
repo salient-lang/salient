@@ -1,25 +1,23 @@
 import { Intrinsic } from "~/wasm/type.ts";
 import { EncodeU32 } from "~/wasm/type.ts";
 import { Constant } from "~/wasm/instruction/constant.ts";
+import { LocalRef } from "~/wasm/funcRef.ts";
 import { Byte } from "~/helper.ts";
 
-
 export class GlobalRegister {
-	idx: number;
-	type: Intrinsic;
 	mutable: boolean;
 	expr: Constant;
+	ref: LocalRef;
 
 	constructor(type: Intrinsic, mutable: boolean, expr: Constant, index: number) {
-		this.type = type;
-		this.idx = index;
+		this.ref = new LocalRef(type);
 		this.mutable = mutable;
 		this.expr = expr;
 	}
 
 	toBinary(): Byte[] {
 		return [
-			this.type,
+			this.ref.type,
 			this.mutable ? 0x01 : 0x00,
 
 			...this.expr.toBinary(),
@@ -41,8 +39,9 @@ export default class GlobalSection {
 		const idx = this.bindings.length;
 
 		const n = new GlobalRegister(type, mut, expr, idx);
-		this.bindings.push(n);
+		n.ref.resolve(idx);
 
+		this.bindings.push(n);
 		return n;
 	}
 

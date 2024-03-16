@@ -59,7 +59,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 			const alloc = ctx.scope.stack.allocate(primary.size, primary.align);
 			returnType = LinearType.make(primary, alloc, ctx.file.owner.project.stackBase);
 
-			ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackReg.idx))
+			ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackReg.ref))
 			ctx.block.push(Instruction.const.i32(alloc.getOffset()));
 		}
 	} else Panic(
