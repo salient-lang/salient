@@ -1,7 +1,7 @@
 import { BasePointerType, BasePointer } from "~/compiler/codegen/expression/type.ts";
 import { LinearType, SolidType } from "~/compiler/codegen/expression/type.ts";
 import { AssertUnreachable } from "~/helper.ts";
-import { IntrinsicValue, i32 } from "~/compiler/intrinsic.ts";
+import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { ReferenceRange } from "~/bnf/shared.js";
 import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { LatentOffset } from "~/helper.ts";
@@ -63,4 +63,5 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	if (base instanceof IntrinsicValue) {
 		Load(ctx, base.type, ctx.file.owner.project.stackBase, type.offset);
 	}
+	return base;
 }

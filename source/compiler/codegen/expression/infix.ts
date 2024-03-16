@@ -3,6 +3,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import Structure from "~/compiler/structure.ts";
 import { IntrinsicValue, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
 import { OperandType, SolidType, IsSolidType, LinearType } from "~/compiler/codegen/expression/type.ts";
+import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { Instruction } from "~/wasm/index.ts";
@@ -15,15 +16,23 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 	if (op === "as") return CompileAs(ctx, lhs, rhs);
 	if (op === ".")  return CompileStaticAccess(ctx, lhs, rhs, expect);
 
-	const a = CompilePrecedence(ctx, lhs, expect);
+	let a = CompilePrecedence(ctx, lhs, expect);
+	if (a instanceof LinearType && a.type instanceof IntrinsicValue) {
+		a = ResolveLinearType(ctx, a, lhs.ref);
+	}
+
 	if (!(a instanceof IntrinsicValue)) Panic(
-		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-variable\n`, {
+		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics value\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
-	const b = CompilePrecedence(ctx, rhs, a.type);
+	let b = CompilePrecedence(ctx, rhs, a.type);
+	if (b instanceof LinearType && b.type instanceof IntrinsicValue) {
+		b = ResolveLinearType(ctx, b, lhs.ref);
+	}
+
 	if (!(b instanceof IntrinsicValue)) Panic(
-		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-variable\n`, {
+		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics value\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
 
