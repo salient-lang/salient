@@ -43,7 +43,9 @@ TimerEnd("compilation");
 if (project.failed) Panic(`Compilation ${colors.red("Failed")}`);
 
 if (!mainFunc.ref) Panic(`Main function not compiled correctly`);
+project.module.exportFunction("_start", mainFunc.ref);
 project.module.exportFunction("main", mainFunc.ref);
+project.module.startFunction(mainFunc.ref);
 
 TimerStart("serialize");
 await Deno.writeFile("out.wasm", project.module.toBinary());

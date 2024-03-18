@@ -3,10 +3,10 @@
 import * as Section from "~/wasm/section/index.ts";
 import { MemoryRef } from "~/wasm/memoryRef.ts";
 import { Intrinsic } from "~/wasm/type.ts";
+import { Constant } from "~/wasm/instruction/constant.ts";
 import { Function } from "~/wasm/function.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Byte } from "~/helper.ts";
-import { Constant } from "~/wasm/instruction/constant.ts";
 
 
 
@@ -17,6 +17,7 @@ export default class Module {
 	memorySect : Section.Memory;
 	globalSect : Section.Global;
 	exportSect : Section.Export;
+	startSect  : Section.Start;
 	dataSect   : Section.Data;
 
 	entryFunc : null | FuncRef;
@@ -29,6 +30,7 @@ export default class Module {
 		this.memorySect = new Section.Memory();
 		this.globalSect = new Section.Global();
 		this.exportSect = new Section.Export();
+		this.startSect  = new Section.Start();
 		this.dataSect   = new Section.Data();
 		this.entryFunc = null;
 		this.funcs = [];
@@ -45,6 +47,10 @@ export default class Module {
 
 	exportFunction(name: string, func: FuncRef) {
 		return this.exportSect.bind(name, func);
+	}
+
+	startFunction(func: FuncRef) {
+		return this.startSect.ref = func;
 	}
 
 	exportMemory(name: string, mem: MemoryRef) {
