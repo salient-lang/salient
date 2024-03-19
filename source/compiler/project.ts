@@ -26,7 +26,7 @@ export default class Project {
 		);
 		this.stackBase = new BasePointer(BasePointerType.global, this.stackReg.ref);
 
-		this.module.addMemory(0, 1);
+		this.module.addMemory(1, 1);
 	}
 
 	markFailure() {

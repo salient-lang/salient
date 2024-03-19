@@ -122,15 +122,16 @@ export default class Function {
 		this.ref = func.ref;
 
 		const scope = new Scope(func);
+		const ctx = new Context(this.getFile(), scope, func.code);
 		for (const arg of this.arguments) {
-			scope.registerArgument(arg.name, arg.type, arg.ref)
+			scope.registerArgument(ctx, arg.name, arg.type, arg.ref)
 		}
 
-		const ctx = new Context(this.getFile(), scope, func.code);
 		const body = this.ast.value[1];
 		if (body.type === "literal") throw new Error("Missing function body");
 
 		ctx.compile(body.value[0].value);
+		scope.stack.resolve();
 
 		if (!ctx.done) Panic(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: body.ref

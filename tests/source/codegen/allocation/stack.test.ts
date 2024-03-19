@@ -17,9 +17,12 @@ Deno.test(`Simple Stack Allocation`, () => {
 
 	stack.resolve();
 
-	a.getOffset().get();
-	b.getOffset().get();
-	c.getOffset().get();
+	const ptrA = a.getOffset().get();
+	const ptrB = b.getOffset().get();
+	const ptrC = c.getOffset().get();
+	assert(ptrA < ptrB);
+	assert(ptrA < ptrC);
+	assert(ptrB < ptrC);
 });
 
 Deno.test(`Region Reuse`, () => {

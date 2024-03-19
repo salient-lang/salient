@@ -133,7 +133,7 @@ export class StackAllocator {
 
 	constructor() {
 		this.checkpointRef = new StackCheckpoint(this);
-		this.latentSize = new LatentValue<number>;
+		this.latentSize = new LatentValue<number>();
 	}
 
 	allocate(size: number, align = 1) {
@@ -162,7 +162,6 @@ export class StackAllocator {
 	}
 
 	resolve() {
-		if (!this.checkpointRef) return;
 		if (this.checkpointRef.hasAllocations()) throw new Error(
 			`Stack leak: ${this.checkpointRef.getAllocationCount()} stack values are still allocated after stack frame end`
 		);
@@ -279,9 +278,10 @@ export class StackAllocator {
 		}
 
 		for (const event of this.checkpointRef.events()) {
+			if (!(event.entity instanceof StackAllocation)) continue;
 			switch (event.type) {
-				case StackEventType.allocation: event.entity instanceof StackAllocation && allocate(event.entity); break;
-				case StackEventType.free:       event.entity instanceof StackAllocation && free(event.entity); break;
+				case StackEventType.allocation: allocate(event.entity); break;
+				case StackEventType.free:       free(event.entity); break;
 				default: AssertUnreachable(event.type);
 			}
 		}

@@ -1,16 +1,12 @@
-import { BasePointerType, BasePointer } from "~/compiler/codegen/expression/type.ts";
-import { LinearType, SolidType } from "~/compiler/codegen/expression/type.ts";
-import { AssertUnreachable } from "~/helper.ts";
-import { IntrinsicValue } from "~/compiler/intrinsic.ts";
+import { AssertUnreachable, LatentOffset, Panic } from "~/helper.ts";
+import { IntrinsicType, IntrinsicValue } from "~/compiler/intrinsic.ts";
+import { BasePointerType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { ReferenceRange } from "~/bnf/shared.js";
-import { IntrinsicType } from "~/compiler/intrinsic.ts";
-import { LatentOffset } from "~/helper.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import { Panic } from "~/helper.ts";
 
-export function Store(ctx: Context, type: SolidType, offset: number | LatentOffset) {
+export function Store(ctx: Context, type: IntrinsicType, offset: number | LatentOffset) {
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.store(offset, 0)); break;
 		case "u64": case "i64": ctx.block.push(Instruction.i64.store(offset, 0)); break;
@@ -24,15 +20,7 @@ export function Store(ctx: Context, type: SolidType, offset: number | LatentOffs
 }
 
 
-export function Load(ctx: Context, type: SolidType, base: BasePointer, offset: number | LatentOffset) {
-	if (!(type instanceof IntrinsicType)) Panic("Unimplemented");
-
-	switch (base.locality) {
-		case BasePointerType.global: ctx.block.push(Instruction.global.get(base.ref)); break;
-		case BasePointerType.local:  ctx.block.push(Instruction.local.get(base.ref)); break;
-		default: AssertUnreachable(base.locality);
-	}
-
+export function Load(ctx: Context, type: IntrinsicType, offset: number | LatentOffset) {
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.load(offset, 0)); break;
 		case "u64": case "i64": ctx.block.push(Instruction.i64.load(offset, 0)); break;
@@ -48,29 +36,35 @@ export function Load(ctx: Context, type: SolidType, base: BasePointer, offset: n
 }
 
 
-export function ResolveLinearType(ctx: Context, type: LinearType, ref: ReferenceRange) {
-	const errs = type.getCompositionErrors();
-	if (errs) {
-		console.error(`Unable to compose value due to some arguments being uninitialized since:\n`
-			+ errs.map(x => SourceView(ctx.file.path, ctx.file.name, x, true)).join("")
-			+ SourceView(ctx.file.path, ctx.file.name, ref, false)
-		);
+export function ResolveLinearType(ctx: Context, type: LinearType, ref: ReferenceRange, strict = true) {
+	if (strict) {
+		const errs = type.getCompositionErrors();
+		if (errs) {
+			console.error(`Unable to compose value due to some arguments being uninitialized since:\n`
+				+ errs.map(x => SourceView(ctx.file.path, ctx.file.name, x, true)).join("")
+				+ SourceView(ctx.file.path, ctx.file.name, ref, false)
+			);
 
-		ctx.file.markFailure();
+			ctx.file.markFailure();
+		}
 	}
 
 	const base = type.type;
-	if (base instanceof IntrinsicValue) {
-		Load(ctx, base.type, ctx.file.owner.project.stackBase, type.offset);
-	} else {
-		switch (type.base.locality) {
-			case BasePointerType.global: ctx.block.push(Instruction.global.get(type.base.ref)); break;
-			case BasePointerType.local:  ctx.block.push(Instruction.local.get(type.base.ref)); break;
-			default: AssertUnreachable(type.base.locality);
-		}
+	switch (type.base.locality) {
+		case BasePointerType.global: ctx.block.push(Instruction.global.get(type.base.ref)); break;
+		case BasePointerType.local:  ctx.block.push(Instruction.local.get(type.base.ref)); break;
+		default: AssertUnreachable(type.base.locality);
+	}
 
-		ctx.block.push(Instruction.const.i32(type.offset));
+	if (base instanceof IntrinsicValue) {
+		Load(ctx, base.type, type.offset);
+		return;
+	}
+
+	if (type.alloc) {
+		ctx.block.push(Instruction.const.i32(type.alloc.getOffset()));
 		ctx.block.push(Instruction.i32.add());
 	}
-	return base;
+
+	if (type.offset !== 0) ctx.block.push(Instruction.const.i32(type.offset));
 }

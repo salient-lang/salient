@@ -72,6 +72,8 @@ const wrapper = {
 	drop       : () => shared_Drop,
 	noop       : () => shared_NoOp,
 
+	copy: memFuncs.copy,
+
 	block: (typeIdx: number, n?: Any[])                 => new Block(typeIdx, n),
 	if   : (typeIdx: number, t?: Any[], f?: Any[])      => new IfBlock(typeIdx, t, f),
 	loop : (typeIdx: number, n?: Any[])                 => new Loop(typeIdx, n),

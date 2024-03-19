@@ -57,7 +57,7 @@ export class LatentValue<T> {
 		this.value = null;
 	}
 
-	get () {
+	get (): T {
 		if (this.value === null) throw new Error("Attempting to read latent value before it's been resolved");
 
 		return this.value;
@@ -77,6 +77,7 @@ export class LatentValue<T> {
 
 export type LatentLike<T> = LatentValue<T> | T;
 
+
 export function ReadLatentLike<T>(v: LatentLike<T>) {
 	if (v instanceof LatentValue) return v.get();
 	return v;
@@ -85,21 +86,32 @@ export function ReadLatentLike<T>(v: LatentLike<T>) {
 export class LatentOffset {
 	private base: LatentValue<number>;
 	private offset: number;
+	private value: number | null;
 
 	constructor(base: LatentValue<number> | LatentOffset, offset: number) {
 		if (base instanceof LatentOffset) {
 			this.offset = base.offset + offset;
 			this.base = base.base;
+			this.value = null;
 		} else {
 			this.offset = offset;
 			this.base = base;
+			this.value = null;
 		}
 	}
 
-	get () {
-		return this.base.get() + this.offset;
+	get (): number {
+		if (this.value === null) {
+			this.value = this.base.get() + this.offset;
+		}
+
+		return this.value;
 	}
 }
+
+
+
+
 
 export function AlignUpInteger(x: number, multiple: number) {
 	assert(multiple !== 0, "Cannot align by zero");

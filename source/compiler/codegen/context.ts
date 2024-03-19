@@ -1,26 +1,20 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
-import type { File, Namespace } from "~/compiler/file.ts";
-import type { Scope } from "./scope.ts";
+import type { Scope } from "~/compiler/codegen/scope.ts";
+import type { File } from "~/compiler/file.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
-import { IntrinsicType, IntrinsicValue, i16, i8, u16, u8 } from "~/compiler/intrinsic.ts";
-import { BasePointerType, BasePointer } from "~/compiler/codegen/expression/type.ts";
+import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
+import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
 import { AssertUnreachable, Panic } from "~/helper.ts";
-import { IntrinsicVariable } from "~/compiler/codegen/variable.ts";
-import { StructVariable } from "~/compiler/codegen/variable.ts";
-import { OperandType } from "~/compiler/codegen/expression/type.ts";
+import { ReferenceRange } from "~/parser.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
-import { none, never } from "~/compiler/intrinsic.ts";
-import { LinearType } from "~/compiler/codegen/expression/type.ts";
+import { Variable } from "~/compiler/codegen/variable.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
-import { Store } from "~/compiler/codegen/expression/helper.ts";
-import { IsSolidType } from "~/compiler/codegen/expression/type.ts";
-import { RuntimeType } from "~/compiler/codegen/expression/type.ts";
-import { IsRuntimeType } from "~/compiler/codegen/expression/type.ts";
 
 export class Context {
 	file: File;
@@ -83,76 +77,91 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const type = syntax.value[1].value[0];
 	const expr = syntax.value[2].value[0];
 
+
+
 	if (banned.namespaces.includes(name)) Panic(
 		`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].value[0].ref }
 	)
 
-	if (ctx.scope.hasVariable(name)) Panic(`${colors.red("Error")}: Variable ${name} is already declared\n`,
+	if (ctx.scope.hasVariable(name)) Panic(
+		`${colors.red("Error")}: Variable ${name} is already declared\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 
-	let typeRef: Namespace | null = null;
-	if (type) {
-		typeRef = ctx.file.get(type.value[0]);
 
-		if (typeRef === null || !(typeRef instanceof IntrinsicType) && !(typeRef instanceof Structure)) Panic(
+	// Init variable when type given
+	let expectType: SolidType | undefined = undefined;
+	let variable: Variable | undefined = undefined;
+	if (type) {
+		const namespace = ctx.file.get(type.value[0]);
+
+		if (namespace === null) Panic(
 			`${colors.red("Error")}: Cannot find type\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
 		)
 
-		if (typeRef === i8 || typeRef === u8 || typeRef === i16 || typeRef === u16) Panic(
-			`${colors.red("Error")}: Cannot explicitly use virtual integer types\n`,
+		if (!IsRuntimeType(namespace)) Panic(
+			`${colors.red("Error")}: Cannot declare variable with non-runtime type ${namespace.getTypeName()}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
-		)
+		);
+
+		let linear: LinearType;
+		if (namespace instanceof IntrinsicType) {
+			const alloc = ctx.scope.stack.allocate(namespace.size, namespace.align);
+			linear = LinearType.make(namespace.value, alloc, ctx.file.owner.project.stackBase);
+		} else if (namespace instanceof Structure) {
+			namespace.link();
+			const alloc = ctx.scope.stack.allocate(namespace.size, namespace.align);
+			linear = LinearType.make(namespace, alloc, ctx.file.owner.project.stackBase);
+		} else Panic(
+			`${colors.red("Error")}: Invalid runtime-type ${namespace.getTypeName()}\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
+			)
+
+		variable = ctx.scope.registerVariable(name, linear, type.ref);
+		linear.markConsumed(syntax.ref); // uninited
+		linear.pin();
+
+		expectType = namespace;
 	}
 
-	if (!expr) {
-		if (!typeRef) Panic(
+	// No assigned value on declaration
+	if (!expr){
+		if (!variable) Panic(
 			`${colors.red("Error")}: Declared variables must have an explicit or an inferred type\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		)
-
-		if (typeRef instanceof Structure) {
-			typeRef.link();
-			const alloc = ctx.scope.stack.allocate(typeRef.size, typeRef.align);
-			const linear = LinearType.make(typeRef, alloc, ctx.file.owner.project.stackBase);
-
-			ctx.scope.registerVariable(name, linear, syntax.ref);
-		} else {
-			ctx.scope.registerVariable(name, typeRef.value, syntax.ref);
-		}
 
 		return;
 	}
 
 	const value = expr.value[0];
-	const resolveType = CompileExpr(ctx, value, typeRef || undefined);
+	const resolveType = CompileExpr(ctx, value, expectType);
 
 	if (!IsRuntimeType(resolveType)) Panic(
 		`${colors.red("Error")}: Cannot assign to a non solid type\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: value.ref }
-	)
+	);
 
-	// Check expected, and inferred matches
-	if (typeRef) {
-		let baseType: OperandType = resolveType;
+	// Post init variable, when derived from expression
+	if (!variable) {
+		let linear: LinearType;
+		if (resolveType instanceof IntrinsicValue) {
+			const alloc = ctx.scope.stack.allocate(resolveType.type.size, resolveType.type.align);
+			linear = LinearType.make(resolveType.type.value, alloc, ctx.file.owner.project.stackBase);
+		} else if (resolveType instanceof LinearType) {
+			linear = resolveType;
+		} else AssertUnreachable(resolveType);
 
-		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
-		if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
-
-		if (typeRef !== baseType) Panic(
-			`${colors.red("Error")}: type ${typeRef.name} != type ${resolveType.getTypeName()}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: type?.ref || syntax.ref }
-		)
+		variable = ctx.scope.registerVariable(name, linear, syntax.ref);
+		linear.markConsumed(syntax.ref); // uninited
+		linear.pin();
 	}
 
-	const variable = ctx.scope.registerVariable(name, resolveType, syntax.ref);
-	if (variable instanceof IntrinsicVariable) {
-		ctx.block.push(Instruction.local.set(variable.register.ref));
-	} else if (variable instanceof StructVariable) {
-		// No-op for struct as value is already written to stack allocator addr
-	} else AssertUnreachable(variable);
+
+	Assign(ctx, variable.type, resolveType, syntax.ref);
+	variable.markDefined();
 }
 
 function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
@@ -165,30 +174,6 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 		`${colors.red("Error")}: Undeclared variable ${name}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
-
-	// Guard: Handle simple intrinsics and exit
-	if (variable instanceof IntrinsicVariable) {
-		if (accessors.value.length > 0) Panic(
-			`${colors.red("Error")}: Cannot access into an intrinsic value\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: accessors.ref }
-		);
-
-		const resolveType = CompileExpr(ctx, value, variable.getBaseType());
-
-		// Check expected, and inferred match
-		let baseType = resolveType;
-		if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
-		if ( resolveType instanceof LinearType ) baseType = resolveType.type;
-
-		if (variable.type !== baseType) Panic(
-			`${colors.red("Error")}: type ${variable.type.getTypeName()} != type ${resolveType.getTypeName()}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-		)
-
-		ctx.block.push(Instruction.local.set(variable.register.ref));
-		variable.markDefined();
-		return;
-	}
 
 	let target = variable.type;
 	for (const syn of accessors.value) {
@@ -221,34 +206,61 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 		}
 	}
 
-	const resolveType = CompileExpr(ctx, value, target.getBaseType());
+	const expr = CompileExpr(ctx, value, target.getBaseType());
+	Assign(ctx, target, expr, syntax.ref);
+}
 
-	// Check expected, and inferred match
-	let baseType = resolveType;
-	if ( resolveType instanceof LinearType ) baseType = resolveType.type;
-	if ( resolveType instanceof IntrinsicValue ) baseType = resolveType.type;
 
-	if (!target.like(baseType)) Panic(
-		`${colors.red("Error")}: type ${target.type.getTypeName()} != type ${resolveType.getTypeName()}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+function Assign(ctx: Context, target: LinearType, expr: OperandType, ref: ReferenceRange) {
+	if (!IsRuntimeType(expr)) Panic(
+		`${colors.red("Error")}: Cannot assign to a non solid type\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
 	)
 
-	if (target.type instanceof IntrinsicValue) {
-		Store(ctx, target.type.type, target.offset);
-		target.markAssigned();
-	} else {
-		// TODO: drop previous value
-		console.warn(`Warn: Unimplemented struct re-assign causing unsafe no-op`);
+	const error = () => Panic(
+		`${colors.red("Error")}: ${target.type.getTypeName()} != ${expr.getTypeName()}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
+	);
 
-		// TODO: move operation
+	if (expr instanceof IntrinsicValue) {
+		if (target.type != expr) error();
 
-		target.markAssigned();
-		console.log(target);
-		Panic(
-			`${colors.red("Error")}: Unimplemented struct move operation\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-		)
+		// target address
+		switch (target.base.locality) {
+			case BasePointerType.global: ctx.block.push(Instruction.global.get(target.base.ref)); break;
+			case BasePointerType.local:  ctx.block.push(Instruction.local.get(target.base.ref)); break;
+			default: AssertUnreachable(target.base.locality);
+		}
+
+		Store(ctx, expr.type, target.offset);
+		target.markDefined();
+		return;
 	}
+
+	if (!(expr instanceof LinearType)) AssertUnreachable(expr);
+
+	if (target.type != expr.type) error();
+
+	// TODO: drop previous value
+	console.warn(`Warn: Unimplemented struct re-assign causing unsafe no-op`);
+
+	// // Destination address
+	ResolveLinearType(ctx, target, ref, false);
+	// Source address
+	ResolveLinearType(ctx, expr, ref, true);
+	// Bytes
+	ctx.block.push(Instruction.const.i32(target.getSize()));
+	ctx.block.push(Instruction.copy(0, 0));
+
+	// Duplicate the struct's linear state over
+	target.infuse(target);
+	target.markDefined();
+
+	// Clean up the expr generated struct
+	expr.dispose();
+
+	return;
+
 }
 
 
@@ -276,7 +288,6 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
 
 	CompileExpr(ctx, value);
 	ctx.scope.cleanup();
-	ctx.scope.stack.resolve();
 	ctx.block.push(Instruction.return());
 	ctx.done = true;
 }

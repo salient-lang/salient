@@ -3,6 +3,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Function from "~/compiler/function.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
+import { IntrinsicType, i32 } from "~/compiler/intrinsic.ts";
 import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
@@ -11,7 +12,6 @@ import { Instruction } from "~/wasm/index.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { none } from "~/compiler/intrinsic.ts";
-import { IntrinsicType } from "~/compiler/intrinsic.ts";
 
 
 
@@ -48,6 +48,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 
 	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
 
+	const stackReg = ctx.file.owner.project.stackReg.ref;
 	let returnType;
 	if (operand.returns.length == 0) {
 		returnType = none;
@@ -59,7 +60,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 			const alloc = ctx.scope.stack.allocate(primary.size, primary.align);
 			returnType = LinearType.make(primary, alloc, ctx.file.owner.project.stackBase);
 
-			ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackReg.ref))
+			ctx.block.push(Instruction.global.get(stackReg));
 			ctx.block.push(Instruction.const.i32(alloc.getOffset()));
 		}
 	} else Panic(
@@ -92,7 +93,21 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 		ResolveLinearType(ctx, res, args[i].ref);
 	}
 
+
+	// Shift the stack pointer forward
+	const stackBk = ctx.scope.register.allocate(i32.bitcode);
+	ctx.block.push(Instruction.global.get(stackReg));
+	ctx.block.push(Instruction.local.tee(stackBk.ref));
+	ctx.block.push(Instruction.const.i32(ctx.scope.stack.getLatentSize()));
+	ctx.block.push(Instruction.i32.add());
+	ctx.block.push(Instruction.global.set(stackReg));
+
 	ctx.block.push(Instruction.call(operand.ref));
+
+	// Restore stack pointer
+	ctx.block.push(Instruction.local.get(stackBk.ref));
+	ctx.block.push(Instruction.global.set(stackReg));
+	stackBk.free();
 
 	return returnType;
 }

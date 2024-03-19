@@ -1,7 +1,6 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
 import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "~/wasm/type.ts";
-import { Byte } from "~/helper.ts";
-import { LatentValue } from "~/helper.ts";
+import { LatentOffset, LatentValue, Byte } from "~/helper.ts";
 
 
 export enum Type {
@@ -13,17 +12,16 @@ export enum Type {
 
 export class Constant {
 	type: Type;
-	x   : number | LatentValue<number>;
+	x   : number | LatentValue<number> | LatentOffset;
 
-	constructor(type: number, idx: number | LatentValue<number>) {
+	constructor(type: number, idx: number | LatentValue<number> | LatentOffset) {
 		this.type = type;
 		this.x    = idx;
 	}
 
 	private read() {
-		return this.x instanceof LatentValue
-			? this.x.get()
-			: this.x;
+		return typeof this.x === "number" ? this.x
+			: this.x.get();
 	}
 
 	toBinary(): Byte[] {
@@ -51,7 +49,7 @@ export class Constant {
 }
 
 const wrapper = {
-	i32: (x: number | LatentValue<number>) => new Constant(Type.i32, x),
+	i32: (x: number | LatentValue<number> | LatentOffset) => new Constant(Type.i32, x),
 	i64: (x: number | LatentValue<number>) => new Constant(Type.i64, x),
 	f32: (x: number | LatentValue<number>) => new Constant(Type.f32, x),
 	f64: (x: number | LatentValue<number>) => new Constant(Type.f64, x),

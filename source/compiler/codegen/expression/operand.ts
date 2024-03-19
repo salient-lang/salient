@@ -2,7 +2,6 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicVariable, StructVariable } from "~/compiler/codegen/variable.ts";
 import { IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
@@ -14,6 +13,7 @@ import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import Structure from "~/compiler/structure.ts";
+import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
@@ -67,18 +67,13 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 		return found;
 	}
 
-	if (variable instanceof IntrinsicVariable) {
-		if (!variable.isDefined) Panic(
-			`${colors.red("Error")}: Variable ${name} has no value assigned to it\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-		);
+	const linear = variable.type;
+	if (linear.type instanceof IntrinsicValue) {
+		ResolveLinearType(ctx, linear, syntax.ref);
+		return linear.type;
+	}
 
-
-		ctx.block.push(Instruction.local.get(variable.register.ref));
-		return variable.type.value;
-	} else if (variable instanceof StructVariable) {
-		return variable.type;
-	} else AssertUnreachable(variable);
+	return variable.type;
 }
 
 function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {

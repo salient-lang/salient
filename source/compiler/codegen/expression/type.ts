@@ -4,6 +4,7 @@ import Structure from "~/compiler/structure.ts";
 import { IntrinsicValue, IntrinsicType, VirtualType } from "~/compiler/intrinsic.ts";
 import { StackAllocation } from "~/compiler/codegen/allocation/stack.ts";
 import { ReferenceRange } from "~/parser.ts";
+import { LatentOffset } from "~/helper.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Namespace } from "~/compiler/file.ts";
 import { LocalRef } from "~/wasm/funcRef.ts";
@@ -67,12 +68,12 @@ export class LinearType {
 	private attributes: Map<string, LinearType>;
 	readonly type: Structure | IntrinsicValue;
 
-	readonly alloc: StackAllocation | null;
-	readonly offset: number;
 	readonly base: BasePointer;
+	readonly alloc: StackAllocation | null;
+	/*readonly*/ offset: number | LatentOffset; // edited by clone
 
 	// constructor(type: LinearType['type'], alloc: LinearType['alloc'], base: BasePointer)
-	// constructor(type: LinearType['type'], parent: LinearType, offset: number)
+	// constructor(type: LinearType['type'], parent: LinearType, offset: LatentOffset)
 	constructor(a: LinearType['type'], b: LinearType['alloc'] | LinearType, c: BasePointer | number) {
 		if (b instanceof LinearType) {
 			assert(typeof c === "number", "should be number");
@@ -84,7 +85,10 @@ export class LinearType {
 			this.parent = b;
 			this.base = b.base;
 			this.alloc = b.alloc;
-			this.offset = b.offset + c;
+			this.offset = (this.parent.offset instanceof LatentOffset)
+				? new LatentOffset(this.parent.offset, c)
+				: this.parent.offset + c;
+
 			this.consumedAt = b.consumedAt;
 		} else {
 			assert(c instanceof BasePointer, "should be base pointer");
@@ -96,7 +100,9 @@ export class LinearType {
 			this.alloc = b;
 			this.type = a;
 			this.base = c;
-			this.offset = 0;
+			this.offset = this.alloc
+				? new LatentOffset(this.alloc.getOffset(), 0)
+				: 0;
 		}
 
 		this.attributes = new Map();
@@ -153,7 +159,7 @@ export class LinearType {
 		return reasons;
 	}
 
-	markAssigned() {
+	markDefined() {
 		this.consumedAt = undefined;
 		this.composable = true;
 		this.attributes.clear();
@@ -169,6 +175,11 @@ export class LinearType {
 
 	shouldDispose(): boolean {
 		return !this.retain;
+	}
+	dispose() {
+		if (this.retain) return;
+		if (!this.alloc) return;
+		this.alloc.free();
 	}
 
 	// This value is not stored in a variable, and parents should retain existence after child's consumption
@@ -194,6 +205,13 @@ export class LinearType {
 		return next;
 	}
 
+	getSize() {
+		if (this.type instanceof IntrinsicValue) return this.type.type.size;
+
+		this.type.link();
+		return this.type.size;
+	}
+
 	getTypeName() {
 		if (this.type instanceof Structure) return this.type.name;
 
@@ -212,5 +230,42 @@ export class LinearType {
 		if (IsNamespace(other)) return this.type === other;
 
 		return false;
+	}
+
+
+	infuse(other: LinearType) {
+		if (!this.like(other)) throw new Error("Cannot infuse a different type");
+
+		this.composable = other.composable;
+		this.consumedAt = other.consumedAt;
+
+		for (const key in this.attributes) {
+			if (other.attributes.has(key)) continue;
+			this.attributes.delete(key);
+		}
+
+		for (const [ key, otherChild ] of other.attributes) {
+			this.get(key)?.infuse(otherChild);
+		}
+	}
+
+
+	clone(): LinearType {
+		const nx = new LinearType(this.type, this.alloc, 0);
+		nx.composable = this.composable;
+		nx.consumedAt = this.consumedAt;
+		nx.parent = this.parent;
+		nx.offset = this.offset;
+		nx.retain = this.retain;
+
+		for (const [key, value] of this.attributes) {
+			if (value instanceof IntrinsicValue) {
+				nx.attributes.set(key, value);
+			} else {
+				nx.attributes.set(key, value.clone());
+			}
+		}
+
+		return nx;
 	}
 }

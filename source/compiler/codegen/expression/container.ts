@@ -10,6 +10,7 @@ import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Store } from "~/compiler/codegen/expression/helper.ts";
+import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 
 export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
 	if (!(expect instanceof Structure)) Panic(
@@ -57,13 +58,26 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 		seen.push(name);
 
 		ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackBase.ref));
-		const expr = CompileExpr(ctx, elm.value[1], attr.type);
+		let expr = CompileExpr(ctx, elm.value[1], attr.type);
+		if (expr instanceof LinearType) {
+			if (expr.type instanceof IntrinsicValue) {
+				ResolveLinearType(ctx, expr, elm.value[1].ref);
+				expr = expr.type;
+			} else {
+				Panic(`${colors.red("Error")}: Only intrinsics are currently supported\n`,
+					{ path: ctx.file.path, name: ctx.file.name, ref: elm.value[1].ref }
+				);
+			}
+		}
+
 		if (expr instanceof IntrinsicValue) {
 			Store(ctx, expr.type, new LatentOffset(alloc.getOffset(), attr.offset) );
-		} else Panic(
-			`${colors.red("Error")}: Only intrinsics are currently supported\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
-		});
+			continue;
+		}
+
+		Panic(`${colors.red("Error")}: Unexpected namespace ${expr.getTypeName()}\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: elm.value[1].ref }
+		);
 	}
 
 	for (const attr of expect.attributes) {
