@@ -32,9 +32,9 @@ if (project.failed) Panic(`Compilation ${colors.red("Failed")}`);
 
 const mainFile = mainPck.import(root);
 const mainFunc = mainFile.namespace["main"];
-if (!(mainFunc instanceof Function)) {
-	Panic(`Main namespace is not a function: ${mainFunc.constructor.name}`);
-}
+if (!(mainFunc instanceof Function)) Panic(
+	`Main namespace is not a function: ${colors.cyan(mainFunc.constructor.name)}`
+);
 
 TimerStart("compilation");
 mainFunc.compile();

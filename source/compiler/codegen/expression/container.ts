@@ -3,14 +3,11 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
-import { Panic, LatentOffset } from "~/helper.ts";
-import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
-import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import { Store } from "~/compiler/codegen/expression/helper.ts";
-import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
+import { Assign } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/helper.ts";
 
 export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
 	if (!(expect instanceof Structure)) Panic(
@@ -21,7 +18,14 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 
 	const alloc = ctx.scope.stack.allocate(expect.size, expect.align);
 	const linear = LinearType.make(expect, alloc, ctx.file.owner.project.stackBase);
+	linear.markConsumed(syntax.ref);
 
+	NestedStructBuilder(ctx, linear, syntax);
+
+	return linear;
+}
+
+function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Term_Container) {
 	function* iterator() {
 		const base = syntax.value[0].value[0];
 		if (!base) return;
@@ -32,10 +36,9 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 		return;
 	}
 
-	const seen: string[] = [];
 	for (const item of iterator()) {
 		const elm = item.value[0];
-		if (elm.type === "container_value") {
+		if (elm.type !== "container_map") {
 			console.error(
 				`${colors.red("Error")}: Unexpected array value as struct member\n`
 				+ SourceView(ctx.file.path, ctx.file.name, elm.ref)
@@ -45,50 +48,46 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 		}
 
 		const name = elm.value[0].value[0].value;
-		const attr = expect.get(name);
-		if (!attr) Panic(
-			`${colors.red("Error")}: Unknown attribute ${name} in struct ${expect.name}\n`, {
+		const target = linear.get(name);
+		if (!target) Panic(
+			`${colors.red("Error")}: Unknown attribute ${name} in struct ${linear.getBaseType().name}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
 		});
+		const value = elm.value[1];
 
-		if (seen.includes(name)) Panic(
-			`${colors.red("Error")}: Duplicate ${name} attribute initialization\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: elm.ref
-		});
-		seen.push(name);
 
-		ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackBase.ref));
-		let expr = CompileExpr(ctx, elm.value[1], attr.type);
-		if (expr instanceof LinearType) {
-			if (expr.type instanceof IntrinsicValue) {
-				ResolveLinearType(ctx, expr, elm.value[1].ref);
-				expr = expr.type;
-			} else {
-				Panic(`${colors.red("Error")}: Only intrinsics are currently supported\n`,
-					{ path: ctx.file.path, name: ctx.file.name, ref: elm.value[1].ref }
-				);
-			}
-		}
-
-		if (expr instanceof IntrinsicValue) {
-			Store(ctx, expr.type, new LatentOffset(alloc.getOffset(), attr.offset) );
+		// short circuit: directly write inner container inside self
+		const innerContainer = MaybeNestedContainer(value);
+		if (innerContainer) {
+			NestedStructBuilder(ctx, target, innerContainer);
 			continue;
 		}
 
-		Panic(`${colors.red("Error")}: Unexpected namespace ${expr.getTypeName()}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: elm.value[1].ref }
-		);
-	}
 
-	for (const attr of expect.attributes) {
-		if (seen.includes(attr.name)) continue;
-
-		const blank = linear.get(attr.name);
-		blank?.markConsumed(syntax.ref);
+		const expr = CompileExpr(ctx, value, target.getBaseType());
+		Assign(ctx, target, expr, elm.ref);
 	}
 
 	return linear;
 }
+
+function MaybeNestedContainer(syntax: Syntax.Term_Expr) {
+	const noInfix = syntax.value[1].value.length == 0;
+	if (!noInfix) return null;
+
+	const expr_arg = syntax.value[0];
+	const expr_val = expr_arg.value[1];
+	if (expr_val.value[0].type != "container") return null;
+
+	const hasPrefix = expr_arg.value[0].value.length != 0;
+	if (hasPrefix) return null;
+
+	const hasPostfix = expr_arg.value[2].value.length != 0;
+	if (hasPostfix) return null;
+
+	return expr_val.value[0];
+}
+
 
 export function ArrayBuilder(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
 	// TODO: Update CompileContainer to derive container type when possible

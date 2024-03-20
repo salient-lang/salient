@@ -6,8 +6,8 @@ import type { File } from "~/compiler/file.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
-import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
+import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicType, IntrinsicValue, none, never, i32 } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
 import { AssertUnreachable, Panic } from "~/helper.ts";
@@ -101,8 +101,8 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
 		)
 
-		if (!IsRuntimeType(namespace)) Panic(
-			`${colors.red("Error")}: Cannot declare variable with non-runtime type ${namespace.getTypeName()}\n`,
+		if (!IsSolidType(namespace)) Panic(
+			`${colors.red("Error")}: Cannot declare variable with non-solid type ${colors.cyan(namespace.getTypeName())}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
 		);
 
@@ -114,10 +114,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 			namespace.link();
 			const alloc = ctx.scope.stack.allocate(namespace.size, namespace.align);
 			linear = LinearType.make(namespace, alloc, ctx.file.owner.project.stackBase);
-		} else Panic(
-			`${colors.red("Error")}: Invalid runtime-type ${namespace.getTypeName()}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: type.ref }
-			)
+		} else AssertUnreachable(namespace);
 
 		variable = ctx.scope.registerVariable(name, linear, type.ref);
 		linear.markConsumed(syntax.ref); // uninited
@@ -211,7 +208,7 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 }
 
 
-function Assign(ctx: Context, target: LinearType, expr: OperandType, ref: ReferenceRange) {
+export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref: ReferenceRange) {
 	if (!IsRuntimeType(expr)) Panic(
 		`${colors.red("Error")}: Cannot assign to a non solid type\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
@@ -225,12 +222,20 @@ function Assign(ctx: Context, target: LinearType, expr: OperandType, ref: Refere
 	if (expr instanceof IntrinsicValue) {
 		if (target.type != expr) error();
 
+		// Start stack swap
+		const reg = ctx.scope.register.allocate(expr.type.bitcode);
+		ctx.block.push(Instruction.local.set(reg.ref));
+
 		// target address
 		switch (target.base.locality) {
 			case BasePointerType.global: ctx.block.push(Instruction.global.get(target.base.ref)); break;
 			case BasePointerType.local:  ctx.block.push(Instruction.local.get(target.base.ref)); break;
 			default: AssertUnreachable(target.base.locality);
 		}
+
+		// End stack swap
+		ctx.block.push(Instruction.local.get(reg.ref));
+		reg.free();
 
 		Store(ctx, expr.type, target.offset);
 		target.markDefined();
@@ -242,12 +247,11 @@ function Assign(ctx: Context, target: LinearType, expr: OperandType, ref: Refere
 	if (target.type != expr.type) error();
 
 	// TODO: drop previous value
-	console.warn(`Warn: Unimplemented struct re-assign causing unsafe no-op`);
 
-	// // Destination address
+	// Destination address
 	ResolveLinearType(ctx, target, ref, false);
 	// Source address
-	ResolveLinearType(ctx, expr, ref, true);
+	ResolveLinearType(ctx, expr, ref, false);
 	// Bytes
 	ctx.block.push(Instruction.const.i32(target.getSize()));
 	ctx.block.push(Instruction.copy(0, 0));

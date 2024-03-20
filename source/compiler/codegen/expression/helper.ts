@@ -49,20 +49,22 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 		}
 	}
 
-	const base = type.type;
+	const baseType = type.getBaseType();
 	switch (type.base.locality) {
 		case BasePointerType.global: ctx.block.push(Instruction.global.get(type.base.ref)); break;
 		case BasePointerType.local:  ctx.block.push(Instruction.local.get(type.base.ref)); break;
 		default: AssertUnreachable(type.base.locality);
 	}
 
-	if (base instanceof IntrinsicValue) {
-		Load(ctx, base.type, type.offset);
+	// Auto load intrinsic value from a linear type
+	if (baseType instanceof IntrinsicType) {
+		Load(ctx, baseType, type.offset);
 		return;
 	}
 
+	// Push the complete pointer to the stack
 	if (type.alloc) {
-		ctx.block.push(Instruction.const.i32(type.alloc.getOffset()));
+		ctx.block.push(Instruction.const.i32(type.offset));
 		ctx.block.push(Instruction.i32.add());
 	}
 

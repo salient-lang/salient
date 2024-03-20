@@ -72,6 +72,7 @@ function CompileReturn(ctx: Context, type: OperandType, prefix: Syntax.Term_Expr
 		type = type.type;
 	}
 
+	// TODO: Typecheck returns
 
 	ctx.scope.cleanup();
 	ctx.block.push(Instruction.return());
