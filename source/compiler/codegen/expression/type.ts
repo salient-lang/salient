@@ -55,9 +55,16 @@ export class BasePointer {
 	}
 }
 
+export enum Ownership {
+	owner,
+	loanRead,
+	loanWrite
+}
+
 export class LinearType {
 	private composable: boolean;
 	private parent?: LinearType;
+	ownership: Ownership;
 
 	private consumedAt?: ReferenceRange;
 
@@ -82,6 +89,7 @@ export class LinearType {
 			this.retain = false;
 			this.type = a;
 
+			this.ownership = b.ownership;
 			this.parent = b;
 			this.base = b.base;
 			this.alloc = b.alloc;
@@ -93,6 +101,7 @@ export class LinearType {
 		} else {
 			assert(c instanceof BasePointer, "should be base pointer");
 
+			this.ownership = Ownership.owner;
 			this.consumedAt = undefined;
 			this.composable = true;
 			this.retain = false;

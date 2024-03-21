@@ -17,8 +17,6 @@ import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
-	const prefix  = syntax.value[0].value[0];
-	const postfix = syntax.value[2].value;
 	const val = syntax.value[1].value[0];
 	let res: OperandType;
 	switch (val.type) {
@@ -31,8 +29,11 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 		default: AssertUnreachable(val);
 	}
 
-	if (prefix) res = CompilePrefix(ctx, prefix, res, expect);
+	const postfix = syntax.value[2].value;
 	if (postfix.length > 0) res = CompilePostfixes(ctx, postfix, res, expect);
+
+	const prefix = syntax.value[0].value[0];
+	if (prefix) res = CompilePrefix(ctx, prefix, res, expect);
 
 	return res;
 }

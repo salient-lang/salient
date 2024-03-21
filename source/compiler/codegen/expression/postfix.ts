@@ -22,14 +22,12 @@ export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[
 
 		switch (act.type) {
 			case "expr_call": res = CompileCall(ctx, act, res); break;
-			case "expr_get": Panic(
-				`${colors.red("Error")}: Unimplemented postfix operation ${act.type}\n`,
-				{ path: ctx.file.path, name: ctx.file.name, ref: act.ref }
-			); break;
-			case "expr_param": Panic(
-				`${colors.red("Error")}: Unimplemented postfix operation ${act.type}\n`,
-				{ path: ctx.file.path, name: ctx.file.name, ref: act.ref }
-			); break;
+
+			case "expr_get": case "expr_loan": case "expr_param":
+				Panic(
+					`${colors.red("Error")}: Unimplemented postfix operation ${act.type}\n`,
+					{ path: ctx.file.path, name: ctx.file.name, ref: act.ref }
+				); break;
 			default: AssertUnreachable(act);
 		}
 	}

@@ -1010,7 +1010,7 @@ export type Term_Expr_postfix = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Expr_call | Term_Expr_get | Term_Expr_param)
+		(Term_Expr_call | Term_Expr_get | Term_Expr_param | Term_Expr_loan)
 	]
 }
 export declare function Parse_Expr_postfix (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1066,6 +1066,23 @@ export type Term_Expr_get = {
 }
 export declare function Parse_Expr_get (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Expr_get,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Expr_loan = {
+	type: 'expr_loan',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(_Literal & {value: "\x40"} | _Literal & {value: "\x24"})
+	]
+}
+export declare function Parse_Expr_loan (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Expr_loan,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
