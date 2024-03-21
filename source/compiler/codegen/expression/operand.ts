@@ -38,12 +38,12 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 }
 
 function CompileContainer(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
+	if (expect instanceof Structure) return StructBuilder(ctx, syntax, expect);
+
 	switch (syntax.value[0].value[0]?.value[0].value[0].type) {
 		case "container_map":   return StructBuilder(ctx, syntax, expect);
 		case "container_value": return ArrayBuilder(ctx, syntax, expect);
 	}
-
-	if (expect instanceof Structure) return StructBuilder(ctx, syntax, expect);
 
 	Panic(
 		`Unable to determine container type\n`, {

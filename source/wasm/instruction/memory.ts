@@ -76,6 +76,22 @@ export class MemoryCopy {
 	}
 }
 
+export class MemoryFill {
+	memoryIdx: number;
+
+	constructor(memoryIdx: Byte) {
+		this.memoryIdx = memoryIdx;
+	}
+
+	toBinary(): Byte[] {
+		return [
+			0xFC,
+			...EncodeU32(11),
+			this.memoryIdx,
+		]
+	}
+}
+
 const wrapper = {
 	i32: {
 		load  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Load, offset, align),
@@ -114,6 +130,7 @@ const wrapper = {
 		store : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.f64Store, offset, align),
 	},
 
-	copy: (fromMemoryIdx = 0, toMemoryIdx = 0) => new MemoryCopy(fromMemoryIdx, toMemoryIdx)
+	copy: (fromMemoryIdx = 0, toMemoryIdx = 0) => new MemoryCopy(fromMemoryIdx, toMemoryIdx),
+	fill: (memoryIdx = 0) => new MemoryFill(memoryIdx),
 }
 export default wrapper;

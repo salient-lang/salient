@@ -1,10 +1,30 @@
+import type * as Syntax from "~/bnf/syntax.d.ts";
+
 import { AssertUnreachable, LatentOffset, Panic } from "~/helper.ts";
-import { IntrinsicType, IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { BasePointerType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { ReferenceRange } from "~/bnf/shared.js";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+
+
+export function MaybeSingularExprArg(syntax: Syntax.Term_Expr) {
+	const noInfix = syntax.value[1].value.length == 0;
+	if (!noInfix) return null;
+
+	const expr_arg = syntax.value[0];
+	const expr_val = expr_arg.value[1];
+
+	const hasPrefix = expr_arg.value[0].value.length != 0;
+	if (hasPrefix) return null;
+
+	const hasPostfix = expr_arg.value[2].value.length != 0;
+	if (hasPostfix) return null;
+
+	return expr_val.value[0];
+}
+
 
 export function Store(ctx: Context, type: IntrinsicType, offset: number | LatentOffset) {
 	switch (type.name) {

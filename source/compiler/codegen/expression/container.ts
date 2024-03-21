@@ -3,7 +3,10 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
+import { MaybeSingularExprArg } from "~/compiler/codegen/expression/helper.ts";
+import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Assign } from "~/compiler/codegen/context.ts";
@@ -26,19 +29,35 @@ export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expec
 }
 
 function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Term_Container) {
-	function* iterator() {
+	function* iterator(skipLast = false) {
 		const base = syntax.value[0].value[0];
 		if (!base) return;
 
+		// Skipping the last is the first in this case
+		if (skipLast && base.value[1].value.length === 0) return;
+
 		yield base.value[0]; // first
-		for (const next of base.value[1].value) yield next.value[0]; // comma chained
+
+		const length = base.value[1].value.length - ( skipLast ? 1 : 0 );
+		for (let i=0; i<length; i++) {
+			const next = base.value[1].value[i];
+			yield next.value[0];
+		}
 
 		return;
 	}
 
-	for (const item of iterator()) {
+	const zeroed = ShouldZero(syntax);
+	if (zeroed) {
+		ResolveLinearType(ctx, linear, syntax.ref, false);                 // address
+		ctx.block.push(Instruction.const.i32(0));                          // value
+		ctx.block.push(Instruction.const.i32(linear.getBaseType().size));  // size
+		ctx.block.push(Instruction.fill());
+	}
+
+	for (const item of iterator(zeroed)) {
 		const elm = item.value[0];
-		if (elm.type !== "container_map") {
+		if (elm.type === "container_value") {
 			console.error(
 				`${colors.red("Error")}: Unexpected array value as struct member\n`
 				+ SourceView(ctx.file.path, ctx.file.name, elm.ref)
@@ -68,24 +87,41 @@ function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Te
 		Assign(ctx, target, expr, elm.ref);
 	}
 
+	// All non inited attributes have been filled with zero
+	if (zeroed) linear.markDefined();
+
 	return linear;
 }
 
+function ShouldZero(syntax: Syntax.Term_Container) {
+	const elms = syntax.value[0].value[0];
+	if (!elms) return false;
+
+	const chain = elms.value[1];
+	const lastI = chain.value.length-1;
+
+	const last_item = lastI > 0
+		? chain.value[lastI].value[0].value[0]
+		: elms.value[0].value[0];
+
+	if (last_item.type === "container_map") return false;
+
+	const expr_arg = MaybeSingularExprArg(last_item.value[0]);
+	if (!expr_arg) return false;
+	if (expr_arg.type !== "constant") return false;
+
+	const constant = expr_arg.value[0];
+	if (constant.type !== "integer") return false;
+
+	return constant.value[0].value === "0";
+}
+
 function MaybeNestedContainer(syntax: Syntax.Term_Expr) {
-	const noInfix = syntax.value[1].value.length == 0;
-	if (!noInfix) return null;
+	const expr_val = MaybeSingularExprArg(syntax);
+	if (expr_val === null) return null;
+	if (expr_val.type != "container") return null;
 
-	const expr_arg = syntax.value[0];
-	const expr_val = expr_arg.value[1];
-	if (expr_val.value[0].type != "container") return null;
-
-	const hasPrefix = expr_arg.value[0].value.length != 0;
-	if (hasPrefix) return null;
-
-	const hasPostfix = expr_arg.value[2].value.length != 0;
-	if (hasPostfix) return null;
-
-	return expr_val.value[0];
+	return expr_val;
 }
 
 

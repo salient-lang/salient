@@ -73,6 +73,7 @@ const wrapper = {
 	noop       : () => shared_NoOp,
 
 	copy: memFuncs.copy,
+	fill: memFuncs.fill,
 
 	block: (typeIdx: number, n?: Any[])                 => new Block(typeIdx, n),
 	if   : (typeIdx: number, t?: Any[], f?: Any[])      => new IfBlock(typeIdx, t, f),

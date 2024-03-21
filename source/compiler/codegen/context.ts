@@ -7,7 +7,7 @@ import type { File } from "~/compiler/file.ts";
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
 import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicType, IntrinsicValue, none, never, i32 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
 import { AssertUnreachable, Panic } from "~/helper.ts";
