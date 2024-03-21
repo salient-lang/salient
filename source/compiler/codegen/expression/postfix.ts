@@ -88,7 +88,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 
 		// Special post-processing for linear types
 		if (!(res instanceof LinearType)) continue;
-		ResolveLinearType(ctx, res, args[i].ref);
+		ResolveLinearType(ctx, res, args[i].ref, true);
 	}
 
 

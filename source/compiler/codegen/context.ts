@@ -158,7 +158,6 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 
 
 	Assign(ctx, variable.type, resolveType, syntax.ref);
-	variable.markDefined();
 }
 
 function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
@@ -257,8 +256,7 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 	ctx.block.push(Instruction.copy(0, 0));
 
 	// Duplicate the struct's linear state over
-	target.infuse(target);
-	target.markDefined();
+	target.infuse(expr);
 
 	// Clean up the expr generated struct
 	expr.dispose();

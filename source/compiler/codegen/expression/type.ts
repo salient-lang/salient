@@ -129,12 +129,18 @@ export class LinearType {
 		// was already composed, so cascading will make no change
 		if (this.composable) return;
 
-		// check all children are composable
-		this.composable = true;
-		for (const [_, child] of this.attributes) {
-			if (!child.composable) {
-				this.composable = false;
-				return; // stop cascade
+		if (this.type instanceof Structure) {
+
+			// Not all attributes are present
+			if (this.attributes.size < this.type.attributes.length) return;
+
+			// check all children are composable
+			this.composable = true;
+			for (const [_, child] of this.attributes) {
+				if (!child.composable) {
+					this.composable = false;
+					return; // stop cascade
+				}
 			}
 		}
 
@@ -144,7 +150,6 @@ export class LinearType {
 
 	private cascadeDecompose() {
 		if (this.composable) this.parent?.cascadeDecompose();
-		this.composable = false;
 	}
 
 	getCompositionErrors(reasons: ReferenceRange[] = []) {
@@ -169,14 +174,16 @@ export class LinearType {
 	}
 
 	markDefined() {
+		this.attributes.clear();
 		this.consumedAt = undefined;
 		this.composable = true;
-		this.attributes.clear();
+
+		this.parent?.cascadeCompose();
 	}
 
 	markConsumed(ref: ReferenceRange) {
-		this.composable = false;
 		this.consumedAt = ref;
+		this.composable = false;
 		this.attributes.clear();
 
 		this.parent?.cascadeDecompose();

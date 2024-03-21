@@ -1,8 +1,8 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import { ParseError, ReferenceRange, Reference } from "~/bnf/shared.js";
 import * as Instance from "~/bnf/syntax.js";
 import * as Syntax from "~/bnf/syntax.d.ts";
+import { ParseError, ReferenceRange, Reference, SyntaxNode } from "~/bnf/shared.js";
 import { Panic } from "~/helper.ts";
 
 await Instance.ready;
@@ -12,21 +12,39 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 
 	if (res instanceof ParseError) Panic(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
 
-	if (res.isPartial) {
-		console.error(res);
-		Panic(
-			colors.red("Syntax Error") + "\n",
-			{
-				path, name,
-				ref: res.reach
-					? new ReferenceRange(res.root.ref.end, res.reach)
-					: ReferenceRange.blank()
-			}
-		)
-	};
+	if (res.isPartial) Panic(
+		colors.red("Syntax Error") + "\n",
+		{
+			path, name,
+			ref: res.reach
+				? new ReferenceRange(res.root.ref.end, res.reach)
+				: ReferenceRange.blank()
+		}
+	);
+
+	// Fix changes which are too long due to `omit`ed syntax
+	RemapRefRange(res.root);
 
 	return res.root as Syntax.Term_Program;
 }
+
+function RemapRefRange(syntax: SyntaxNode) {
+	if (!Array.isArray(syntax.value)) return;
+
+	const lastI = syntax.value.length - 1;
+	if (lastI < 0) return;
+
+	for (const child of syntax.value) {
+		RemapRefRange(child);
+	}
+
+	syntax.ref.end = syntax.value[lastI].ref.end;
+
+	return;
+}
+
+
+
 
 export function SourceView(path: string, name: string, range: ReferenceRange, compact?: boolean) {
 	const source = ReadByteRange(path, range.start.index-200, range.end.index+200);
