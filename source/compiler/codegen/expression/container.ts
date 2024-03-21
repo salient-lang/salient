@@ -100,20 +100,17 @@ function ShouldZero(syntax: Syntax.Term_Container) {
 	const chain = elms.value[1];
 	const lastI = chain.value.length-1;
 
-	const last_item = lastI > 0
+	const last_item = 0 <= lastI
 		? chain.value[lastI].value[0].value[0]
 		: elms.value[0].value[0];
 
 	if (last_item.type === "container_map") return false;
 
 	const expr_arg = MaybeSingularExprArg(last_item.value[0]);
-	if (!expr_arg) return false;
-	if (expr_arg.type !== "constant") return false;
+	if (expr_arg === null) return false;
+	if (expr_arg.type !== "name") return false;
 
-	const constant = expr_arg.value[0];
-	if (constant.type !== "integer") return false;
-
-	return constant.value[0].value === "0";
+	return expr_arg.value[0].value === "none";
 }
 
 function MaybeNestedContainer(syntax: Syntax.Term_Expr) {
