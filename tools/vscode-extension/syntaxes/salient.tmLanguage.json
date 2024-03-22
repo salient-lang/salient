@@ -4,6 +4,7 @@
 	"patterns": [
 		{"include": "#comment"},
 		{"include": "#function"},
+		{"include": "#structure"},
 		{"include": "#block"}
 	],
 	"repository": {
@@ -214,11 +215,47 @@
 			]
 		},
 
+		"structure": {
+			"name": "meta.body.struct.sa",
+			"begin": "\\b(struct)\\s+(\\w+)\\s*(:\\s*(\\w+)\\s*)?\\{",
+			"beginCaptures": {
+				"1": { "name": "storage.type.struct.sa" },
+				"2": { "name": "entity.name.type.struct.sa" },
+				"4": { "name": "storage.type.sa" },
+				"5": { "name": "punctuation.section.block.begin.bracket.curly.struct" }
+			},
+			"end": "\\}",
+			"endCaptures": {
+				"0": { "name": "punctuation.section.block.end.bracket.curly.struct.sa" }
+			},
+			"patterns": [
+				{ "include": "#comment" },
+				{
+					"name": "declare.sa",
+					"match": "\\b(\\w+)(:)\\s*(\\w+)\\s*(;)",
+					"captures": {
+						"1": { "name": "variable.sa" },
+						"2": { "name": "keyword.operator.sa" },
+						"3": { "name": "storage.type.sa" },
+						"4": { "name": "punctuation.terminator.statement.sa" }
+					}
+				},
+				{
+					"name": "spreat.sa",
+					"match": "(\\.\\.\\.)(\\w+)(;)",
+					"captures": {
+						"1": { "name": "keyword.operator.sa" },
+						"2": { "name": "variable.sa" }
+					}
+				}
+			]
+		},
+
 		"declare": {
 			"patterns": [
 				{
 					"name": "declare.sa",
-					"begin": "\\b(let)\\s+(\\w+)((:)\\s*(\\w+))?\\s*(=)",
+					"begin": "\\b(let)\\s+(\\w+)\\s*((:)\\s*(\\w+))?\\s*(=)",
 					"beginCaptures": {
 						"1": { "name": "storage.type.sa" },
 						"2": { "name": "variable.sa" },

@@ -1,38 +1,32 @@
-import { dirname, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
-
+import Package from "~/compiler/package.ts";
 import Module from "~/wasm/module.ts";
-import { File } from "~/compiler/file.ts"
+import { BasePointer, BasePointerType } from "~/compiler/codegen/expression/type.ts";
+import { GlobalRegister } from "~/wasm/section/global.ts";
+import { Instruction } from "~/wasm/index.ts";
+import { Intrinsic } from "~/wasm/type.ts";
 
 export default class Project {
-	files: File[];
-	cwd: string;
-
 	module: Module;
+	packages: Package[];
+
+	stackReg: GlobalRegister;
+	stackBase: BasePointer;
 
 	failed: boolean;
 
-	constructor(base: string) {
-		this.failed = false;
-		this.files = [];
-		this.cwd = dirname(base);
-
+	constructor() {
 		this.module = new Module();
-	}
+		this.packages = [];
+		this.failed = false;
 
-	import(filePath: string) {
-		const name = relative(this.cwd, filePath);
-		const data = Deno.readTextFileSync(filePath);
-		const file = new File(this, filePath, name, data);
-		this.files.push(file);
+		this.stackReg = this.module.registerGlobal(
+			Intrinsic.i32,
+			true,
+			Instruction.const.i32(0)
+		);
+		this.stackBase = new BasePointer(BasePointerType.global, this.stackReg.ref);
 
-		return file;
-	}
-
-	importRaw(data: string) {
-		const file = new File(this, "./", "[buffer]", data);
-		this.files.push(file);
-
-		return file;
+		this.module.addMemory(1, 1);
 	}
 
 	markFailure() {

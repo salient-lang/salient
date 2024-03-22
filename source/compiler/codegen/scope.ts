@@ -1,14 +1,20 @@
-import { TypeSystem, Variable } from "~/compiler/codegen/variable.ts"
-import { RegisterAllocator } from "~/compiler/codegen/registers.ts";
+import Structure from "~/compiler/structure.ts";
+import { SolidType, LinearType, BasePointer, BasePointerType } from "~/compiler/codegen/expression/type.ts";
+import { AssertUnreachable } from "~/helper.ts";
+import { RegisterAllocator } from "~/compiler/codegen/allocation/registers.ts";
+import { StackAllocator } from "~/compiler/codegen/allocation/stack.ts";
 import { ReferenceRange } from "~/parser.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
+import { Instruction } from "~/wasm/index.ts";
+import { Variable } from "~/compiler/codegen/variable.ts";
 import { Function } from "~/wasm/function.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Store } from "~/compiler/codegen/expression/helper.ts";
 
 export class Scope {
 	_parent: Scope | null;
-	_localRegs: number;
 	register: RegisterAllocator;
+	stack:    StackAllocator;
 	vars: { [key: string]: Variable };
 
 	constructor(ctx: Function | Scope) {
@@ -16,36 +22,54 @@ export class Scope {
 
 		if (ctx instanceof Scope) {
 			this.register = ctx.register;
-			this._localRegs = this.register._regs.length;
 			this._parent = ctx;
+			this.stack = ctx.stack;
 		} else {
 			this.register = new RegisterAllocator(ctx);
+			this.stack = new StackAllocator();
 		}
 
 		this.vars = {};
-		this._localRegs = 0;
 	}
 
-	registerArgument(name: string, type: Intrinsic, ref: ReferenceRange) {
-		this.vars[name] = new Variable(
-			name, type,
-			this.register.allocate(type.bitcode, true),
-		ref);
+	registerArgument(ctx: Context, name: string, type: SolidType, ref: ReferenceRange) {
+		if (this.vars[name]) throw new Error(`Attempting to rebind variable ${name}`);
 
-		this.vars[name].markArgument();
-		this._localRegs = this.register._regs.length;
+		if (type instanceof IntrinsicType) {
+			const reg = this.register.allocate(type.bitcode, true);
+			const alloc = this.stack.allocate(type.size, type.align);
+			alloc.tag = name;
+
+			const linear = LinearType.make(type.value, alloc, ctx.file.owner.project.stackBase);
+			this.vars[name] = new Variable(name, linear);
+			this.vars[name].markDefined();
+
+			// address
+			ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackReg.ref));
+			// value
+			ctx.block.push(Instruction.local.get(reg.ref));
+			Store(ctx, type, linear.offset);
+
+			this.vars[name] = new Variable(name, linear);
+			reg.free();
+		} else if (type instanceof Structure) {
+			const reg = this.register.allocate(type.getBitcode(), true);
+
+			const linear = LinearType.make(type, null, new BasePointer(BasePointerType.local, reg.ref));
+			this.vars[name] = new Variable(name, linear);
+		} else AssertUnreachable(type);
+
+		this.vars[name].markDefined();
+		this.vars[name].type.pin();
 
 		return this.vars[name];
 	}
 
-	registerVariable(name: string, type: Intrinsic, ref: ReferenceRange) {
-		if (this.vars[name]) return null;
+	registerVariable(name: string, type: LinearType, ref: ReferenceRange) {
+		if (this.vars[name]) throw new Error(`Attempting to rebind variable ${name}`);
 
-		this.vars[name] = new Variable(
-			name, type,
-			this.register.allocate(type.bitcode),
-		ref);
-
+		this.vars[name] = new Variable(name, type);
+		this.vars[name].type.pin();
 		return this.vars[name];
 	}
 
@@ -59,7 +83,7 @@ export class Scope {
 			if (readOnly) return inherited;
 
 			// Don't both cloning if the value can't be consumed in this scope
-			if (inherited.storage === TypeSystem.Normal) return inherited;
+			if (inherited instanceof LinearType) return inherited;
 
 			this.vars[name] = inherited.clone();
 		}
@@ -67,16 +91,19 @@ export class Scope {
 		return null;
 	}
 
+	hasVariable(name: string) {
+		return !!this.vars[name];
+	}
+
 	child() {
 		return new Scope(this);
 	}
 
-
-	cleanup() {
+	cleanup(recursive: boolean = false) {
 		for (const name in this.vars) {
-			if (!this.vars[name].isLocal) continue;
-
-			this.vars[name].register.free();
+			this.vars[name].cleanup();
 		}
+
+		if (recursive) this._parent?.cleanup(recursive);
 	}
 }

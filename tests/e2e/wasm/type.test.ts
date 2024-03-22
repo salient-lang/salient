@@ -1,6 +1,7 @@
 /// <reference lib="deno.ns" />
 import { assertEquals, assertThrows } from "https://deno.land/std@0.201.0/assert/mod.ts";
-import { EncodeSignedLEB, EncodeUnsignedLEB } from "../../source/wasm/type.ts";
+
+import { EncodeSignedLEB, EncodeUnsignedLEB } from "~/wasm/type.ts";
 
 function toHex(arr: number[]): string {
 	return arr.map(x => x.toString(16).padStart(2, "0")).join("");

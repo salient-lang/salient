@@ -1,4 +1,5 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
+import { LatentOffset } from "~/helper.ts";
 import { EncodeU32 } from "~/wasm/type.ts";
 import { Byte } from "~/helper.ts";
 
@@ -34,10 +35,10 @@ export enum Type {
 
 export class MemoryRegister {
 	type   : Type;
-	offset : number;
+	offset : number | LatentOffset;
 	align  : number;
 
-	constructor(type: Type, offset: number, align: number) {
+	constructor(type: Type, offset: number | LatentOffset, align: number) {
 		this.type   = type;
 		this.offset = offset;
 		this.align  = align;
@@ -47,38 +48,89 @@ export class MemoryRegister {
 		return [
 			this.type,
 			...EncodeU32(this.align),
-			...EncodeU32(this.offset),
+			...EncodeU32(
+				this.offset instanceof LatentOffset
+					? this.offset.get()
+					: this.offset
+			),
 		];
+	}
+}
+
+export class MemoryCopy {
+	fromIdx: number;
+	toIdx: number;
+
+	constructor(fromIdx: Byte, toIdx: Byte) {
+		this.fromIdx = fromIdx;
+		this.toIdx = toIdx;
+	}
+
+	toBinary(): Byte[] {
+		return [
+			0xFC,
+			...EncodeU32(10),
+			this.fromIdx,
+			this.toIdx
+		]
+	}
+}
+
+export class MemoryFill {
+	memoryIdx: number;
+
+	constructor(memoryIdx: Byte) {
+		this.memoryIdx = memoryIdx;
+	}
+
+	toBinary(): Byte[] {
+		return [
+			0xFC,
+			...EncodeU32(11),
+			this.memoryIdx,
+		]
 	}
 }
 
 const wrapper = {
 	i32: {
-		load  : (offset: number, align: number) => new MemoryRegister(Type.i32Load, offset, align),
-		store : (offset: number, align: number) => new MemoryRegister(Type.i32Store, offset, align),
+		load  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Load, offset, align),
+		store : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Store, offset, align),
 
-		load8_u  : (offset: number, align: number) => new MemoryRegister(Type.i32Load8u, offset, align),
-		load8_s  : (offset: number, align: number) => new MemoryRegister(Type.i32Load8s, offset, align),
-		load16_u : (offset: number, align: number) => new MemoryRegister(Type.i32Load16u, offset, align),
-		load16_s : (offset: number, align: number) => new MemoryRegister(Type.i32Load16s, offset, align),
+		load8_u  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Load8u, offset, align),
+		load8_s  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Load8s, offset, align),
+		load16_u : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Load16u, offset, align),
+		load16_s : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Load16s, offset, align),
 
-		store8  : (offset: number, align: number) => new MemoryRegister(Type.i32Store8, offset, align),
-		store16 : (offset: number, align: number) => new MemoryRegister(Type.i32Store16, offset, align),
+		store8  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Store8, offset, align),
+		store16 : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i32Store16, offset, align),
 	},
 	i64: {
-		load  : (offset: number, align: number) => new MemoryRegister(Type.i64Load, offset, align),
-		store : (offset: number, align: number) => new MemoryRegister(Type.i64Store, offset, align),
+		load  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load, offset, align),
+		store : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Store, offset, align),
 
-		load8_u  : (offset: number, align: number) => new MemoryRegister(Type.i64Load8u, offset, align),
-		load8_s  : (offset: number, align: number) => new MemoryRegister(Type.i64Load8s, offset, align),
-		load16_u : (offset: number, align: number) => new MemoryRegister(Type.i64Load16u, offset, align),
-		load16_s : (offset: number, align: number) => new MemoryRegister(Type.i64Load16s, offset, align),
-		load32_u : (offset: number, align: number) => new MemoryRegister(Type.i64Load32u, offset, align),
-		load32_s : (offset: number, align: number) => new MemoryRegister(Type.i64Load32s, offset, align),
+		load8_u  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load8u, offset, align),
+		load8_s  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load8s, offset, align),
+		load16_u : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load16u, offset, align),
+		load16_s : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load16s, offset, align),
+		load32_u : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load32u, offset, align),
+		load32_s : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Load32s, offset, align),
 
-		store8  : (offset: number, align: number) => new MemoryRegister(Type.i64Store8, offset, align),
-		store16 : (offset: number, align: number) => new MemoryRegister(Type.i64Store16, offset, align),
-		store32 : (offset: number, align: number) => new MemoryRegister(Type.i64Store32, offset, align),
+		store8  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Store8, offset, align),
+		store16 : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Store16, offset, align),
+		store32 : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.i64Store32, offset, align),
 	},
+
+	f32: {
+		load  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.f32Load, offset, align),
+		store : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.f32Store, offset, align),
+	},
+	f64: {
+		load  : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.f64Load, offset, align),
+		store : (offset: number | LatentOffset, align: number) => new MemoryRegister(Type.f64Store, offset, align),
+	},
+
+	copy: (fromMemoryIdx = 0, toMemoryIdx = 0) => new MemoryCopy(fromMemoryIdx, toMemoryIdx),
+	fill: (memoryIdx = 0) => new MemoryFill(memoryIdx),
 }
 export default wrapper;

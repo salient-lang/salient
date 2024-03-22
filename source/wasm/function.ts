@@ -30,7 +30,7 @@ export class Function {
 		return ref;
 	}
 
-	resolve(idx: number, override: boolean = false) {
+	resolve(idx: number, override = false) {
 		this.ref.resolve(idx, override);
 	}
 	clear() {
@@ -65,7 +65,7 @@ export class Function {
 		}
 
 		// Resolve local variable refs
-		let offsets = new Map<Intrinsic, number>();
+		const offsets = new Map<Intrinsic, number>();
 		for (const ref of this.locals) {
 			const key = ref.type;
 			const offset = offsets.get(key) || types.get(key) || 0;

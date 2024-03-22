@@ -4,7 +4,8 @@ import type { Term_Access, Term_Function } from "~/bnf/syntax.d.ts";
 import type { File, Namespace } from "./file.ts";
 
 import { ReferenceRange, SourceView } from "~/parser.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
+import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
@@ -13,10 +14,10 @@ import { Panic } from "~/helper.ts";
 
 class Argument {
 	name: string;
-	type: Intrinsic;
+	type: SolidType;
 	ref: ReferenceRange;
 
-	constructor(name: string, type: Intrinsic, ref: ReferenceRange) {
+	constructor(name: string, type: SolidType, ref: ReferenceRange) {
 		this.name = name;
 		this.type = type;
 		this.ref  = ref;
@@ -35,7 +36,7 @@ export default class Function {
 	isLinked:   boolean;
 
 	arguments: Argument[];
-	returns:   Intrinsic[];
+	returns:   Argument[];
 
 	constructor(owner: File, ast: Term_Function) {
 		this.owner = owner;
@@ -53,6 +54,10 @@ export default class Function {
 
 	getFile() {
 		return this.owner;
+	}
+
+	getTypeName() {
+		return "function";
 	}
 
 	declarationView(): string {
@@ -90,15 +95,19 @@ export default class Function {
 				raw_args[i].value[0].value,
 				types[i],
 				raw_args[i].ref
-			))
+			));
 		}
 
-		const rets = LinkTypes(this.getFile(),
+		const returnTypes = LinkTypes(this.getFile(),
 			[head.value[2]]
 		);
-		if (rets === null) return;
-		this.returns = rets;
+		if (returnTypes === null) return;
 
+		this.returns.push(new Argument(
+			"return",
+			returnTypes[0],
+			head.value[2].ref
+		));
 
 		this.isLinked = true;
 	}
@@ -110,24 +119,38 @@ export default class Function {
 		if (!this.isLinked)  return;      // Failed to link
 		this.isCompiled = true;
 
-		const project = this.getFile().owner;
-
+		const project = this.getFile().owner.project;
 		const func = project.module.makeFunction(
-			this.arguments.map(x => x.type.bitcode),
-			this.returns.map(x => x.bitcode)
+			[
+				...this.returns
+					.filter(x => !(x.type instanceof IntrinsicType))
+					.map(x => x.type.getBitcode()),
+				...this.arguments
+					.map(x => x.type.getBitcode())
+			],
+			this.returns
+				.filter(x => x.type instanceof IntrinsicType)
+				.map(x => x.type.getBitcode()),
 		);
 		this.ref = func.ref;
 
 		const scope = new Scope(func);
-		for (const arg of this.arguments) {
-			scope.registerArgument(arg.name, arg.type, arg.ref)
+		const ctx = new Context(this.getFile(), this, scope, func.code);
+
+		for (const ret of this.returns) {
+			if (ret.type instanceof IntrinsicType) continue;
+			scope.registerArgument(ctx, ret.name, ret.type, ret.ref);
 		}
 
-		const ctx = new Context(this.getFile(), scope, func.code);
+		for (const arg of this.arguments) {
+			scope.registerArgument(ctx, arg.name, arg.type, arg.ref)
+		}
+
 		const body = this.ast.value[1];
 		if (body.type === "literal") throw new Error("Missing function body");
 
 		ctx.compile(body.value[0].value);
+		scope.stack.resolve();
 
 		if (!ctx.done) Panic(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: body.ref
@@ -139,15 +162,24 @@ export default class Function {
 
 
 function LinkTypes(scope: File, syntax: Term_Access[]) {
-	const out: Intrinsic[] = [];
+	const out: SolidType[] = [];
 
 	let failed = false;
 	for (const arg of syntax) {
 		const res = scope.get(arg);
-		if (res === null || !(res instanceof Intrinsic)) {
-			// Not Panic-ing, because we may want to display multiple failures at once
+
+		// Not Panicking on error
+		//   Because we may want to display multiple failures at once
+		if (res === null) {
 			console.error(
-				`${colors.red("Error")}: Cannot find type\n`
+				`${colors.red("Error")}: Cannot find namespace\n`
+				+ SourceView(scope.path, scope.name, arg.ref)
+			)
+			failed = true;
+			continue;
+		} else if (!IsSolidType(res)) {
+			console.error(
+				`${colors.red("Error")}: Function parameters must be a solid type\n`
 				+ SourceView(scope.path, scope.name, arg.ref)
 			)
 			failed = true;

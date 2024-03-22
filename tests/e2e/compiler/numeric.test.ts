@@ -1,8 +1,10 @@
 /// <reference lib="deno.ns" />
 import { fail, assertEquals, assertNotEquals, assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
-import * as CompilerFunc from "../../source/compiler/function.ts";
-import Project from "../../source/compiler/project.ts";
-import { FuncRef } from "../../source/wasm/funcRef.ts";
+
+import * as CompilerFunc from "~/compiler/function.ts";
+import Package from "~/compiler/package.ts";
+import Project from "~/compiler/project.ts";
+import { FuncRef } from "~/wasm/funcRef.ts";
 
 const decoder = new TextDecoder();
 
@@ -14,8 +16,9 @@ fn main(): f32 {
 }`;
 
 Deno.test(`Numeric logic test`, async () => {
-	const project = new Project("./");
-	const mainFile = project.importRaw(source);
+	const project = new Project();
+	const mainPck = new Package(project, "./");
+	const mainFile = mainPck.importRaw(source);
 
 
 	const mainFunc = mainFile.namespace["main"];
@@ -25,7 +28,6 @@ Deno.test(`Numeric logic test`, async () => {
 	project.module.exportFunction("_start", mainFunc.ref as FuncRef);
 
 	let stdout = "";
-
 	let memory: WebAssembly.Memory;
 
 	const imports = {
@@ -56,7 +58,7 @@ Deno.test(`Numeric logic test`, async () => {
 
 		// Call the _start function
 		if (typeof exports._start === "function") {
-			const out = (exports._start as Function)() as any;
+			(exports._start as Function)() as any;
 		} else {
 			fail(`Expected _start to be a function`);
 		}

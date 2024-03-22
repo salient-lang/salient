@@ -1,76 +1,46 @@
 import { ReferenceRange } from "~/parser.ts";
-import { Intrinsic } from "~/compiler/intrinsic.ts";
-import { Register } from "~/compiler/codegen/registers.ts";
-
-export enum TypeSystem {
-	Affine,
-	Normal
-}
+import { LinearType } from "~/compiler/codegen/expression/type.ts";
 
 export class Variable {
-	name: string;
-	type: Intrinsic;
-	storage: TypeSystem;
-	register: Register;
+	readonly name: string;
+	readonly type: LinearType;
 
-	lastDefined: ReferenceRange | null;
-
-	isDefined: boolean;
-	isGlobal: boolean;
 	isClone: boolean;
-	isLocal: boolean;
-	modifiedAt: ReferenceRange;
 
-
-	constructor(name: string, type: Intrinsic, register: Register, ref: ReferenceRange) {
+	constructor(name: string, type: LinearType) {
 		this.name = name;
 		this.type = type;
-		this.storage    = (type instanceof Intrinsic) ? TypeSystem.Normal : TypeSystem.Affine;
-		this.register   = register;
-		this.modifiedAt = ref;
-		this.isDefined  = false;
-		this.isGlobal   = false;
-		this.isLocal    = true;
-		this.isClone    = false;
+		this.isClone  = false;
+	}
 
-		this.lastDefined = ref;
+	getBaseType() {
+		return this.type.getBaseType();
 	}
 
 	markDefined() {
-		this.lastDefined = null;
-		this.isDefined = true;
+		this.type.markDefined();
 	}
 	markUndefined(ref: ReferenceRange) {
-		this.lastDefined = ref;
-		this.isDefined = false;
-	}
-
-	markGlobal() {
-		this.isGlobal = true;
-		this.isLocal  = false;
-		this.isClone  = false;
-		this.markDefined();
+		this.type.markConsumed(ref);
 	}
 
 	markArgument() {
-		this.isGlobal = false;
-		this.isLocal  = false;
-		this.isClone  = false;
 		this.markDefined();
 	}
 
 	clone() {
-		const clone = new Variable(this.name, this.type, this.register, this.modifiedAt);
-		clone.lastDefined = this.lastDefined;
-		clone.isDefined   = this.isDefined;
-		clone.isGlobal    = this.isGlobal;
-		clone.isLocal     = false;
-		clone.isClone     = true;
+		const clone = new Variable(this.name, this.type.clone());
+		clone.isClone = true;
 
 		return clone;
 	}
 
-	toBinary() {
-		return this.type.bitcode;
+	cleanup() {
+		if (this.isClone) return;
+		if (this.type.alloc) this.type.alloc.free();
 	}
+
+	// toBinary() {
+	// 	return this.register.type;
+	// }
 }

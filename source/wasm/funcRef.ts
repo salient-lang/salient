@@ -1,5 +1,4 @@
 import { LatentValue, type Byte } from "~/helper.ts";
-
 import { EncodeU32, Intrinsic } from "~/wasm/type.ts";
 
 export class FuncRef extends LatentValue<number> {

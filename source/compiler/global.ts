@@ -18,6 +18,10 @@ export default class Global {
 		return SourceView(this.owner.path, this.owner.name, ReferenceRange.blank());
 	}
 
+	getTypeName() {
+		return "[global]";
+	}
+
 	merge(other: Namespace) {
 		console.error(
 			`${colors.red("Error")}: Cannot share a name space between these two\n`

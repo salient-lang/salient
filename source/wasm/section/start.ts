@@ -3,6 +3,12 @@ import { FuncRef } from "~/wasm/funcRef.ts";
 
 
 export default class StartSection {
+	static typeID = 8;
+	ref: null | FuncRef;
+
+	constructor () {
+		this.ref = null;
+	}
 
 	static toBinary (ref: null | FuncRef) {
 		const buf = [];
@@ -20,6 +26,4 @@ export default class StartSection {
 			...buf
 		];
 	}
-
-	static typeID = 8;
 }
