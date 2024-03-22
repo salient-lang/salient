@@ -79,7 +79,7 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	// Auto load intrinsic value from a linear type
 	if (baseType instanceof IntrinsicType) {
 		Load(ctx, baseType, type.offset);
-		return;
+		return baseType.value;
 	}
 
 	// Push the complete pointer to the stack
@@ -89,4 +89,5 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	}
 
 	if (type.offset !== 0) ctx.block.push(Instruction.const.i32(type.offset));
+	return type;
 }

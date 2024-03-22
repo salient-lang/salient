@@ -16,15 +16,18 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 	if (op === "as") return CompileAs(ctx, lhs, rhs);
 	if (op === ".")  return CompileStaticAccess(ctx, lhs, rhs, expect);
 
-	const a = CompilePrecedence(ctx, lhs, expect);
+	let a = CompilePrecedence(ctx, lhs, expect);
+	if (a instanceof LinearType && a.type instanceof IntrinsicValue) a = ResolveLinearType(ctx, a, rhs.ref);
+
 	if (!(a instanceof IntrinsicValue)) Panic(
-		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics value\n`, {
+		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics ${colors.cyan(a.getTypeName())}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
-	const b = CompilePrecedence(ctx, rhs, a.type);
+	let b = CompilePrecedence(ctx, rhs, a.type);
+	if (b instanceof LinearType && b.type instanceof IntrinsicValue) b = ResolveLinearType(ctx, b, rhs.ref);
 	if (!(b instanceof IntrinsicValue)) Panic(
-		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics value\n`, {
+		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics ${colors.cyan(b.getTypeName())}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
 
@@ -117,12 +120,6 @@ function CompileStaticAccess(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceT
 		`${colors.red("Error")}: Unknown attribute ${name} on ${a.getTypeName()}\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
-
-
-	if (attr.type instanceof IntrinsicValue) {
-		ResolveLinearType(ctx, attr, rhs.ref);
-		return attr.type;
-	}
 
 	return attr;
 }

@@ -11,12 +11,16 @@ Deno.test(`Signed integer Fibonacci test`, async () => {
 	const mainPck = new Package(project, "./");
 	const mainFile = mainPck.importRaw(`
 		fn fib_recur(n: i32): i32 {
-			if n <= 1 return n;
+			if n <= 1 { return n; };
 			return fib_recur(n - 1) + fib_recur(n - 2);
 		}
 
 		fn fib_tail(n: i32, a: i32, b: i32): i32 {
-			return if n <= 0 a else fib_tail(n - 1, b, a + b);
+			if n <= 0 {
+				return a;
+			} else {
+				return fib_tail(n - 1, b, a + b);
+			};
 		}`
 	);
 

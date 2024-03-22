@@ -61,10 +61,11 @@ class StackCheckpoint {
 
 	free(alloc: StackAllocation) {
 		const index = this.local.findIndex(l => l === alloc);
-		if (index === -1) throw new Error(`Attempting to free${alloc?.tag ? ` tag[${alloc?.tag}]` : ""} non-local allocation`);
 
 		this.timeline.push(new StackEvent(StackEventType.free, alloc));
-		this.local.splice(index, 1);
+
+		if (index === -1) console.warn(`Warn: Attempting to free${alloc?.tag ? ` tag[${alloc?.tag}]` : ""} non-local allocation`);
+		else this.local.splice(index, 1);
 	}
 
 	private bind(alloc: StackAllocation) {
@@ -79,6 +80,10 @@ class StackCheckpoint {
 
 	getAllocationCount() {
 		return this.local.length;
+	}
+
+	getAllocations() {
+		return this.local.map(x => x.tag || ".unknown");
 	}
 
 	rewind() {
@@ -161,9 +166,14 @@ export class StackAllocator {
 		return this.latentSize;
 	}
 
+	getAllocationCount() {
+		return this.checkpointRef.getAllocationCount();
+	}
+
 	resolve() {
 		if (this.checkpointRef.hasAllocations()) throw new Error(
-			`Stack leak: ${this.checkpointRef.getAllocationCount()} stack values are still allocated after stack frame end`
+			`Stack leak: ${this.checkpointRef.getAllocationCount()} stack values are still allocated after stack frame end `
+			+ this.checkpointRef.getAllocations()
 		);
 
 		const table: Region[] = [];
@@ -236,7 +246,10 @@ export class StackAllocator {
 		}
 
 		function free(alloc: StackAllocation): void {
-			if (!alloc.inUse) throw new Error("Double free on stack allocation");
+			if (!alloc.inUse) {
+				console.warn("Warn: Double free on stack allocation");
+				return
+			}
 			if (alloc.isAlias()) return;
 
 			alloc.inUse = false;

@@ -99,9 +99,11 @@ export class Scope {
 		return new Scope(this);
 	}
 
-	cleanup() {
+	cleanup(recursive: boolean = false) {
 		for (const name in this.vars) {
 			this.vars[name].cleanup();
 		}
+
+		if (recursive) this._parent?.cleanup(recursive);
 	}
 }

@@ -2,15 +2,15 @@ import { ReferenceRange } from "~/parser.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 
 export class Variable {
-	name: string;
-	type: LinearType;
+	readonly name: string;
+	readonly type: LinearType;
 
 	isClone: boolean;
 
 	constructor(name: string, type: LinearType) {
 		this.name = name;
 		this.type = type;
-		this.isClone    = false;
+		this.isClone  = false;
 	}
 
 	getBaseType() {

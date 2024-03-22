@@ -68,12 +68,6 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 		return found;
 	}
 
-	const linear = variable.type;
-	if (linear.type instanceof IntrinsicValue) {
-		ResolveLinearType(ctx, linear, syntax.ref);
-		return linear.type;
-	}
-
 	return variable.type;
 }
 
@@ -108,6 +102,8 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {
 			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.getTypeName()} != ${typeElse.getTypeName()}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
+
+		if (scopeIf.done && scopeElse.done) ctx.done = true;
 	}
 
 	let typeIdx = 0x40;
@@ -126,6 +122,8 @@ function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: SolidTyp
 	const child = ctx.child();
 	child.compile(syntax.value[0].value);
 	child.cleanup();
+
+	if (child.done) ctx.done = true;
 
 	ctx.block.push(Instruction.block(0x40, child.block));
 	return child.raiseType;

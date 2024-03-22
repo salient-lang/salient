@@ -5,10 +5,12 @@ import Function from "~/compiler/function.ts";
 import { AssertUnreachable, Panic } from "~/helper.ts";
 import { IntrinsicType, i32 } from "~/compiler/intrinsic.ts";
 import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
+import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { OperandType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { none } from "~/compiler/intrinsic.ts";
@@ -47,16 +49,18 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
 
 	const stackReg = ctx.file.owner.project.stackReg.ref;
-	let returnType;
-	if (operand.returns.length == 0) {
-		returnType = none;
-	} else if (operand.returns.length == 1) {
+	let returnType: VirtualType | IntrinsicValue | LinearType = none;
+
+	if (operand.returns.length == 1) {
 		const primary = operand.returns[0];
-		if (primary instanceof IntrinsicType) {
-			returnType = primary.value;
+		if (primary.type instanceof IntrinsicType) {
+			returnType = primary.type.value;
 		} else {
-			const alloc = ctx.scope.stack.allocate(primary.size, primary.align);
-			returnType = LinearType.make(primary, alloc, ctx.file.owner.project.stackBase);
+			const alloc = ctx.scope.stack.allocate(primary.type.size, primary.type.align);
+			const forward = primary.type instanceof IntrinsicType
+				? primary.type.value
+				: primary.type;
+			returnType = LinearType.make(forward, alloc, ctx.file.owner.project.stackBase);
 
 			ctx.block.push(Instruction.global.get(stackReg));
 			ctx.block.push(Instruction.const.i32(alloc.getOffset()));
@@ -74,6 +78,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 
 	for (let i=0; i<args.length; i++) {
 		const signature = operand.arguments[i];
+
 		const res = CompileExpr(ctx, args[i], signature.type);
 		if (IsNamespace(res)) Panic(
 			`${colors.red("Error")}: Cannot use a namespace as a runtime argument\n`,
@@ -81,7 +86,7 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 		);
 
 		if (!res.like(signature.type)) Panic(
-			`${colors.red("Error")}: Call argument type miss-match, expected ${signature.type.name} got ${res.getTypeName()}\n`,
+			`${colors.red("Error")}: Call argument type miss-match, expected ${colors.cyan(signature.type.name)} got ${colors.cyan(res.getTypeName())}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: args[i].ref }
 		);
 

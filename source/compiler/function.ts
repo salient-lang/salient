@@ -5,6 +5,7 @@ import type { File, Namespace } from "./file.ts";
 
 import { ReferenceRange, SourceView } from "~/parser.ts";
 import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
+import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
@@ -35,7 +36,7 @@ export default class Function {
 	isLinked:   boolean;
 
 	arguments: Argument[];
-	returns:   SolidType[];
+	returns:   Argument[];
 
 	constructor(owner: File, ast: Term_Function) {
 		this.owner = owner;
@@ -94,15 +95,19 @@ export default class Function {
 				raw_args[i].value[0].value,
 				types[i],
 				raw_args[i].ref
-			))
+			));
 		}
 
-		const rets = LinkTypes(this.getFile(),
+		const returnTypes = LinkTypes(this.getFile(),
 			[head.value[2]]
 		);
-		if (rets === null) return;
-		this.returns = rets;
+		if (returnTypes === null) return;
 
+		this.returns.push(new Argument(
+			"return",
+			returnTypes[0],
+			head.value[2].ref
+		));
 
 		this.isLinked = true;
 	}
@@ -116,13 +121,27 @@ export default class Function {
 
 		const project = this.getFile().owner.project;
 		const func = project.module.makeFunction(
-			this.arguments.map(x => x.type.getBitcode()),
-			this.returns.map(x => x.getBitcode())
+			[
+				...this.returns
+					.filter(x => !(x.type instanceof IntrinsicType))
+					.map(x => x.type.getBitcode()),
+				...this.arguments
+					.map(x => x.type.getBitcode())
+			],
+			this.returns
+				.filter(x => x.type instanceof IntrinsicType)
+				.map(x => x.type.getBitcode()),
 		);
 		this.ref = func.ref;
 
 		const scope = new Scope(func);
-		const ctx = new Context(this.getFile(), scope, func.code);
+		const ctx = new Context(this.getFile(), this, scope, func.code);
+
+		for (const ret of this.returns) {
+			if (ret.type instanceof IntrinsicType) continue;
+			scope.registerArgument(ctx, ret.name, ret.type, ret.ref);
+		}
+
 		for (const arg of this.arguments) {
 			scope.registerArgument(ctx, arg.name, arg.type, arg.ref)
 		}

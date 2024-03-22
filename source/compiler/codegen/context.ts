@@ -6,6 +6,7 @@ import type { File } from "~/compiler/file.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
+import Function from "~/compiler/function.ts";
 import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
 import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
@@ -18,6 +19,7 @@ import { Block } from "~/wasm/instruction/control-flow.ts";
 
 export class Context {
 	file: File;
+	function: Function;
 	scope: Scope;
 	done: boolean;
 
@@ -25,7 +27,8 @@ export class Context {
 
 	block: AnyInstruction[];
 
-	constructor(file: File, scope: Scope, block: AnyInstruction[]) {
+	constructor(file: File, func: Function, scope: Scope, block: AnyInstruction[]) {
+		this.function = func;
 		this.raiseType = none;
 		this.scope = scope;
 		this.block = block;
@@ -62,7 +65,7 @@ export class Context {
 	}
 
 	child() {
-		return new Context(this.file, this.scope.child(), []);
+		return new Context(this.file, this.function, this.scope.child(), []);
 	}
 
 	cleanup() {
@@ -251,7 +254,8 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 	ResolveLinearType(ctx, target, ref, false);
 	// Source address
 	ResolveLinearType(ctx, expr, ref, false);
-	// Bytes
+
+	// Transfer
 	ctx.block.push(Instruction.const.i32(target.getSize()));
 	ctx.block.push(Instruction.copy(0, 0));
 
@@ -276,22 +280,89 @@ function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 
 
 
-
-
-function CompileReturn(ctx: Context, syntax: Syntax.Term_Return) {
+function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
+	const maybe_expr = syntax.value[1].value[0];
 	const isTail = syntax.value[0].value.length > 0;
-	const value = syntax.value[1];
+	const ref = syntax.ref;
 
-	if (isTail) Panic(`${colors.red("Error")}: Unimplemented tail call return\n`, {
-		path: ctx.file.path,
-		name: ctx.file.name,
-		ref: syntax.ref
-	});
+	if (isTail) Panic(
+		`${colors.red("Error")}: Unimplemented tail call return\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref }
+	);
 
-	CompileExpr(ctx, value);
-	ctx.scope.cleanup();
+	// Guard: return none
+	if (ctx.function.returns.length === 0) {
+		if (maybe_expr) Panic(
+			`${colors.red("Error")}: This function should have no return value\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
+		ctx.scope.cleanup(true);
+		ctx.block.push(Instruction.return());
+		ctx.done = true;
+		return never;
+	}
+
+	if (!maybe_expr) Panic(
+		`${colors.red("Error")}: Missing return expression\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref }
+	);
+
+	if (ctx.function.returns.length !== 1) Panic(
+		`${colors.red("Error")}: Multi value return is currently not supported\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref }
+	);
+
+	const goal = ctx.function.returns[0];
+	const expr = CompileExpr(ctx, maybe_expr, goal.type || none);
+	if (!IsRuntimeType(expr)) Panic(
+		`${colors.red("Error")}: You can only return a runtime type, not ${colors.cyan(expr.getTypeName())}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref }
+	);
+
+	// Guard: simple intrinsic return
+	if (goal.type instanceof IntrinsicType) {
+		if (!goal.type.like(expr)) Panic(
+			`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
+		if (expr instanceof LinearType) {
+			ResolveLinearType(ctx, expr, ref, true);
+			expr.dispose();
+		};
+
+		ctx.scope.cleanup(true);
+		ctx.block.push(Instruction.return());
+		ctx.done = true;
+		return never;
+	}
+
+	if (expr instanceof IntrinsicValue || !expr.like(goal.type)) Panic(
+		`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref }
+	);
+
+	const target = ctx.scope.getVariable("return", true);
+	if (!target) throw new Error("Missing return variable");
+
+	// Destination address
+	ResolveLinearType(ctx, target.type, maybe_expr.ref, false);
+
+	// Source Address
+	ResolveLinearType(ctx, expr, maybe_expr.ref, true);
+
+	// Transfer
+	ctx.block.push(Instruction.const.i32(goal.type.size));
+	ctx.block.push(Instruction.copy(0, 0));
+
+	expr.dispose();
+
+	ctx.scope.cleanup(true);
 	ctx.block.push(Instruction.return());
 	ctx.done = true;
+
+	return never;
 }
 
 function CompileRaise(ctx: Context, syntax: Syntax.Term_Raise) {

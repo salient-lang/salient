@@ -913,8 +913,8 @@ export type Term_Return = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)?', value: [] | [_Literal & {value: "\x5ftail"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		Term_Expr
+		{ type: '(...)?', value: [] | [_Literal & {value: "\x5fcall"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
+		{ type: '(...)?', value: [] | [Term_Expr], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Return (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -976,7 +976,7 @@ export type Term_Expr_prefix = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(_Literal & {value: "\x21"} | _Literal & {value: "\x2d"} | _Literal & {value: "return"})
+		(_Literal & {value: "\x21"} | _Literal & {value: "\x2d"})
 	]
 }
 export declare function Parse_Expr_prefix (i: string, refMapping?: boolean): _Shared.ParseError | {

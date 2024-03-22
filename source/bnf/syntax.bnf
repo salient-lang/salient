@@ -81,7 +81,7 @@ container ::= %(w* "[" w*) ( container_item ( %(w* "," w*) container_item )* %w*
 #  Function
 #=============================
 function ::= func_head %w* ( block | ";" ) ;
-	func_head ::= %("fn" w+) ...name %( w* "(" w* ) func_args %(w* ")" w* ":" w*) access ;
+	func_head ::= %("fn" w+) ...name %( w* "(" w* ) func_args %(w* ")" w*) %(":" w*) access ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 
@@ -91,7 +91,7 @@ block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
-return ::= %"return" "_tail"? %w+ expr %( ";" w* );
+return ::= %"return" "_call"? %w+ expr? %( ";" w* );
 raise  ::= %"raise" %w+ expr %( ";" w* );  # TODO rename to lift
 # drop  ::= %"drop" %w+ expr %( ";" w* );
 
@@ -99,7 +99,7 @@ raise  ::= %"raise" %w+ expr %( ";" w* );  # TODO rename to lift
 #  Expression
 #=============================
 expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
-	expr_prefix ::= "!" | "-" | "return" ;
+	expr_prefix ::= "!" | "-" ;
 	expr_infix ::= "&&" | "||" | "^" | "==" | "!=" | "<=" | ">=" | "<" | ">"
 		| "%" | "*" | "/" | "+" | "-"
 		| "as" | "instanceof"
