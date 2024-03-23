@@ -61,7 +61,7 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 	const variable = ctx.scope.getVariable(name, true);
 	if (!variable) {
 		const found = ctx.file.access(name);
-		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${name}\n`, {
+		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${colors.cyan(name)}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 

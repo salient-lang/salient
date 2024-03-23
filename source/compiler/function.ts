@@ -5,11 +5,12 @@ import type { File, Namespace } from "./file.ts";
 
 import { ReferenceRange, SourceView } from "~/parser.ts";
 import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicType } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, VirtualType, never, none } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
 import { Panic } from "~/helper.ts";
+import Structure from "~/compiler/structure.ts";
 
 
 class Argument {
@@ -36,7 +37,7 @@ export default class Function {
 	isLinked:   boolean;
 
 	arguments: Argument[];
-	returns:   Argument[];
+	returns:   Argument[] | VirtualType;
 
 	constructor(owner: File, ast: Term_Function) {
 		this.owner = owner;
@@ -44,7 +45,7 @@ export default class Function {
 		this.ast = ast;
 		this.ref = null;
 
-		this.returns   = [];
+		this.returns   = never;
 		this.arguments = [];
 
 		this.isLinking  = false;
@@ -91,9 +92,20 @@ export default class Function {
 		if (types === null) return;
 
 		for (let i=0; i<raw_args.length; i++) {
+			const type = types[i];
+			if (type instanceof VirtualType) {
+				const file = this.getFile();
+				console.error(
+					`${colors.red("Error")}: Function parameters must be a solid type\n`
+					+ SourceView(file.path, file.name, raw_args[i].ref)
+				)
+				file.markFailure();
+				continue;
+			}
+
 			this.arguments.push(new Argument(
 				raw_args[i].value[0].value,
-				types[i],
+				type,
 				raw_args[i].ref
 			));
 		}
@@ -103,11 +115,18 @@ export default class Function {
 		);
 		if (returnTypes === null) return;
 
-		this.returns.push(new Argument(
-			"return",
-			returnTypes[0],
-			head.value[2].ref
-		));
+		const retType = returnTypes[0];
+		if (retType instanceof VirtualType) {
+			this.returns = retType;
+		} else {
+			this.returns = [
+				new Argument(
+					"return",
+					retType,
+					head.value[2].ref
+				)
+			];
+		}
 
 		this.isLinked = true;
 	}
@@ -119,27 +138,30 @@ export default class Function {
 		if (!this.isLinked)  return;      // Failed to link
 		this.isCompiled = true;
 
+
+		const args: number[] = [];
+		const rets: number[] = [];
+		if (Array.isArray(this.returns)) for (const arg of this.returns) {
+			if (!(arg.type instanceof IntrinsicType)) args.push(arg.type.getBitcode());
+			else rets.push(arg.type.getBitcode());
+		}
+
+		for (const arg of this.arguments) {
+			args.push(arg.type.getBitcode());
+		}
+
 		const project = this.getFile().owner.project;
-		const func = project.module.makeFunction(
-			[
-				...this.returns
-					.filter(x => !(x.type instanceof IntrinsicType))
-					.map(x => x.type.getBitcode()),
-				...this.arguments
-					.map(x => x.type.getBitcode())
-			],
-			this.returns
-				.filter(x => x.type instanceof IntrinsicType)
-				.map(x => x.type.getBitcode()),
-		);
+		const func = project.module.makeFunction( args, rets );
 		this.ref = func.ref;
+
+
+
 
 		const scope = new Scope(func);
 		const ctx = new Context(this.getFile(), this, scope, func.code);
 
-		for (const ret of this.returns) {
-			if (ret.type instanceof IntrinsicType) continue;
-			scope.registerArgument(ctx, ret.name, ret.type, ret.ref);
+		if (Array.isArray(this.returns)) for (const ret of this.returns) {
+			if (ret.type instanceof Structure) scope.registerArgument(ctx, ret.name, ret.type, ret.ref);
 		}
 
 		for (const arg of this.arguments) {
@@ -162,7 +184,7 @@ export default class Function {
 
 
 function LinkTypes(scope: File, syntax: Term_Access[]) {
-	const out: SolidType[] = [];
+	const out: Array<SolidType | VirtualType> = [];
 
 	let failed = false;
 	for (const arg of syntax) {
@@ -177,7 +199,7 @@ function LinkTypes(scope: File, syntax: Term_Access[]) {
 			)
 			failed = true;
 			continue;
-		} else if (!IsSolidType(res)) {
+		} else if (!IsSolidType(res) && !(res instanceof VirtualType)) {
 			console.error(
 				`${colors.red("Error")}: Function parameters must be a solid type\n`
 				+ SourceView(scope.path, scope.name, arg.ref)

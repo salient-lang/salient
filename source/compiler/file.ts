@@ -3,15 +3,16 @@
 import type Package from "./package.ts";
 import type { Term_Access, Term_Function, Term_Program, Term_Structure } from "~/bnf/syntax.d.ts";
 
-import { IntrinsicType, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64, none, never } from "~/compiler/intrinsic.ts";
 import { AssertUnreachable, FlatAccess, FlattenAccess } from "~/helper.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Parse } from "~/parser.ts";
 import Structure from "~/compiler/structure.ts";
 import Function from "~/compiler/function.ts";
 import Global from "~/compiler/global.ts";
 import Import from "~/compiler/import.ts";
 
-export type Namespace = Function | Import | Global | Structure | IntrinsicType ;
+export type Namespace = Function | Import | Global | Structure | IntrinsicType | VirtualType ;
 
 // deno-lint-ignore no-explicit-any
 export function IsNamespace(val: any): val is Namespace {
@@ -37,6 +38,7 @@ export class File {
 		this.path = path;
 
 		this.namespace = {
+			none, never,
 			bool,               // virtual native types
 			u8, i8, u16, i16,   // virtual native types
 			i32, i64, u32, u64, // native int types

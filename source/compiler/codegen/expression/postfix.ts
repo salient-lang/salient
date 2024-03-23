@@ -51,7 +51,9 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 	const stackReg = ctx.file.owner.project.stackReg.ref;
 	let returnType: VirtualType | IntrinsicValue | LinearType = none;
 
-	if (operand.returns.length == 1) {
+	if (operand.returns instanceof VirtualType) {
+		returnType = operand.returns;
+	} else if (operand.returns.length == 1) {
 		const primary = operand.returns[0];
 		if (primary.type instanceof IntrinsicType) {
 			returnType = primary.type.value;

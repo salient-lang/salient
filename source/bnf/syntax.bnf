@@ -91,7 +91,7 @@ block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
-return ::= %"return" "_call"? %w+ expr? %( ";" w* );
+return ::= %"return" "_call"? ( %w+ expr)? %( w* ";" w* );
 raise  ::= %"raise" %w+ expr %( ";" w* );  # TODO rename to lift
 # drop  ::= %"drop" %w+ expr %( ";" w* );
 

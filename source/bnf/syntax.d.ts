@@ -914,7 +914,16 @@ export type Term_Return = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		{ type: '(...)?', value: [] | [_Literal & {value: "\x5fcall"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		{ type: '(...)?', value: [] | [Term_Expr], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)?', value: [] | [{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr
+	]
+}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Return (i: string, refMapping?: boolean): _Shared.ParseError | {
