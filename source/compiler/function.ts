@@ -32,6 +32,8 @@ export default class Function {
 	name: string;
 	ref: FuncRef | null;
 
+	external?: string;
+
 	isCompiled: boolean;
 	isLinking:  boolean;
 	isLinked:   boolean;
@@ -39,7 +41,8 @@ export default class Function {
 	arguments: Argument[];
 	returns:   Argument[] | VirtualType;
 
-	constructor(owner: File, ast: Term_Function) {
+	constructor(owner: File, ast: Term_Function, external?: string) {
+		this.external = external;
 		this.owner = owner;
 		this.name = ast.value[0].value[0].value;
 		this.ast = ast;
@@ -151,11 +154,37 @@ export default class Function {
 		}
 
 		const project = this.getFile().owner.project;
+
+		const body = this.ast.value[1];
+		if (this.external) {
+			const file = this.getFile();
+			if (body.type !== "literal") {
+				console.error(`${colors.red("Error")}: External imports must have no body\n`+
+					SourceView(file.path, file.name, body.ref)
+				);
+				file.markFailure();
+				return;
+			}
+
+			const mod = file.owner.project.module;
+			const typeIdx = mod.makeType(args, rets);
+			const ref = mod.importFunction(this.external, this.name, typeIdx);
+			if (ref === null) {
+				console.error(`${colors.red("Error")}: Import name conflict\n`+
+					SourceView(file.path, file.name, this.ast.ref)
+				);
+				file.markFailure();
+				return;
+			}
+
+			this.ref = ref;
+
+			return;
+		}
+
+
 		const func = project.module.makeFunction( args, rets );
 		this.ref = func.ref;
-
-
-
 
 		const scope = new Scope(func);
 		const ctx = new Context(this.getFile(), this, scope, func.code);
@@ -168,15 +197,23 @@ export default class Function {
 			scope.registerArgument(ctx, arg.name, arg.type, arg.ref)
 		}
 
-		const body = this.ast.value[1];
-		if (body.type === "literal") throw new Error("Missing function body");
+		if (body.type === "literal") {
+			console.error(`${colors.red("Error")}: Missing function body\n`+
+				SourceView(ctx.file.path, ctx.file.name, body.ref)
+			);
+			ctx.file.markFailure();
+			return;
+		}
 
 		ctx.compile(body.value[0].value);
 		scope.stack.resolve();
 
-		if (!ctx.done) Panic(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: body.ref
-		})
+		if (!ctx.done) {
+			console.error(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`+
+				SourceView(ctx.file.path, ctx.file.name, body.ref)
+			);
+			ctx.file.markFailure();
+		}
 	}
 }
 

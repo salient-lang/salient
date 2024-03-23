@@ -1,6 +1,7 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
+import Structure from "~/compiler/structure.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
 import { IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
@@ -12,8 +13,6 @@ import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import Structure from "~/compiler/structure.ts";
-import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
