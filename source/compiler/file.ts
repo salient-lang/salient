@@ -11,6 +11,7 @@ import Structure from "~/compiler/structure.ts";
 import Function from "~/compiler/function.ts";
 import Global from "~/compiler/global.ts";
 import Import from "~/compiler/import.ts";
+import { SimplifyString } from "~/compiler/codegen/expression/constant.ts";
 
 export type Namespace = Function | Import | Global | Structure | IntrinsicType | VirtualType ;
 
@@ -122,12 +123,13 @@ function IngestStructure(file: File, syntax: Term_Structure) {
 function IngestExternal(file: File, syntax: Term_External) {
 	if (syntax.value[0].type !== "ext_import") throw new Error(`Unsupported external export`);
 
+	const name = SimplifyString(syntax.value[0].value[1]);
 	for (const inner of syntax.value[0].value[0].value) {
 		const line = inner.value[0];
 		const type = line.type;
 		switch (type) {
 			case "function": {
-				IngestFunction(file, line, "ext");
+				IngestFunction(file, line, name.str);
 			} break;
 			case "ext_import_var": throw new Error(`Import global unimplemented`);
 			default: AssertUnreachable(type);

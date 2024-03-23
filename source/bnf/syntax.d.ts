@@ -252,17 +252,7 @@ export type Term_String_ascii = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)*', value: Array<({
-	type: '(...)',
-	start: number,
-	end: number,
-	count: number,
-	ref: _Shared.ReferenceRange,
-	value: [
-		_Literal & {value: "\x5c"},
-		_Literal
-	]
-} | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)*', value: Array<(Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_String_ascii (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -279,21 +269,28 @@ export type Term_String_utf8 = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)*', value: Array<({
-	type: '(...)',
+		{ type: '(...)*', value: Array<(Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}
+export declare function Parse_String_utf8 (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_String_utf8,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Str_escape = {
+	type: 'str_escape',
 	start: number,
 	end: number,
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		_Literal & {value: "\x5c"},
 		_Literal
 	]
-} | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
-	]
 }
-export declare function Parse_String_utf8 (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_String_utf8,
+export declare function Parse_Str_escape (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Str_escape,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

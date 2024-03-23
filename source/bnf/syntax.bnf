@@ -33,8 +33,9 @@ constant ::= boolean
 	| float | integer ;
 
 string ::= string_ascii | string_utf8 ;
-	string_ascii ::= %"\'" ( ( "\\" !"" ) | !( "\'" ) )* %"\'" ;
-	string_utf8  ::= %"\"" ( ( "\\" !"" ) | !( "\"" ) )* %"\"" ;
+	string_ascii ::= %"\'" ( str_escape | !( "\'" ) )* %"\'" ;
+	string_utf8  ::= %"\"" ( str_escape | !( "\"" ) )* %"\"" ;
+	str_escape   ::= %"\\" !"" ;
 
 boolean ::= "true" | "false" ;
 

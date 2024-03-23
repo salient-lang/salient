@@ -147,3 +147,28 @@ function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsi
 
 	return f32.value;
 }
+
+export function SimplifyString(syntax: Syntax.Term_String) {
+	const inner = syntax.value[0];
+	const type = inner.type === "string_ascii" ? "ascii" : "utf8";
+	let str = "";
+
+	for (const chunk of inner.value[0].value) {
+		if (chunk.type == "literal") {
+			str += chunk.value;
+			continue;
+		}
+
+		const esc = chunk.value[0].value;
+		switch (esc) {
+			case "0": str += "\0"; break;
+			case "f": str += "\f"; break;
+			case "n": str += "\n"; break;
+			case "r": str += "\r"; break;
+			case "v": str += "\v"; break;
+			default: str += esc;
+		}
+	}
+
+	return { type, str }
+}
