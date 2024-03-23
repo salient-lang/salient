@@ -38,6 +38,7 @@ export default class Module {
 
 	importFunction(mod: string, name: string, typeIdx: number) {
 		const idx = this.importSect.registerFunction(mod, name, typeIdx);
+		if (idx === null) return null;
 
 		const ref = new FuncRef(true);
 		ref.resolve(idx);

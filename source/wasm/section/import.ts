@@ -24,17 +24,17 @@ class Register {
 	}
 }
 
-interface InnerObject {
+interface ModuleMap {
 	[key: string]: Register;
 }
 
-interface OuterObject {
-	[key: string]: InnerObject;
+interface NamespaceMap {
+	[key: string]: ModuleMap;
 }
 
 
 export default class ImportSection {
-	_entries: OuterObject;
+	_entries: NamespaceMap;
 	_funcs: number;
 
 	constructor() {
@@ -50,9 +50,7 @@ export default class ImportSection {
 
 		if (!mod[name]) {
 			mod[name] = new Register(module, name, typeIdx, this._funcs++);
-		} else if (mod[name].type !== typeIdx) {
-			throw new Error(`Attempting to register import "${module}" "${name}" with new type`);
-		}
+		} else if (mod[name].type !== typeIdx) return null;
 
 		return mod[name].idx;
 	}
