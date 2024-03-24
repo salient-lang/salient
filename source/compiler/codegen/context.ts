@@ -11,12 +11,13 @@ import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsS
 import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Variable } from "~/compiler/codegen/variable.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
-import { VirtualType } from "~/compiler/intrinsic.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 export class Context {
 	file: File;

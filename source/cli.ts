@@ -8,7 +8,7 @@ import Function from "~/compiler/function.ts";
 import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
 import { DisplayTimers, TimerStart, TimerEnd } from "~/helper.ts";
-import { Panic } from "~/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 if (Deno.args.includes("--version")) {
 	console.log("version: 0.0.0");

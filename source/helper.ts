@@ -1,40 +1,4 @@
-import { assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
-
-import type { Term_Access, Term_Access_comp, Term_Access_dynamic, Term_Access_static, Term_Name } from "~/bnf/syntax.d.ts";
-import type { ReferenceRange } from "~/bnf/shared.d.ts";
-import { SourceView } from "~/parser.ts";
-
-export type FlatAccess = (Term_Name | Term_Access_static | Term_Access_dynamic | Term_Access_comp)[];
-
-export function FlattenAccess(syntax: Term_Access): FlatAccess {
-	return [
-		syntax.value[0],
-		...syntax.value[1].value.map(x => x.value[0].value[0])
-	].reverse();
-}
-
-
-export function FlatAccessToStr(access: FlatAccess): string {
-	return access.map(x =>
-		x.type === "access_static" ? `.${x.value}`
-		: x.type === "name" ? `.${x.value}`
-		: x.type === "access_dynamic" ? "[]"
-		: x.type === "access_comp" ? "#[]"
-		: "UNK"
-	).join("")
-}
-
-
-export class Box<T> {
-	value: T;
-	constructor(val: T) {
-		this.value = val;
-	}
-}
-
-
 export type Byte = number;
-
 export function isByte(value: number): value is Byte {
 	return Number.isInteger(value) && value >= 0 && value <= 255;
 }
@@ -45,18 +9,14 @@ export function AssertUnreachable(x: never): never {
 }
 
 
-export type SourceMap = {
-	path: string,
-	name: string,
-	ref:  ReferenceRange
-}
 
-export function Panic(x: string, source?: SourceMap): never {
-	if (source) console.error(x + SourceView(source.path, source.name, source.ref));
-	else        console.error(x);
-	Deno.exit(1);
-}
 
+export class Box<T> {
+	value: T;
+	constructor(val: T) {
+		this.value = val;
+	}
+}
 
 export class LatentValue<T> {
 	private value: T | null;
@@ -83,60 +43,30 @@ export class LatentValue<T> {
 	}
 }
 
-export type LatentLike<T> = LatentValue<T> | T;
-
-
-export function ReadLatentLike<T>(v: LatentLike<T>) {
-	if (v instanceof LatentValue) return v.get();
-	return v;
-}
-
 export class LatentOffset {
 	private base: LatentValue<number>;
 	private offset: number;
-	private value: number | null;
+	private cache: number | null;
 
 	constructor(base: LatentValue<number> | LatentOffset, offset: number) {
 		if (base instanceof LatentOffset) {
 			this.offset = base.offset + offset;
 			this.base = base.base;
-			this.value = null;
+			this.cache = null;
 		} else {
 			this.offset = offset;
 			this.base = base;
-			this.value = null;
+			this.cache = null;
 		}
 	}
 
 	get (): number {
-		if (this.value === null) {
-			this.value = this.base.get() + this.offset;
+		if (this.cache === null) {
+			this.cache = this.base.get() + this.offset;
 		}
 
-		return this.value;
+		return this.cache;
 	}
-}
-
-
-
-
-
-export function AlignUpInteger(x: number, multiple: number) {
-	assert(multiple !== 0, "Cannot align by zero");
-
-	const remainder = x % multiple;
-	return remainder !== 0
-		? x + (multiple - remainder)
-		: x;
-}
-
-export function AlignDownInteger(x: number, multiple: number) {
-	assert(multiple !== 0, "Cannot align by zero");
-
-	const remainder = x % multiple;
-	return remainder !== 0
-		? x - remainder
-		: x;
 }
 
 

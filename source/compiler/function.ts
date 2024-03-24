@@ -3,13 +3,12 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type { Term_Access, Term_Function } from "~/bnf/syntax.d.ts";
 import type { File, Namespace } from "./file.ts";
 
+import { IntrinsicType, VirtualType, never } from "~/compiler/intrinsic.ts";
 import { ReferenceRange, SourceView } from "~/parser.ts";
 import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicType, VirtualType, never, none } from "~/compiler/intrinsic.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
-import { Panic } from "~/helper.ts";
 import Structure from "~/compiler/structure.ts";
 
 

@@ -3,15 +3,16 @@
 import type Package from "./package.ts";
 import type { Term_Access, Term_External, Term_Function, Term_Program, Term_Structure } from "~/bnf/syntax.d.ts";
 
-import { IntrinsicType, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64, none, never } from "~/compiler/intrinsic.ts";
-import { AssertUnreachable, FlatAccess, FlattenAccess } from "~/helper.ts";
-import { VirtualType } from "~/compiler/intrinsic.ts";
-import { Parse } from "~/parser.ts";
 import Structure from "~/compiler/structure.ts";
 import Function from "~/compiler/function.ts";
 import Global from "~/compiler/global.ts";
 import Import from "~/compiler/import.ts";
+import { IntrinsicType, bool, u8, i8, u16, i16, i32, i64, u32, u64, f32, f64, none, never } from "~/compiler/intrinsic.ts";
+import { FlatAccess, FlattenAccess } from "~/compiler/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { SimplifyString } from "~/compiler/codegen/expression/constant.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
+import { Parse } from "~/parser.ts";
 
 export type Namespace = Function | Import | Global | Structure | IntrinsicType | VirtualType ;
 

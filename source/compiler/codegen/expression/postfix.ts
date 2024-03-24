@@ -2,7 +2,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Function from "~/compiler/function.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { IntrinsicType, i32 } from "~/compiler/intrinsic.ts";
 import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { IntrinsicValue } from "~/compiler/intrinsic.ts";
@@ -13,6 +13,7 @@ import { Instruction } from "~/wasm/index.ts";
 import { VirtualType } from "~/compiler/intrinsic.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/compiler/helper.ts";
 import { none } from "~/compiler/intrinsic.ts";
 
 

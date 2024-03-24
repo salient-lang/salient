@@ -2,11 +2,12 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import { IntrinsicType, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType): IntrinsicValue {
 	if (!(expect instanceof IntrinsicType)) expect = undefined;
