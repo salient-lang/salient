@@ -42,7 +42,7 @@ Deno.test(`Numeric logic test`, async () => {
 	assertNotEquals(left.ref, null, "Left function hasn't compiled");
 	project.module.exportFunction("left", left.ref as FuncRef);
 
-	const right = mainFile.namespace["left"];
+	const right = mainFile.namespace["right"];
 	assert(right instanceof CompilerFunc.default, "Missing right function");
 	right.compile();
 	assertNotEquals(right.ref, null, "Right function hasn't compiled");
