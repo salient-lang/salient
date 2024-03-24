@@ -11,11 +11,13 @@ import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsS
 import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
 import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Variable } from "~/compiler/codegen/variable.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 export class Context {
 	file: File;
@@ -281,7 +283,7 @@ function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 
 
 function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
-	const maybe_expr = syntax.value[1].value[0];
+	const maybe_expr = syntax.value[1].value[0]?.value[0];
 	const isTail = syntax.value[0].value.length > 0;
 	const ref = syntax.ref;
 
@@ -291,7 +293,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 	);
 
 	// Guard: return none
-	if (ctx.function.returns.length === 0) {
+	if (ctx.function.returns instanceof VirtualType) {
 		if (maybe_expr) Panic(
 			`${colors.red("Error")}: This function should have no return value\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref }
@@ -300,7 +302,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 		ctx.scope.cleanup(true);
 		ctx.block.push(Instruction.return());
 		ctx.done = true;
-		return never;
+		return ctx.function.returns;
 	}
 
 	if (!maybe_expr) Panic(

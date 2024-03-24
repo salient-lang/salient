@@ -2,7 +2,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Function from "~/compiler/function.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { IntrinsicType, i32 } from "~/compiler/intrinsic.ts";
 import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { IntrinsicValue } from "~/compiler/intrinsic.ts";
@@ -13,6 +13,7 @@ import { Instruction } from "~/wasm/index.ts";
 import { VirtualType } from "~/compiler/intrinsic.ts";
 import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/compiler/helper.ts";
 import { none } from "~/compiler/intrinsic.ts";
 
 
@@ -51,7 +52,9 @@ function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: Opera
 	const stackReg = ctx.file.owner.project.stackReg.ref;
 	let returnType: VirtualType | IntrinsicValue | LinearType = none;
 
-	if (operand.returns.length == 1) {
+	if (operand.returns instanceof VirtualType) {
+		returnType = operand.returns;
+	} else if (operand.returns.length == 1) {
 		const primary = operand.returns[0];
 		if (primary.type instanceof IntrinsicType) {
 			returnType = primary.type.value;

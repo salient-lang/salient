@@ -1,17 +1,19 @@
 import type { Byte } from "~/helper.ts";
 import { EncodeName, EncodeU32 } from "~/wasm/type.ts";
+import { FuncRef } from "~/wasm/funcRef.ts";
+import { Box } from "~/helper.ts";
 
 class Register {
 	mod:  string;
 	name: string;
 	type: number;
-	idx:  number;
+	ref:  FuncRef;
 
-	constructor (mod: string, name: string, typeIdx: number, idx: number) {
+	constructor (mod: string, name: string, typeIdx: number) {
 		this.mod  = mod;
 		this.name = name;
 		this.type = typeIdx;
-		this.idx  = idx;
+		this.ref  = new FuncRef(false);
 	}
 
 	toBinary(): Byte[] {
@@ -24,17 +26,17 @@ class Register {
 	}
 }
 
-interface InnerObject {
+interface ModuleMap {
 	[key: string]: Register;
 }
 
-interface OuterObject {
-	[key: string]: InnerObject;
+interface NamespaceMap {
+	[key: string]: ModuleMap;
 }
 
 
 export default class ImportSection {
-	_entries: OuterObject;
+	_entries: NamespaceMap;
 	_funcs: number;
 
 	constructor() {
@@ -49,19 +51,17 @@ export default class ImportSection {
 		const mod = this._entries[module];
 
 		if (!mod[name]) {
-			mod[name] = new Register(module, name, typeIdx, this._funcs++);
-		} else if (mod[name].type !== typeIdx) {
-			throw new Error(`Attempting to register import "${module}" "${name}" with new type`);
-		}
+			mod[name] = new Register(module, name, typeIdx);
+		} else if (mod[name].type !== typeIdx) return null;
 
-		return mod[name].idx;
+		return mod[name].ref;
 	}
 
 	getFuncs(): number {
 		return this._funcs;
 	}
 
-	toBinary (): Byte[] {
+	toBinary (funcID: Box<number>): Byte[] {
 		let length = 0;
 		const buffer = [];
 
@@ -69,6 +69,7 @@ export default class ImportSection {
 			const mod = this._entries[module];
 
 			for (const name in mod) {
+				mod[name].ref.resolve(funcID.value++, true);
 				buffer.push(...mod[name].toBinary());
 				length++;
 			}

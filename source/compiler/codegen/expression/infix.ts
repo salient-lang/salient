@@ -9,7 +9,7 @@ import { ReferenceRange } from "~/parser.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { CompileArg } from "~/compiler/codegen/expression/operand.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import { Panic } from "~/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType): OperandType {

@@ -1,4 +1,5 @@
-import { AssertUnreachable, AlignUpInteger, AlignDownInteger, LatentValue } from "~/helper.ts";
+import { AlignUpInteger, AlignDownInteger } from "~/compiler/helper.ts";
+import { AssertUnreachable, LatentValue } from "~/helper.ts";
 
 /**
  * Used for calculating the relative stack location of variables within a function stack

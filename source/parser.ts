@@ -3,7 +3,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import * as Instance from "~/bnf/syntax.js";
 import * as Syntax from "~/bnf/syntax.d.ts";
 import { ParseError, ReferenceRange, Reference, SyntaxNode } from "~/bnf/shared.js";
-import { Panic } from "~/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 await Instance.ready;
 

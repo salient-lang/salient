@@ -1,6 +1,6 @@
 import type { Term_Expr, Term_Expr_arg, _Literal } from "~/bnf/syntax.d.ts";
 import { ReferenceRange } from "~/parser.ts";
-import { Panic } from "~/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 
 const precedence = {

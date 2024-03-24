@@ -2,11 +2,12 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import { IntrinsicType, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType): IntrinsicValue {
 	if (!(expect instanceof IntrinsicType)) expect = undefined;
@@ -146,4 +147,29 @@ function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsi
 	ctx.block.push(Instruction.const.f32(num));
 
 	return f32.value;
+}
+
+export function SimplifyString(syntax: Syntax.Term_String) {
+	const inner = syntax.value[0];
+	const type = inner.type === "string_ascii" ? "ascii" : "utf8";
+	let str = "";
+
+	for (const chunk of inner.value[0].value) {
+		if (chunk.type == "literal") {
+			str += chunk.value;
+			continue;
+		}
+
+		const esc = chunk.value[0].value;
+		switch (esc) {
+			case "0": str += "\0"; break;
+			case "f": str += "\f"; break;
+			case "n": str += "\n"; break;
+			case "r": str += "\r"; break;
+			case "v": str += "\v"; break;
+			default: str += esc;
+		}
+	}
+
+	return { type, str }
 }
