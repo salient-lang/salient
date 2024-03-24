@@ -12,10 +12,10 @@ Deno.test(`Wasm module test: should print "${goalText}"`, async () => {
 	const mem = mod.addMemory(1);
 	mod.exportMemory("memory", mem);
 
-	const type0 = mod.makeType([Type.Intrinsic.i32], [Type.Intrinsic.i32]);
 	const type1 = mod.makeType([Type.Intrinsic.i32, Type.Intrinsic.i32, Type.Intrinsic.i32, Type.Intrinsic.i32], [Type.Intrinsic.i32]);
 
 	const fd_write = mod.importFunction("wasi_snapshot_preview1", "fd_write", type1);
+	if (fd_write === null) fail(`Unable to import fd_write`);
 
 	mod.setData(0, goalText);
 	// The WASI iovec struct, which consists of a pointer to

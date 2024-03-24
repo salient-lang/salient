@@ -1,10 +1,11 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
+import Structure from "~/compiler/structure.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
 import { IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
@@ -12,8 +13,7 @@ import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import Structure from "~/compiler/structure.ts";
-import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
@@ -61,7 +61,7 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 	const variable = ctx.scope.getVariable(name, true);
 	if (!variable) {
 		const found = ctx.file.access(name);
-		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${name}\n`, {
+		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${colors.cyan(name)}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 

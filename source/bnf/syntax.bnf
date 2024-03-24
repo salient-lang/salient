@@ -1,5 +1,5 @@
 program ::= %w* ( stmt_top %w* )* ;
-	stmt_top ::= function | structure ;
+	stmt_top ::= function | structure | external ;
 
 
 #=============================
@@ -32,8 +32,10 @@ constant ::= boolean
 	| string
 	| float | integer ;
 
-string ::= string_text ;
-	string_text ::= %"\'" ( ( "\\" !"" ) | !( "\'" ) )* %"\'" ;
+string ::= string_ascii | string_utf8 ;
+	string_ascii ::= %"\'" ( str_escape | !( "\'" ) )* %"\'" ;
+	string_utf8  ::= %"\"" ( str_escape | !( "\"" ) )* %"\"" ;
+	str_escape   ::= %"\\" !"" ;
 
 boolean ::= "true" | "false" ;
 
@@ -80,7 +82,7 @@ container ::= %(w* "[" w*) ( container_item ( %(w* "," w*) container_item )* %w*
 #=============================
 #  Function
 #=============================
-function ::= func_head %w* ( block | ";" ) ;
+function ::= func_head %w* ( block | ";" ) %w* ;
 	func_head ::= %("fn" w+) ...name %( w* "(" w* ) func_args %(w* ")" w*) %(":" w*) access ;
 	func_args ::= ( func_arg %w* ( %( "," w* ) func_arg )* )? ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
@@ -91,9 +93,10 @@ block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
-return ::= %"return" "_call"? %w+ expr? %( ";" w* );
+return ::= %"return" "_call"? ( %w+ expr)? %( w* ";" w* );
 raise  ::= %"raise" %w+ expr %( ";" w* );  # TODO rename to lift
 # drop  ::= %"drop" %w+ expr %( ";" w* );
+
 
 #=============================
 #  Expression
@@ -118,3 +121,13 @@ arg_list ::= ( expr %w* ","? %w* )* ;
 if ::= %("if" w*) expr %w* expr %w* ( %"else" %w* expr )? ;
 
 statement ::= expr %terminate ;
+
+
+#=============================
+#  External
+#=============================
+external ::= %( "external" w+ ) ( ext_import | ext_export ) ;
+	ext_import ::= %( "import" w* "{" w* ) ext_imports* %( w* "}" w* "from" w*) string %(w* ";" w*) ;
+		ext_imports    ::= function | ext_import_var ;
+		ext_import_var ::= %( "let" w* ) name %( w* ":" w* ) access %(w* ";" w*);
+	ext_export ::= "export" ;

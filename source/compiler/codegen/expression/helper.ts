@@ -1,12 +1,13 @@
 import type * as Syntax from "~/bnf/syntax.d.ts";
 
-import { AssertUnreachable, LatentOffset, Panic } from "~/helper.ts";
+import { AssertUnreachable, LatentOffset } from "~/helper.ts";
 import { BasePointerType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { ReferenceRange } from "~/bnf/shared.js";
 import { IntrinsicType } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 
 export function MaybeSingularExprArg(syntax: Syntax.Term_Expr) {
