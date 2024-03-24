@@ -15,13 +15,25 @@ fn right(): f32 {
 	return 10.0 - 1.0 / 2.0 % 10.0 - 8.0;
 }
 
-fn main(): bool {
+fn main(): i32 {
 	// (-2.5 % 2.0) * -3.0 == 10.0 - ((1.0 / 2.0) % 10.0) - 8.0;
 	// 1.5 == 1.5
 	// true == 1
 
 	// doing this in a single expression to also ensure == is applied correctly
-	return -2.5 % 2.0 * -3.0 == 10.0 - 1.0 / 2.0 % 10.0 - 8.0;
+	if ( (-2.5 % 2.0) * -3.0 ) != ( 10.0 - ( (1.0 / 2.0) % 10.0 ) - 8.0 ) {
+		return 25;
+	};
+
+	if ( (-2.5 % 2.0) * -3.0 != 10.0 - ( (1.0 / 2.0) % 10.0 ) - 8.0 ) {
+		return 29;
+	};
+
+	if ( -2.5 % 2.0 * -3.0 != 10.0 - 1.0 / 2.0 % 10.0 - 8.0 ) {
+		return 33;
+	};
+
+	return 36;
 }`;
 
 Deno.test(`Numeric logic test`, async () => {
@@ -59,13 +71,13 @@ Deno.test(`Numeric logic test`, async () => {
 		: fail(`Expected _start to be a function`);
 
 	const code = main() as number;
-	if (code === 0) {
+	if (code !== 0) {
 		const leftFn: () => number = exports.left as any;
 		assert(leftFn instanceof Function, "Missing left function");
 
 		const rightFn: () => number = exports.right as any;
 		assert(rightFn instanceof Function, "Missing right function");
 
-		fail(`equivalence checks failed ${leftFn()} != ${rightFn()}`);
+		fail(`equivalence checks failed ${leftFn()} != ${rightFn()} at line ${code}`);
 	};
 });
