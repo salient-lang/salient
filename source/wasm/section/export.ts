@@ -1,3 +1,4 @@
+// https://webassembly.github.io/spec/core/binary/modules.html#export-section
 import { EncodeName, EncodeU32 } from "~/wasm/type.ts";
 import { MemoryRef } from "~/wasm/memoryRef.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";

@@ -25,6 +25,14 @@ export function FlatAccessToStr(access: FlatAccess): string {
 }
 
 
+export class Box<T> {
+	value: T;
+	constructor(val: T) {
+		this.value = val;
+	}
+}
+
+
 export type Byte = number;
 
 export function isByte(value: number): value is Byte {
