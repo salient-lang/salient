@@ -63,15 +63,15 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 			// (1 + 2) * 3 -> (2 * 3) + 1
 			root = {
 				type: "infix",
-				lhs: {
+				lhs: root.lhs,
+				op: root.op,
+				rhs: {
 					type: "infix",
 					lhs: root.rhs,
 					op,
 					rhs: arg,
 					ref: ReferenceRange.union(root.ref, arg.ref)
 				},
-				op: root.op,
-				rhs: root.lhs,
 				ref: ReferenceRange.union(arg.ref, arg.ref)
 			}
 		} else {
