@@ -63,6 +63,7 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 		rpn.push(op_stack.pop()!);
 	}
 
+	// This could probably be optimised in the future to not use a stack, and just manipulate a raw root node
 	const stack = new Array<PrecedenceTree>();
 	while (rpn.length > 0) {
 		const token = rpn.shift()!;
@@ -85,8 +86,8 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 	}
 
 	const root = stack.pop()!;
-	assert(typeof root === "string", "Expression somehow has no arguments during precedence calculation");
-	assert(stack.length != 0, "Expression somehow has only operators during precedence calculation");
+	assert(typeof root !== "string", "Expression somehow has no arguments during precedence calculation");
+	assert(stack.length == 0, "Expression somehow has only operators during precedence calculation");
 
 	return root;
 }
