@@ -8,17 +8,17 @@ import { FuncRef } from "~/wasm/funcRef.ts";
 
 const source = `
 fn left(): f32 {
-	// return (-2.5 % 2.0) * -3.0;
+	// (-2.5 % 2.0) * -3.0;
 	return -2.5 % 2.0 * -3.0;
 }
 
-fn right(): f32 {
-	// return 9.5 - 0.5 - 8.0;
-	return 10.0 - 1.0 / 2.0 % 10.0 - 8.0;
+fn right(): i32 {
+	// 10.0 - 0.5 - 8.0
+	// return 10.0 - 1.0 / 2.0 % 10.0 - 8.0;
+	return 10 - 0 - 8;
 }
 
 fn main(): i32 {
-	return 1;
 
 	// if ( 10.0 - ( 3.0 / 2.0 ) - 8.0 != 10.0 - 3.0 / 2.0 - 8.0 ) {
 	// 	return 20;

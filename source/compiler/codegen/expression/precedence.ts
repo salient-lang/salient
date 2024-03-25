@@ -6,18 +6,19 @@ import { Panic } from "~/compiler/helper.ts";
 const precedence = {
 	".": 1, "->": 1,
 	"**": 2,
-	"*" : 3, "/" : 3, "%" : 3,
-	"+" : 4, "-" : 4,
-	"<<": 5, ">>": 5,
-	"<" : 6, ">" : 6, "<=": 6, ">=": 6,
-	"instanceof": 7,
-	"==": 8, "!=": 8,
-	"as": 9,
+	"%": 3,
+	"*" : 4, "/" : 4,
+	"+" : 5, "-" : 5,
+	"<<": 6, ">>": 6,
+	"<" : 7, ">" : 7, "<=": 7, ">=": 7,
+	"instanceof": 8,
+	"==": 9, "!=": 9,
 	"&": 10,
 	"^": 11,
 	"|": 12,
-	"&&": 13,
-	"||": 14,
+	"as": 13,
+	"&&": 14,
+	"||": 15,
 } as { [key: string]: number };
 
 export function GetPrecedence (a: string, b: string) {
@@ -41,67 +42,68 @@ export type PrecedenceTree = Term_Expr_arg | {
 
 export function ApplyPrecedence(syntax: Term_Expr) {
 
-	const val_stack = new Array<PrecedenceTree>();
+	const rpn       = new Array<PrecedenceTree | string>();
 	const op_stack  = new Array<string>();
 
-	val_stack.push(syntax.value[0]);
-
+	rpn.push(syntax.value[0]);
 	for (const action of syntax.value[1].value) {
-		const op  = action.value[0].value;
-		const arg = action.value[1];
-
-		const prev = op_stack.pop();
-		if (prev === undefined || GetPrecedence(prev, op) < 0) {
-			if (prev) op_stack.push(prev);
-			val_stack.push(arg);
-			op_stack.push(op);
-		} else {
-			const lhs = val_stack.pop()!;
-
-			val_stack.push({
-				type: "infix",
-				lhs: lhs,
-				op:  op,
-				rhs: arg,
-				ref: ReferenceRange.union(lhs.ref, arg.ref)
-			});
-			op_stack.push(prev);
+		const op = action.value[0].value;
+		while (op_stack.length > 0) {
+			const prev = op_stack[op_stack.length - 1]!; // peak
+			if (GetPrecedence(prev, op) <= 0) {
+				rpn.push(op_stack.pop()!);
+			} else break;
 		}
+		op_stack.push(op);
+		rpn.push(action.value[1]);
 	}
 
-	let root = val_stack[0]!;
-	for (let i=1; i<val_stack.length; i++) {
-		const nx = val_stack[i]!;
-		root = {
+	// Drain remaining operators
+	while (op_stack.length > 0) {
+		rpn.push(op_stack.pop()!);
+	}
+
+	const stack = new Array<PrecedenceTree>();
+	while (rpn.length > 0) {
+		const token = rpn.shift()!;
+
+		if (typeof token != "string") {
+			stack.push(token);
+			continue;
+		}
+
+		const rhs = stack.pop()!;
+		const lhs = stack.pop()!;
+
+		stack.push({
 			type: "infix",
-			lhs: root,
-			op:  op_stack[i-1]!,
-			rhs: nx,
-			ref: ReferenceRange.union(root.ref, nx.ref),
-		}
-		console.log(root.op);
+			lhs: lhs,
+			op:  token,
+			rhs: rhs,
+			ref: ReferenceRange.union(lhs.ref, rhs.ref)
+		})
 	}
 
-	console.log(val_stack);
-
-	[9.5, 0.5, 8.0, 1.0];
-	["-", "-", "="]
-
-	// while (op_stack.length > 0) {
-	// 	const op = op_stack.pop()!;
-	// 	const rhs = val_stack.pop()!;
-	// 	const lhs = val_stack.pop()!;
-
-	// 	val_stack.push({
-	// 		type: "infix",
-	// 		lhs,
-	// 		op,
-	// 		rhs,
-	// 		ref: ReferenceRange.union(lhs.ref, rhs.ref),
-	// 	});
-	// }
-
-	// if (val_stack.length !== 1) throw new Error("Operand stack unexpectedly didn't fully drain");
+	const root = stack.pop()!;
+	if (typeof root === "string") throw new Error("Please no");
+	if (stack.length != 0) throw new Error("Please no");
 
 	return root;
+}
+
+
+// For debugging assistance
+function StringifyPrecedence(tree: PrecedenceTree | string): string {
+	if (typeof tree === "string") return tree;
+
+	if (tree.type === "infix") return `(${StringifyPrecedence(tree.lhs)} ${tree.op} ${StringifyPrecedence(tree.rhs)})`;
+
+	const arg = tree.value[1].value[0];
+	if (arg.type == "expr_brackets") return `(...)`;
+	if (arg.type != "constant") return `type[${arg.type}]`;
+
+	if (arg.value[0].type == "boolean") return arg.value[0].value[0].value;
+	if (arg.value[0].type == "integer") return arg.value[0].value[0].value;
+	if (arg.value[0].type == "float") return arg.value[0].value[0].value;
+	return "str";
 }
