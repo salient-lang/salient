@@ -1,6 +1,7 @@
 import type { Term_Expr, Term_Expr_arg, _Literal } from "~/bnf/syntax.d.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { Panic } from "~/compiler/helper.ts";
+import { assert } from "https://deno.land/std@0.201.0/assert/assert.ts";
 
 
 const precedence = {
@@ -41,7 +42,6 @@ export type PrecedenceTree = Term_Expr_arg | {
 };
 
 export function ApplyPrecedence(syntax: Term_Expr) {
-
 	const rpn       = new Array<PrecedenceTree | string>();
 	const op_stack  = new Array<string>();
 
@@ -85,14 +85,14 @@ export function ApplyPrecedence(syntax: Term_Expr) {
 	}
 
 	const root = stack.pop()!;
-	if (typeof root === "string") throw new Error("Please no");
-	if (stack.length != 0) throw new Error("Please no");
+	assert(typeof root === "string", "Expression somehow has no arguments during precedence calculation");
+	assert(stack.length != 0, "Expression somehow has only operators during precedence calculation");
 
 	return root;
 }
 
 
-// For debugging assistance
+// For debugging assistance when hell breaks loose
 function StringifyPrecedence(tree: PrecedenceTree | string): string {
 	if (typeof tree === "string") return tree;
 
