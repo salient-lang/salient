@@ -70,6 +70,7 @@ function PrepareReturn(ctx: Context, target: Function, ref: ReferenceRange): Vir
 			? primary.type.value
 			: primary.type;
 		const returnType = LinearType.make(forward, alloc, ctx.file.owner.project.stackBase);
+		returnType.markDefined();
 
 		ctx.block.push(Instruction.global.get(stackReg));
 		ctx.block.push(Instruction.const.i32(alloc.getOffset()));
@@ -78,7 +79,7 @@ function PrepareReturn(ctx: Context, target: Function, ref: ReferenceRange): Vir
 	}
 }
 
-function PrepareArguments(ctx: Context, target: Function, args: Syntax.Term_Arg_list | undefined, tail: boolean, ref: ReferenceRange) {
+function PrepareArguments(ctx: Context, target: Function, args: Syntax.Term_Arg_list | undefined, tailCall: boolean, ref: ReferenceRange) {
 
 	let i = 0;
 	for (const arg of LineariseArgList(args)) {
@@ -98,6 +99,12 @@ function PrepareArguments(ctx: Context, target: Function, args: Syntax.Term_Arg_
 
 		// Special post-processing for linear types
 		if (!(res instanceof LinearType)) continue;
+
+		if (tailCall && res.alloc !== null) ctx.markFailure(
+			`${colors.red("Error")}: Cannot use a locally created value as a tail call argument\n`,
+			arg.ref
+		);
+
 		ResolveLinearType(ctx, res, arg.ref, true);
 	}
 
@@ -130,6 +137,8 @@ export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, ope
 	);
 
 	PrepareArguments(ctx, operand, syntax.value[0].value[0], true, syntax.ref);
+
+	ctx.scope.cleanup(true);
 
 	if (ctx.function.owner.owner.project.flags.tailCall) {
 		ctx.block.push(Instruction.return_call(operand.ref));

@@ -35,7 +35,7 @@ export default class Project {
 		this.module.addMemory(1, 1);
 
 		this.flags = {
-			tailCall: false
+			tailCall: true
 		};
 	}
 

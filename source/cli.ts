@@ -54,7 +54,7 @@ TimerEnd("serialize");
 TimerStart("wasm2wat");
 const command = new Deno.Command(
 	"wasm2wat",
-	{ args: ["-v", "out.wasm", "-o", "out.wat"] }
+	{ args: ["-v", "out.wasm", "-o", "out.wat", "--enable-all"] }
 );
 const { code, stdout, stderr } = await command.output();
 if (code !== 0) {
