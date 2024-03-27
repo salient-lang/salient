@@ -5,9 +5,9 @@ import { CompileInfix } from "~/compiler/codegen/expression/infix.ts";
 import { CompileArg } from "~/compiler/codegen/expression/operand.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 
-export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: SolidType): OperandType {
+export function CompileExpr(ctx: Context, syntax: Syntax.Term_Expr, expect?: SolidType, tailCall: boolean = false): OperandType {
 	const elm = ApplyPrecedence(syntax);
-	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect);
+	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect, tailCall);
 
-	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect);
+	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect, tailCall);
 }

@@ -12,7 +12,7 @@ import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
 
 
-export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType): OperandType {
+export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType, tailCall = false): OperandType {
 	if (op === "as") return CompileAs(ctx, lhs, rhs);
 	if (op === ".")  return CompileStaticAccess(ctx, lhs, rhs, expect);
 
@@ -24,7 +24,7 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
-	let b = CompilePrecedence(ctx, rhs, a.type);
+	let b = CompilePrecedence(ctx, rhs, a.type, tailCall);
 	if (b instanceof LinearType && b.type instanceof IntrinsicValue) b = ResolveLinearType(ctx, b, rhs.ref);
 	if (!(b instanceof IntrinsicValue)) Panic(
 		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics ${colors.cyan(b.getTypeName())}\n`, {
@@ -56,8 +56,8 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 	}
 }
 
-function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType): OperandType {
-	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect);
+function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType, tailCall = false): OperandType {
+	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect, tailCall);
 	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect);
 }
 
@@ -127,9 +127,10 @@ function CompileStaticAccess(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceT
 
 
 function CompileAdd(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot add unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot add unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value || lhs === u8.value || lhs === u16.value || lhs === u32.value) {
 		ctx.block.push(Instruction.i32.add());
@@ -157,9 +158,10 @@ function CompileAdd(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 }
 
 function CompileSub(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot subtract unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot subtract unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value || lhs === u8.value || lhs === u16.value || lhs === u32.value) {
 		ctx.block.push(Instruction.i32.sub());
@@ -190,9 +192,10 @@ function CompileSub(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 
 
 function CompileMul(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot multiply unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot multiply unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value || lhs === u8.value || lhs === u16.value || lhs === u32.value) {
 		ctx.block.push(Instruction.i32.mul());
@@ -220,9 +223,10 @@ function CompileMul(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 }
 
 function CompileDiv(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot divide unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot divide unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.div_s());
@@ -258,9 +262,10 @@ function CompileDiv(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 }
 
 function CompileRem(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot remainder unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot remainder unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.rem_s());
@@ -412,9 +417,10 @@ function CompileFloatRemainder(ctx: Context, type: IntrinsicValue, ref: Referenc
 
 
 function CompileAnd(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot && unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot && unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.and());
@@ -440,9 +446,10 @@ function CompileAnd(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 }
 
 function CompileOr(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot || unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot || unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.or());
@@ -469,9 +476,10 @@ function CompileOr(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: 
 }
 
 function CompileXor(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot ^ unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot ^ unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.xor());
@@ -502,9 +510,10 @@ function CompileXor(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 
 
 function CompileEq(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot == unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot == unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.eq());
@@ -540,9 +549,10 @@ function CompileEq(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: 
 }
 
 function CompileNeq(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot != unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot != unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.ne());
@@ -578,9 +588,10 @@ function CompileNeq(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref:
 }
 
 function CompileLt(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot < unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot < unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.lt_s());
@@ -616,9 +627,10 @@ function CompileLt(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: 
 }
 
 function CompileLe(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot <= unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot <= unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.le_s());
@@ -654,9 +666,10 @@ function CompileLe(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: 
 }
 
 function CompileGt(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot > unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot > unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.gt_s());
@@ -692,9 +705,10 @@ function CompileGt(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: 
 }
 
 function CompileGe(ctx: Context, lhs: IntrinsicValue, rhs: IntrinsicValue, ref: ReferenceRange) {
-	if (lhs !== rhs) Panic(`${colors.red("Error")}: Cannot >= unmatched types ${lhs.type.name} != ${rhs.type.name}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref
-	});
+	if (lhs !== rhs) ctx.markFailure(
+		`${colors.red("Error")}: Cannot >= unmatched types ${lhs.type.name} != ${rhs.type.name}\n`,
+		ref
+	);
 
 	if (lhs === i8.value || lhs === i16.value || lhs === i32.value) {
 		ctx.block.push(Instruction.i32.ge_s());

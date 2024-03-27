@@ -48,7 +48,7 @@ export class Scope {
 			ctx.block.push(Instruction.global.get(ctx.file.owner.project.stackReg.ref));
 			// value
 			ctx.block.push(Instruction.local.get(reg.ref));
-			Store(ctx, type, linear.offset);
+			Store(ctx, type, linear.offset, ref);
 
 			this.vars[name] = new Variable(name, linear);
 			reg.free();
