@@ -282,6 +282,10 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 	const res = CompileExpr(ctx, syntax.value[0]);
 
+	if (res instanceof LinearType) res.dispose();
+
+	// TOOD: drop structs properly
+
 	if (res !== none && res !== never) {
 		ctx.block.push(Instruction.drop());
 	}
@@ -306,9 +310,9 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 			{ path: ctx.file.path, name: ctx.file.name, ref }
 		);
 
-		CompileExpr(ctx, maybe_expr, undefined, true);
+		const expr = CompileExpr(ctx, maybe_expr, undefined, true);
+		if (expr !== never) throw new Error("Expected a never returning expression");
 
-		// return CompileTailCall(ctx, expr, func);
 		return never;
 	}
 

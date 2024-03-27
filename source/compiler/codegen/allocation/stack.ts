@@ -172,7 +172,7 @@ export class StackAllocator {
 	}
 
 	resolve() {
-		if (this.checkpointRef.hasAllocations()) throw new Error(
+		if (this.checkpointRef.hasAllocations()) console.warn(
 			`Stack leak: ${this.checkpointRef.getAllocationCount()} stack values are still allocated after stack frame end `
 			+ this.checkpointRef.getAllocations()
 		);

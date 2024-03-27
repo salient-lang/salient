@@ -83,6 +83,11 @@ function PrepareArguments(ctx: Context, target: Function, args: Syntax.Term_Arg_
 
 	let i = 0;
 	for (const arg of LineariseArgList(args)) {
+		if (target.arguments.length <= i) Panic(
+			`${colors.red("Error")}: Too many arguments supplied\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
 		const signature = target.arguments[i];
 		i++;
 
@@ -100,12 +105,11 @@ function PrepareArguments(ctx: Context, target: Function, args: Syntax.Term_Arg_
 		// Special post-processing for linear types
 		if (!(res instanceof LinearType)) continue;
 
-		if (tailCall && res.alloc !== null) ctx.markFailure(
+		const final = ResolveLinearType(ctx, res, arg.ref, true);
+		if (tailCall && !(final instanceof IntrinsicValue) && res.alloc !== null) ctx.markFailure(
 			`${colors.red("Error")}: Cannot use a locally created value as a tail call argument\n`,
 			arg.ref
 		);
-
-		ResolveLinearType(ctx, res, arg.ref, true);
 	}
 
 	if (i != target.arguments.length) ctx.markFailure(
@@ -127,7 +131,6 @@ export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, ope
 	operand.compile(); // check the function is compiled
 
 	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
-	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
 
 	const expect = Array.isArray(ctx.function.returns) ? ctx.function.returns[0].type : ctx.function.returns;
 	const returnType = PrepareReturnTail(ctx, operand, syntax.ref);
@@ -147,8 +150,8 @@ export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, ope
 		ctx.block.push(Instruction.return());
 	}
 
+	if (returnType instanceof LinearType) returnType.dispose();
 	ctx.done = true;
-
 	return never;
 }
 
@@ -166,7 +169,10 @@ function PrepareReturnTail(ctx: Context, target: Function, ref: ReferenceRange) 
 	if (primary.type instanceof IntrinsicType) {
 		return primary.type;
 	} else {
-		// Put the pointer on the stack
+		const out = ctx.scope.getVariable("return", false);
+		if (!out) throw new Error("Return variable somehow wasn't declared");
+
+		ResolveLinearType(ctx, out.type, ref);
 	}
 
 	return primary.type;
