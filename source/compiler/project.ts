@@ -5,12 +5,18 @@ import { GlobalRegister } from "~/wasm/section/global.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Intrinsic } from "~/wasm/type.ts";
 
+type ProjectFlags = {
+	tailCall: boolean;
+}
+
 export default class Project {
 	module: Module;
 	packages: Package[];
 
 	stackReg: GlobalRegister;
 	stackBase: BasePointer;
+
+	flags: ProjectFlags;
 
 	failed: boolean;
 
@@ -27,6 +33,10 @@ export default class Project {
 		this.stackBase = new BasePointer(BasePointerType.global, this.stackReg.ref);
 
 		this.module.addMemory(1, 1);
+
+		this.flags = {
+			tailCall: false
+		};
 	}
 
 	markFailure() {

@@ -937,7 +937,7 @@ export type Term_Return = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)?', value: [] | [_Literal & {value: "\x5fcall"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
+		{ type: '(...)?', value: [] | [_Literal & {value: "\x5ftail"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
 		{ type: '(...)?', value: [] | [{
 	type: '(...)',
 	start: number,

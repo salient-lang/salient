@@ -3,7 +3,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
+import { IntrinsicValue, VirtualType, bool, never } from "~/compiler/intrinsic.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix/index.ts";
@@ -16,7 +16,7 @@ import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
 
 
-export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
+export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType, tailCall = false): OperandType {
 	const val = syntax.value[1].value[0];
 	let res: OperandType;
 	switch (val.type) {
@@ -30,7 +30,16 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	}
 
 	const postfix = syntax.value[2].value;
-	if (postfix.length > 0) res = CompilePostfixes(ctx, postfix, res, expect);
+	if (postfix.length > 0) res = CompilePostfixes(ctx, postfix, res, tailCall);
+
+	if (tailCall) {
+		if (res != never) ctx.markFailure(
+			`${colors.red("Error")}: No actual tail call present where required\n`,
+			syntax.ref
+		);
+
+		return never;
+	}
 
 	const prefix = syntax.value[0].value[0];
 	if (prefix) res = CompilePrefix(ctx, prefix, res, expect);

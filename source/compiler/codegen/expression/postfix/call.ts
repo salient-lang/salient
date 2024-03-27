@@ -2,22 +2,21 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Function from "~/compiler/function.ts";
-import { IntrinsicType, i32 } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, IntrinsicValue, VirtualType, i32, never } from "~/compiler/intrinsic.ts";
+import { OperandType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
-import { IntrinsicValue } from "~/compiler/intrinsic.ts";
-import { OperandType } from "~/compiler/codegen/expression/type.ts";
+import { LineariseArgList } from "~/compiler/codegen/expression/postfix/index.ts";
+import { ReferenceRange } from "~/parser.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
-import { VirtualType } from "~/compiler/intrinsic.ts";
-import { LinearType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
-import { none } from "~/compiler/intrinsic.ts";
-import { LineariseArgList } from "~/compiler/codegen/expression/postfix/index.ts";
 
 
-export function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: OperandType, expect?: OperandType) {
+export function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: OperandType, tailCall: boolean = false) {
+	if (tailCall) return CompileTailCall(ctx, syntax, operand);
+
 	if (!(operand instanceof Function)) Panic(
 		`${colors.red("Error")}: Cannot call on a non function value\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
@@ -27,33 +26,63 @@ export function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand
 
 	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
 
+	const returnType = PrepareReturn(ctx, operand, syntax.ref);
+	PrepareArguments(ctx, operand, syntax.value[0].value[0], false, syntax.ref);
+
 	const stackReg = ctx.file.owner.project.stackReg.ref;
-	let returnType: VirtualType | IntrinsicValue | LinearType = none;
 
-	if (operand.returns instanceof VirtualType) {
-		returnType = operand.returns;
-	} else if (operand.returns.length == 1) {
-		const primary = operand.returns[0];
-		if (primary.type instanceof IntrinsicType) {
-			returnType = primary.type.value;
-		} else {
-			const alloc = ctx.scope.stack.allocate(primary.type.size, primary.type.align);
-			const forward = primary.type instanceof IntrinsicType
-				? primary.type.value
-				: primary.type;
-			returnType = LinearType.make(forward, alloc, ctx.file.owner.project.stackBase);
+	// Shift the stack pointer forward
+	const stackBk = ctx.scope.register.allocate(i32.bitcode);
+	ctx.block.push(Instruction.global.get(stackReg));
+	ctx.block.push(Instruction.local.tee(stackBk.ref));
+	ctx.block.push(Instruction.const.i32(ctx.scope.stack.getLatentSize()));
+	ctx.block.push(Instruction.i32.add());
+	ctx.block.push(Instruction.global.set(stackReg));
 
-			ctx.block.push(Instruction.global.get(stackReg));
-			ctx.block.push(Instruction.const.i32(alloc.getOffset()));
-		}
-	} else Panic(
+	ctx.block.push(Instruction.call(operand.ref));
+
+	// Restore stack pointer
+	ctx.block.push(Instruction.local.get(stackBk.ref));
+	ctx.block.push(Instruction.global.set(stackReg));
+	stackBk.free();
+
+	return returnType;
+}
+
+function PrepareReturn(ctx: Context, target: Function, ref: ReferenceRange): VirtualType | IntrinsicValue | LinearType {
+	const stackReg = ctx.file.owner.project.stackReg.ref;
+
+	if (target.returns instanceof VirtualType) {
+		return target.returns;
+	}
+
+	if (target.returns.length != 1) Panic(
 		`${colors.red("Error")}: Multi-return is currently unsupported\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+		{ path: ctx.file.path, name: ctx.file.name, ref }
 	);
 
+	const primary = target.returns[0];
+	if (primary.type instanceof IntrinsicType) {
+		return primary.type.value;
+	} else {
+		const alloc = ctx.scope.stack.allocate(primary.type.size, primary.type.align);
+		const forward = primary.type instanceof IntrinsicType
+			? primary.type.value
+			: primary.type;
+		const returnType = LinearType.make(forward, alloc, ctx.file.owner.project.stackBase);
+
+		ctx.block.push(Instruction.global.get(stackReg));
+		ctx.block.push(Instruction.const.i32(alloc.getOffset()));
+
+		return returnType;
+	}
+}
+
+function PrepareArguments(ctx: Context, target: Function, args: Syntax.Term_Arg_list | undefined, tail: boolean, ref: ReferenceRange) {
+
 	let i = 0;
-	for (const arg of LineariseArgList(syntax.value[0].value[0])) {
-		const signature = operand.arguments[i];
+	for (const arg of LineariseArgList(args)) {
+		const signature = target.arguments[i];
 		i++;
 
 		const res = CompileExpr(ctx, arg, signature.type);
@@ -72,26 +101,64 @@ export function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand
 		ResolveLinearType(ctx, res, arg.ref, true);
 	}
 
-	if (i != operand.arguments.length) ctx.markFailure(
+	if (i != target.arguments.length) ctx.markFailure(
 		`${colors.red("Error")}: Miss matched argument count\n`,
+		ref
+	);
+}
+
+
+
+
+
+export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand: OperandType) {
+	if (!(operand instanceof Function)) Panic(
+		`${colors.red("Error")}: Cannot call on a non function value\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+	);
+
+	operand.compile(); // check the function is compiled
+
+	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
+	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
+
+	const expect = Array.isArray(ctx.function.returns) ? ctx.function.returns[0].type : ctx.function.returns;
+	const returnType = PrepareReturnTail(ctx, operand, syntax.ref);
+	if (returnType != expect) ctx.markFailure(
+		`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(expect.getTypeName())} got ${colors.cyan(returnType.getTypeName())}\n`,
 		syntax.ref
 	);
 
+	PrepareArguments(ctx, operand, syntax.value[0].value[0], true, syntax.ref);
 
-	// Shift the stack pointer forward
-	const stackBk = ctx.scope.register.allocate(i32.bitcode);
-	ctx.block.push(Instruction.global.get(stackReg));
-	ctx.block.push(Instruction.local.tee(stackBk.ref));
-	ctx.block.push(Instruction.const.i32(ctx.scope.stack.getLatentSize()));
-	ctx.block.push(Instruction.i32.add());
-	ctx.block.push(Instruction.global.set(stackReg));
+	if (ctx.function.owner.owner.project.flags.tailCall) {
+		ctx.block.push(Instruction.return_call(operand.ref));
+	} else {
+		ctx.block.push(Instruction.call(operand.ref));
+		ctx.block.push(Instruction.return());
+	}
 
-	ctx.block.push(Instruction.call(operand.ref));
+	ctx.done = true;
 
-	// Restore stack pointer
-	ctx.block.push(Instruction.local.get(stackBk.ref));
-	ctx.block.push(Instruction.global.set(stackReg));
-	stackBk.free();
+	return never;
+}
 
-	return returnType;
+function PrepareReturnTail(ctx: Context, target: Function, ref: ReferenceRange) {
+	if (target.returns instanceof VirtualType) {
+		return target.returns;
+	}
+
+	if (target.returns.length != 1) Panic(
+		`${colors.red("Error")}: Multi-return is currently unsupported\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref }
+	);
+
+	const primary = target.returns[0];
+	if (primary.type instanceof IntrinsicType) {
+		return primary.type;
+	} else {
+		// Put the pointer on the stack
+	}
+
+	return primary.type;
 }

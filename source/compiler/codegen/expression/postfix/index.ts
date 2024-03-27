@@ -9,13 +9,17 @@ import { Panic } from "~/compiler/helper.ts";
 
 
 
-export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[], type: OperandType, expect?: OperandType): OperandType {
+export function CompilePostfixes(ctx: Context, syntax: Syntax.Term_Expr_postfix[], type: OperandType, tailCall = false): OperandType {
 	let res = type;
-	for (const postfix of syntax) {
+
+	for (let i=0; i<syntax.length; i++) {
+		const postfix = syntax[i];
+		const last = i === syntax.length - 1;
 		const act = postfix.value[0];
 
+		const shouldTail = last && tailCall;
 		switch (act.type) {
-			case "expr_call": res = CompileCall(ctx, act, res); break;
+			case "expr_call": res = CompileCall(ctx, act, res, shouldTail); break;
 
 			case "expr_get": case "expr_loan": case "expr_param":
 				Panic(

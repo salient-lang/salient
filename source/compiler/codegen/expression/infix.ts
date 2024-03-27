@@ -12,7 +12,7 @@ import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
 
 
-export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType): OperandType {
+export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType, tailCall = false): OperandType {
 	if (op === "as") return CompileAs(ctx, lhs, rhs);
 	if (op === ".")  return CompileStaticAccess(ctx, lhs, rhs, expect);
 
@@ -24,7 +24,7 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
-	let b = CompilePrecedence(ctx, rhs, a.type);
+	let b = CompilePrecedence(ctx, rhs, a.type, tailCall);
 	if (b instanceof LinearType && b.type instanceof IntrinsicValue) b = ResolveLinearType(ctx, b, rhs.ref);
 	if (!(b instanceof IntrinsicValue)) Panic(
 		`${colors.red("Error")}: Cannot apply arithmetic infix operation to non-intrinsics ${colors.cyan(b.getTypeName())}\n`, {
@@ -56,8 +56,8 @@ export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs:
 	}
 }
 
-function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType): OperandType {
-	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect);
+function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType, tailCall = false): OperandType {
+	if (elm.type === "expr_arg") return CompileArg(ctx, elm, expect, tailCall);
 	return CompileInfix(ctx, elm.lhs, elm.op, elm.rhs, elm.ref, expect);
 }
 

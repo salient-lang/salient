@@ -292,10 +292,23 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 	const isTail = syntax.value[0].value.length > 0;
 	const ref = syntax.ref;
 
-	if (isTail) Panic(
-		`${colors.red("Error")}: Unimplemented tail call return\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref }
-	);
+	// Guard: tail call
+	if (isTail) {
+		if (!maybe_expr) Panic(
+			`${colors.red("Error")}: Missing return_call expression\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
+		if (maybe_expr.value[0].value[0].value.length != 0) Panic(
+			`${colors.red("Error")}: Missing return_call expression\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
+		CompileExpr(ctx, maybe_expr, undefined, true);
+
+		// return CompileTailCall(ctx, expr, func);
+		return never;
+	}
 
 	// Guard: return none
 	if (ctx.function.returns instanceof VirtualType) {
