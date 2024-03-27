@@ -2,13 +2,12 @@
 	"files.associations": {},
 	"editor.insertSpaces": false,
 	"files.eol": "\n",
+	"editor.rulers": [ 80, 120 ],
 	"cSpell.words": [
 		"bitcode",
 		"codegen",
-		"Fuwawa",
 		"impls",
-		"iovs",
-		"Yeet"
+		"iovs"
 	],
 	"deno.enable": true
 }

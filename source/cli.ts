@@ -8,7 +8,7 @@ import Function from "~/compiler/function.ts";
 import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
 import { DisplayTimers, TimerStart, TimerEnd } from "~/helper.ts";
-import { Panic } from "~/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 if (Deno.args.includes("--version")) {
 	console.log("version: 0.0.0");
@@ -54,7 +54,7 @@ TimerEnd("serialize");
 TimerStart("wasm2wat");
 const command = new Deno.Command(
 	"wasm2wat",
-	{ args: ["-v", "out.wasm", "-o", "out.wat"] }
+	{ args: ["-v", "out.wasm", "-o", "out.wat", "--enable-all"] }
 );
 const { code, stdout, stderr } = await command.output();
 if (code !== 0) {

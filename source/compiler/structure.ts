@@ -2,10 +2,11 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type { Term_Structure } from "~/bnf/syntax.d.ts";
 import type { File, Namespace } from "~/compiler/file.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
 import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/bnf/shared.d.ts";
 import { SourceView } from "~/parser.ts";
+import { Panic } from "~/compiler/helper.ts";
 import { i32 } from "~/compiler/intrinsic.ts";
 
 export default class Structure {

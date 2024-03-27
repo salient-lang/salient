@@ -10,7 +10,7 @@ import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Assign } from "~/compiler/codegen/context.ts";
-import { Panic } from "~/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
 	if (!(expect instanceof Structure)) Panic(
@@ -58,11 +58,10 @@ function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Te
 	for (const item of iterator(zeroed)) {
 		const elm = item.value[0];
 		if (elm.type === "container_value") {
-			console.error(
-				`${colors.red("Error")}: Unexpected array value as struct member\n`
-				+ SourceView(ctx.file.path, ctx.file.name, elm.ref)
+			ctx.markFailure(
+				`${colors.red("Error")}: Unexpected array value as struct member\n`,
+				elm.ref
 			);
-			ctx.file.markFailure();
 			continue;
 		}
 

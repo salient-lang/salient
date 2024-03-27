@@ -1,6 +1,6 @@
 import type * as Syntax from "~/bnf/syntax.d.ts";
 
-import { AssertUnreachable, LatentOffset, Panic } from "~/helper.ts";
+import { AssertUnreachable, LatentOffset } from "~/helper.ts";
 import { BasePointerType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { ReferenceRange } from "~/bnf/shared.js";
 import { IntrinsicType } from "~/compiler/intrinsic.ts";
@@ -26,7 +26,7 @@ export function MaybeSingularExprArg(syntax: Syntax.Term_Expr) {
 }
 
 
-export function Store(ctx: Context, type: IntrinsicType, offset: number | LatentOffset) {
+export function Store(ctx: Context, type: IntrinsicType, offset: number | LatentOffset, ref: ReferenceRange) {
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.store(offset, 0)); break;
 		case "u64": case "i64": ctx.block.push(Instruction.i64.store(offset, 0)); break;
@@ -35,12 +35,12 @@ export function Store(ctx: Context, type: IntrinsicType, offset: number | Latent
 		case "f32": ctx.block.push(Instruction.f32.store(offset, 1)); break;
 		case "f64": ctx.block.push(Instruction.f64.store(offset, 1)); break;
 
-		default: Panic(`Unhandled store type ${type.name}`);
+		default: ctx.markFailure(`Unhandled store type ${type.name}`, ref);
 	}
 }
 
 
-export function Load(ctx: Context, type: IntrinsicType, offset: number | LatentOffset) {
+export function Load(ctx: Context, type: IntrinsicType, offset: number | LatentOffset, ref: ReferenceRange) {
 	switch (type.name) {
 		case "u32": case "i32": ctx.block.push(Instruction.i32.load(offset, 0)); break;
 		case "u64": case "i64": ctx.block.push(Instruction.i64.load(offset, 0)); break;
@@ -51,7 +51,7 @@ export function Load(ctx: Context, type: IntrinsicType, offset: number | LatentO
 		case "f32": ctx.block.push(Instruction.f32.load(offset, 0)); break;
 		case "f64": ctx.block.push(Instruction.f64.load(offset, 0)); break;
 
-		default: Panic(`Unhandled store type ${type.name}`);
+		default: ctx.markFailure(`Unhandled store type ${type.name}`, ref);
 	}
 }
 
@@ -78,7 +78,7 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 
 	// Auto load intrinsic value from a linear type
 	if (baseType instanceof IntrinsicType) {
-		Load(ctx, baseType, type.offset);
+		Load(ctx, baseType, type.offset, ref);
 		return baseType.value;
 	}
 

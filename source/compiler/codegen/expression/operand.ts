@@ -1,22 +1,22 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
+import Structure from "~/compiler/structure.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicValue, VirtualType, bool } from "~/compiler/intrinsic.ts";
+import { IntrinsicValue, VirtualType, bool, never } from "~/compiler/intrinsic.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
-import { AssertUnreachable, Panic } from "~/helper.ts";
-import { CompilePostfixes } from "~/compiler/codegen/expression/postfix.ts";
+import { AssertUnreachable } from "~/helper.ts";
+import { CompilePostfixes } from "~/compiler/codegen/expression/postfix/index.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import Structure from "~/compiler/structure.ts";
-import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 
-export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType): OperandType {
+export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType, tailCall = false): OperandType {
 	const val = syntax.value[1].value[0];
 	let res: OperandType;
 	switch (val.type) {
@@ -30,7 +30,16 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	}
 
 	const postfix = syntax.value[2].value;
-	if (postfix.length > 0) res = CompilePostfixes(ctx, postfix, res, expect);
+	if (postfix.length > 0) res = CompilePostfixes(ctx, postfix, res, tailCall);
+
+	if (tailCall) {
+		if (res != never) ctx.markFailure(
+			`${colors.red("Error")}: No actual tail call present where required\n`,
+			syntax.ref
+		);
+
+		return never;
+	}
 
 	const prefix = syntax.value[0].value[0];
 	if (prefix) res = CompilePrefix(ctx, prefix, res, expect);
@@ -52,16 +61,16 @@ function CompileContainer(ctx: Context, syntax: Syntax.Term_Container, expect?: 
 	})
 }
 
-function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: SolidType) {
+function CompileBrackets(ctx: Context, syntax: Syntax.Term_Expr_brackets, expect?: SolidType): OperandType {
 	return CompileExpr(ctx, syntax.value[0], expect);
 }
 
-function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
+function CompileName(ctx: Context, syntax: Syntax.Term_Name): OperandType {
 	const name = syntax.value[0].value;
 	const variable = ctx.scope.getVariable(name, true);
 	if (!variable) {
 		const found = ctx.file.access(name);
-		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${name}\n`, {
+		if (found === null) Panic(`${colors.red("Error")}: Undeclared term ${colors.cyan(name)}\n`, {
 			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
 		});
 
@@ -71,7 +80,7 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name) {
 	return variable.type;
 }
 
-function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType) {
+function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType): OperandType {
 	const cond = CompileExpr(ctx, syntax.value[0]);
 	if (cond instanceof LinearType && cond.type !== bool.value) Panic(
 		`${colors.red("Error")}: Invalid comparison type ${cond.type.getTypeName()}\n`,

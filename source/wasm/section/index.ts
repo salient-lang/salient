@@ -8,11 +8,10 @@ import Global    from "~/wasm/section/global.ts";
 import Export    from "~/wasm/section/export.ts";
 import Start     from "~/wasm/section/start.ts";
 import Element   from "~/wasm/section/element.ts";
-import Code      from "~/wasm/section/code.ts";
 import Data      from "~/wasm/section/data.ts";
 import DataCount from "~/wasm/section/data-count.ts";
 
-export type Section = Custom | Type | Import | Function | Table | Memory | Global | Export | Start | Element | Code | Data | DataCount ;
+export type Section = Custom | Type | Import | Function | Table | Memory | Global | Export | Start | Element | Data | DataCount ;
 
 export {
 	Custom,
@@ -25,7 +24,6 @@ export {
 	Export,
 	Start,
 	Element,
-	Code,
 	Data,
 	DataCount
 }

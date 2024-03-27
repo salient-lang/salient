@@ -1,4 +1,4 @@
-import { Unreachable, IfBlock, Block, Loop, NoOp, Br, Br_If, Return } from "./control-flow.ts";
+import { Unreachable, IfBlock, Block, Loop, NoOp, Br, Br_If, Return } from "~/wasm/instruction/control-flow.ts";
 
 import { EncodeU32 } from "~/wasm/type.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
@@ -19,6 +19,21 @@ export class Call {
 	toBinary(): Byte[] {
 		return [
 			0x10,
+			...EncodeU32(this.x instanceof FuncRef ? this.x.get() : this.x)
+		];
+	}
+}
+
+export class ReturnCall {
+	x: FuncRef | number;
+
+	constructor(funcRef: FuncRef | number) {
+		this.x = funcRef;
+	}
+
+	toBinary(): Byte[] {
+		return [
+			0x12,
 			...EncodeU32(this.x instanceof FuncRef ? this.x.get() : this.x)
 		];
 	}
@@ -78,6 +93,7 @@ const wrapper = {
 	block: (typeIdx: number, n?: Any[])                 => new Block(typeIdx, n),
 	if   : (typeIdx: number, t?: Any[], f?: Any[])      => new IfBlock(typeIdx, t, f),
 	loop : (typeIdx: number, n?: Any[])                 => new Loop(typeIdx, n),
+	return_call : (funcRef: FuncRef | number) => new ReturnCall(funcRef),
 	call : (funcRef: FuncRef | number) => new Call(funcRef),
 	br_if: (i: number)                 => new Br_If(i),
 	br   : (i: number)                 => new Br(i),

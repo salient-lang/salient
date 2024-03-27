@@ -19,7 +19,7 @@ Deno.test(`Signed integer Fibonacci test`, async () => {
 			if n <= 0 {
 				return a;
 			} else {
-				return fib_tail(n - 1, b, a + b);
+				return_tail fib_tail(n - 1, b, a + b);
 			};
 		}`
 	);

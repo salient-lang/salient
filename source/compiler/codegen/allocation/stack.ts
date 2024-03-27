@@ -1,4 +1,5 @@
-import { AssertUnreachable, AlignUpInteger, AlignDownInteger, LatentValue } from "~/helper.ts";
+import { AlignUpInteger, AlignDownInteger } from "~/compiler/helper.ts";
+import { AssertUnreachable, LatentValue } from "~/helper.ts";
 
 /**
  * Used for calculating the relative stack location of variables within a function stack
@@ -171,7 +172,7 @@ export class StackAllocator {
 	}
 
 	resolve() {
-		if (this.checkpointRef.hasAllocations()) throw new Error(
+		if (this.checkpointRef.hasAllocations()) console.warn(
 			`Stack leak: ${this.checkpointRef.getAllocationCount()} stack values are still allocated after stack frame end `
 			+ this.checkpointRef.getAllocations()
 		);

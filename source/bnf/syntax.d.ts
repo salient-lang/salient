@@ -33,7 +33,7 @@ export type Term_Stmt_top = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Function | Term_Structure)
+		(Term_Function | Term_Structure | Term_External)
 	]
 }
 export declare function Parse_Stmt_top (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -235,7 +235,7 @@ export type Term_String = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_String_text
+		(Term_String_ascii | Term_String_utf8)
 	]
 }
 export declare function Parse_String (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -245,28 +245,52 @@ export declare function Parse_String (i: string, refMapping?: boolean): _Shared.
 	isPartial: boolean
 }
 
-export type Term_String_text = {
-	type: 'string_text',
+export type Term_String_ascii = {
+	type: 'string_ascii',
 	start: number,
 	end: number,
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)*', value: Array<({
-	type: '(...)',
-	start: number,
-	end: number,
-	count: number,
-	ref: _Shared.ReferenceRange,
-	value: [
-		_Literal & {value: "\x5c"},
-		_Literal
-	]
-} | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)*', value: Array<(Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
-export declare function Parse_String_text (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_String_text,
+export declare function Parse_String_ascii (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_String_ascii,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_String_utf8 = {
+	type: 'string_utf8',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		{ type: '(...)*', value: Array<(Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+	]
+}
+export declare function Parse_String_utf8 (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_String_utf8,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Str_escape = {
+	type: 'str_escape',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		_Literal
+	]
+}
+export declare function Parse_Str_escape (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Str_escape,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
@@ -913,8 +937,17 @@ export type Term_Return = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)?', value: [] | [_Literal & {value: "\x5fcall"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
-		{ type: '(...)?', value: [] | [Term_Expr], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)?', value: [] | [_Literal & {value: "\x5ftail"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange },
+		{ type: '(...)?', value: [] | [{
+	type: '(...)',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr
+	]
+}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Return (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1027,7 +1060,7 @@ export type Term_Expr_param = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Arg_list
+		{ type: '(...)?', value: [] | [Term_Arg_list], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_param (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1044,7 +1077,7 @@ export type Term_Expr_call = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Arg_list
+		{ type: '(...)?', value: [] | [Term_Arg_list], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_call (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1061,7 +1094,7 @@ export type Term_Expr_get = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Arg_list
+		{ type: '(...)?', value: [] | [Term_Arg_list], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_get (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1148,6 +1181,7 @@ export type Term_Arg_list = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
+		Term_Expr,
 		{ type: '(...)*', value: Array<{
 	type: '(...)',
 	start: number,
@@ -1155,8 +1189,7 @@ export type Term_Arg_list = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Expr,
-		{ type: '(...)?', value: [] | [_Literal & {value: "\x2c"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		Term_Expr
 	]
 }>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
@@ -1208,6 +1241,93 @@ export type Term_Statement = {
 }
 export declare function Parse_Statement (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Statement,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_External = {
+	type: 'external',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Ext_import | Term_Ext_export)
+	]
+}
+export declare function Parse_External (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_External,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Ext_import = {
+	type: 'ext_import',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		{ type: '(...)*', value: Array<Term_Ext_imports>, start: number, end: number, count: number, ref: _Shared.ReferenceRange },
+		Term_String
+	]
+}
+export declare function Parse_Ext_import (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Ext_import,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Ext_imports = {
+	type: 'ext_imports',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Function | Term_Ext_import_var)
+	]
+}
+export declare function Parse_Ext_imports (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Ext_imports,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Ext_import_var = {
+	type: 'ext_import_var',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Name,
+		Term_Access
+	]
+}
+export declare function Parse_Ext_import_var (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Ext_import_var,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Ext_export = {
+	type: 'ext_export',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		_Literal & {value: "export"}
+	]
+}
+export declare function Parse_Ext_export (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Ext_export,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

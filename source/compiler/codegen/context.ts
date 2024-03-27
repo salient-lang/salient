@@ -10,12 +10,14 @@ import Function from "~/compiler/function.ts";
 import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
 import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
+import { ReferenceRange, SourceView } from "~/parser.ts";
 import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
-import { AssertUnreachable, Panic } from "~/helper.ts";
-import { ReferenceRange } from "~/parser.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
+import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Variable } from "~/compiler/codegen/variable.ts";
 import { Block } from "~/wasm/instruction/control-flow.ts";
+import { Panic } from "~/compiler/helper.ts";
 
 export class Context {
 	file: File;
@@ -57,6 +59,11 @@ export class Context {
 		}
 	}
 
+	markFailure(reason: string, ref: ReferenceRange) {
+		console.error(reason + SourceView(this.file.path, this.file.name, ref));
+		this.file.markFailure();
+	}
+
 	mergeBlock() {
 		if (this.block.length !== 1) return;
 		if (!(this.block[0] instanceof Block)) return;
@@ -81,10 +88,10 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const expr = syntax.value[2].value[0];
 
 
-
-	if (banned.namespaces.includes(name)) Panic(
+	// Worth continuing compilation, to test the validity of the invalid variable name's use
+	if (banned.namespaces.includes(name)) ctx.markFailure(
 		`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].value[0].ref }
+		syntax.value[0].value[0].ref
 	)
 
 	if (ctx.scope.hasVariable(name)) Panic(
@@ -150,15 +157,17 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		if (resolveType instanceof IntrinsicValue) {
 			const alloc = ctx.scope.stack.allocate(resolveType.type.size, resolveType.type.align);
 			linear = LinearType.make(resolveType.type.value, alloc, ctx.file.owner.project.stackBase);
+
+			variable = ctx.scope.registerVariable(name, linear, syntax.ref);
+			linear.markConsumed(syntax.ref); // uninited
+			linear.pin();
 		} else if (resolveType instanceof LinearType) {
-			linear = resolveType;
+			// Just claim ownership of the container created in the expr
+			variable = ctx.scope.registerVariable(name, resolveType, syntax.ref);
+			variable.type.pin();
+			return;
 		} else AssertUnreachable(resolveType);
-
-		variable = ctx.scope.registerVariable(name, linear, syntax.ref);
-		linear.markConsumed(syntax.ref); // uninited
-		linear.pin();
 	}
-
 
 	Assign(ctx, variable.type, resolveType, syntax.ref);
 }
@@ -216,9 +225,9 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
 	)
 
-	const error = () => Panic(
+	const error = () => ctx.markFailure(
 		`${colors.red("Error")}: ${target.type.getTypeName()} != ${expr.getTypeName()}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
+		ref
 	);
 
 	if (expr instanceof IntrinsicValue) {
@@ -239,7 +248,7 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 		ctx.block.push(Instruction.local.get(reg.ref));
 		reg.free();
 
-		Store(ctx, expr.type, target.offset);
+		Store(ctx, expr.type, target.offset, ref);
 		target.markDefined();
 		return;
 	}
@@ -273,6 +282,10 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 	const res = CompileExpr(ctx, syntax.value[0]);
 
+	if (res instanceof LinearType) res.dispose();
+
+	// TOOD: drop structs properly
+
 	if (res !== none && res !== never) {
 		ctx.block.push(Instruction.drop());
 	}
@@ -281,17 +294,30 @@ function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 
 
 function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
-	const maybe_expr = syntax.value[1].value[0];
+	const maybe_expr = syntax.value[1].value[0]?.value[0];
 	const isTail = syntax.value[0].value.length > 0;
 	const ref = syntax.ref;
 
-	if (isTail) Panic(
-		`${colors.red("Error")}: Unimplemented tail call return\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref }
-	);
+	// Guard: tail call
+	if (isTail) {
+		if (!maybe_expr) Panic(
+			`${colors.red("Error")}: Missing return_call expression\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
+		if (maybe_expr.value[0].value[0].value.length != 0) Panic(
+			`${colors.red("Error")}: Missing return_call expression\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref }
+		);
+
+		const expr = CompileExpr(ctx, maybe_expr, undefined, true);
+		if (expr !== never) throw new Error("Expected a never returning expression");
+
+		return never;
+	}
 
 	// Guard: return none
-	if (ctx.function.returns.length === 0) {
+	if (ctx.function.returns instanceof VirtualType) {
 		if (maybe_expr) Panic(
 			`${colors.red("Error")}: This function should have no return value\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref }
@@ -300,7 +326,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 		ctx.scope.cleanup(true);
 		ctx.block.push(Instruction.return());
 		ctx.done = true;
-		return never;
+		return ctx.function.returns;
 	}
 
 	if (!maybe_expr) Panic(
@@ -322,10 +348,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 
 	// Guard: simple intrinsic return
 	if (goal.type instanceof IntrinsicType) {
-		if (!goal.type.like(expr)) Panic(
-			`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref }
-		);
+		if (!goal.type.like(expr)) ctx.markFailure(`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`, ref);
 
 		if (expr instanceof LinearType) {
 			ResolveLinearType(ctx, expr, ref, true);
