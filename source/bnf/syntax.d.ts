@@ -1060,7 +1060,7 @@ export type Term_Expr_param = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Arg_list
+		{ type: '(...)?', value: [] | [Term_Arg_list], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_param (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1077,7 +1077,7 @@ export type Term_Expr_call = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Arg_list
+		{ type: '(...)?', value: [] | [Term_Arg_list], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_call (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1094,7 +1094,7 @@ export type Term_Expr_get = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Arg_list
+		{ type: '(...)?', value: [] | [Term_Arg_list], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_Expr_get (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1181,6 +1181,7 @@ export type Term_Arg_list = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
+		Term_Expr,
 		{ type: '(...)*', value: Array<{
 	type: '(...)',
 	start: number,
@@ -1188,8 +1189,7 @@ export type Term_Arg_list = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		Term_Expr,
-		{ type: '(...)?', value: [] | [_Literal & {value: "\x2c"}], start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		Term_Expr
 	]
 }>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]

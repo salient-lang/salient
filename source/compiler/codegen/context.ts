@@ -10,9 +10,9 @@ import Function from "~/compiler/function.ts";
 import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
 import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
+import { ReferenceRange, SourceView } from "~/parser.ts";
 import { ResolveLinearType, Store } from "~/compiler/codegen/expression/helper.ts"
 import { AssertUnreachable } from "~/helper.ts";
-import { ReferenceRange } from "~/parser.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Variable } from "~/compiler/codegen/variable.ts";
@@ -59,6 +59,11 @@ export class Context {
 		}
 	}
 
+	markFailure(reason: string, ref: ReferenceRange) {
+		console.error(reason + SourceView(this.file.path, this.file.name, ref));
+		this.file.markFailure();
+	}
+
 	mergeBlock() {
 		if (this.block.length !== 1) return;
 		if (!(this.block[0] instanceof Block)) return;
@@ -83,10 +88,10 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const expr = syntax.value[2].value[0];
 
 
-
-	if (banned.namespaces.includes(name)) Panic(
+	// Worth continuing compilation, to test the validity of the invalid variable name's use
+	if (banned.namespaces.includes(name)) ctx.markFailure(
 		`${colors.red("Error")}: You're not allowed to call a variable ${name}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].value[0].ref }
+		syntax.value[0].value[0].ref
 	)
 
 	if (ctx.scope.hasVariable(name)) Panic(
@@ -218,9 +223,9 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
 	)
 
-	const error = () => Panic(
+	const error = () => ctx.markFailure(
 		`${colors.red("Error")}: ${target.type.getTypeName()} != ${expr.getTypeName()}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: ref }
+		ref
 	);
 
 	if (expr instanceof IntrinsicValue) {
@@ -241,7 +246,7 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 		ctx.block.push(Instruction.local.get(reg.ref));
 		reg.free();
 
-		Store(ctx, expr.type, target.offset);
+		Store(ctx, expr.type, target.offset, ref);
 		target.markDefined();
 		return;
 	}
@@ -324,10 +329,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 
 	// Guard: simple intrinsic return
 	if (goal.type instanceof IntrinsicType) {
-		if (!goal.type.like(expr)) Panic(
-			`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref }
-		);
+		if (!goal.type.like(expr)) ctx.markFailure(`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`, ref);
 
 		if (expr instanceof LinearType) {
 			ResolveLinearType(ctx, expr, ref, true);

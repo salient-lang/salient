@@ -7,7 +7,6 @@ import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
-import { Panic } from "~/compiler/helper.ts";
 
 export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType): IntrinsicValue {
 	if (!(expect instanceof IntrinsicType)) expect = undefined;
@@ -34,17 +33,17 @@ export function CompileBool(ctx: Context, syntax: Syntax.Term_Boolean) {
 }
 
 function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: IntrinsicType) {
-	const num = Number(syntax.value[0].value);
+	let num = Number(syntax.value[0].value);
 
-	if (isNaN(num))
-		Panic(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+	if (isNaN(num)) {
+		ctx.markFailure(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, syntax.ref);
+		num = 0;
+	}
 
-	if (!Number.isInteger(num))
-		Panic(`${colors.red("Error")}: Invalid integer ${syntax.value[0].value}\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+	if (!Number.isInteger(num)) {
+		ctx.markFailure(`${colors.red("Error")}: Invalid integer ${syntax.value[0].value}\n`, syntax.ref)
+		num = 0;
+	};
 
 	const unsigned = expect === u8 || expect === u16 || expect === u32 || expect === u64;
 	const size     = expect?.size || 4;
@@ -52,20 +51,13 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (size === 8) {
 		ctx.block.push(Instruction.const.i64(num));
 		if (unsigned) {
-			if (num > 2**64) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-			});
+			if (num > 2**64) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 			return u64.value;
 		}
 
-		if (num > 2**63) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
-
-		if (num < -(2**63)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+		if (num < -(2**63)) ctx.markFailure(`${colors.red("Error")}: Value too small for size\n`, syntax.ref);
+		if (num > 2**63) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 		return i64.value;
 	}
@@ -73,20 +65,13 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (size === 2) {
 		ctx.block.push(Instruction.const.i32(num));
 		if (unsigned) {
-			if (num > 2**16) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-			});
+			if (num > 2**16) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 			return u16.value;
 		}
 
-		if (num > 2**15) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
-
-		if (num < -(2**15)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+		if (num < -(2**15)) ctx.markFailure(`${colors.red("Error")}: Value too small for size\n`, syntax.ref);
+		if (num > 2**15) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 		return i16.value;
 	}
@@ -94,40 +79,26 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 	if (size === 1) {
 		ctx.block.push(Instruction.const.i32(num));
 		if (unsigned) {
-			if (num > 2**8) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-				path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-			});
+			if (num > 2**8) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 			return u8.value;
 		}
 
-		if (num > 2**7) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
-
-		if (num < -(2**7)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+		if (num < -(2**7)) ctx.markFailure(`${colors.red("Error")}: Value too small for size\n`, syntax.ref);
+		if (num > 2**7) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 		return i8.value;
 	}
 
 	ctx.block.push(Instruction.const.i32(num));
 	if (unsigned) {
-		if (num > 2**32) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-			path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-		});
+		if (num > 2**32) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 		return u32.value;
 	}
 
-	if (num > 2**31) Panic(`${colors.red("Error")}: Value too big for size\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
-
-	if (num < -(2**31)) Panic(`${colors.red("Error")}: Value too small for size\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
+	if (num < -(2**31)) ctx.markFailure(`${colors.red("Error")}: Value too small for size\n`, syntax.ref);
+	if (num > 2**31) ctx.markFailure(`${colors.red("Error")}: Value too big for size\n`, syntax.ref);
 
 	return i32.value;
 }
@@ -135,9 +106,7 @@ function CompileInt(ctx: Context, syntax: Syntax.Term_Integer, expect?: Intrinsi
 function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: IntrinsicType) {
 	const num = Number(syntax.value[0].value);
 
-	if (isNaN(num)) Panic(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, {
-		path: ctx.file.path, name: ctx.file.name, ref: syntax.ref
-	});
+	if (isNaN(num)) ctx.markFailure(`${colors.red("Error")}: Invalid number ${syntax.value[0].value}\n`, syntax.ref);
 
 	if (expect === f64) {
 		ctx.block.push(Instruction.const.f64(num));

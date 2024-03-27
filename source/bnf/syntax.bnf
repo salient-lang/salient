@@ -108,15 +108,15 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 		| "as" | "instanceof"
 		| "." | "->" ;
 	expr_postfix ::= expr_call | expr_get | expr_param | expr_loan ;
-		expr_param ::= %"#[" %w* arg_list %w* %"]" ;
-		expr_call  ::=  %"(" %w* arg_list %w* %")" ;
-		expr_get   ::=  %"[" %w* arg_list %w* %"]" ;
+		expr_param ::= %"#[" %w* arg_list? %w* %"]" ;
+		expr_call  ::=  %"(" %w* arg_list? %w* %")" ;
+		expr_get   ::=  %"[" %w* arg_list? %w* %"]" ;
 		expr_loan  ::= "@" | "$" ;
 	expr_arg ::= expr_prefix? %w* expr_val %w* expr_postfix* ;
 	expr_val ::= constant | expr_brackets | block | container | if | name ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
 
-arg_list ::= ( expr %w* ","? %w* )* ;
+arg_list ::= expr ( %(w* "," w*) expr )* ;
 
 if ::= %("if" w*) expr %w* expr %w* ( %"else" %w* expr )? ;
 

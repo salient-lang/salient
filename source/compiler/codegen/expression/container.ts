@@ -58,11 +58,10 @@ function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Te
 	for (const item of iterator(zeroed)) {
 		const elm = item.value[0];
 		if (elm.type === "container_value") {
-			console.error(
-				`${colors.red("Error")}: Unexpected array value as struct member\n`
-				+ SourceView(ctx.file.path, ctx.file.name, elm.ref)
+			ctx.markFailure(
+				`${colors.red("Error")}: Unexpected array value as struct member\n`,
+				elm.ref
 			);
-			ctx.file.markFailure();
 			continue;
 		}
 
