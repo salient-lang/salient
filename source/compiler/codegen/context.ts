@@ -157,15 +157,17 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 		if (resolveType instanceof IntrinsicValue) {
 			const alloc = ctx.scope.stack.allocate(resolveType.type.size, resolveType.type.align);
 			linear = LinearType.make(resolveType.type.value, alloc, ctx.file.owner.project.stackBase);
+
+			variable = ctx.scope.registerVariable(name, linear, syntax.ref);
+			linear.markConsumed(syntax.ref); // uninited
+			linear.pin();
 		} else if (resolveType instanceof LinearType) {
-			linear = resolveType;
+			// Just claim ownership of the container created in the expr
+			variable = ctx.scope.registerVariable(name, resolveType, syntax.ref);
+			variable.type.pin();
+			return;
 		} else AssertUnreachable(resolveType);
-
-		variable = ctx.scope.registerVariable(name, linear, syntax.ref);
-		linear.markConsumed(syntax.ref); // uninited
-		linear.pin();
 	}
-
 
 	Assign(ctx, variable.type, resolveType, syntax.ref);
 }
