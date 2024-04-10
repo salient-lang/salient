@@ -7,6 +7,8 @@ import { IntrinsicValue } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SolidType } from "~/compiler/codegen/expression/type.ts";
 import { Context } from "~/compiler/codegen/context.ts";
+import { Panic } from "~/compiler/helper.ts";
+import { File } from "~/compiler/file.ts";
 
 export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expect?: SolidType): IntrinsicValue {
 	if (!(expect instanceof IntrinsicType)) expect = undefined;
@@ -118,27 +120,32 @@ function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsi
 	return f32.value;
 }
 
-export function SimplifyString(syntax: Syntax.Term_String) {
-	const inner = syntax.value[0];
-	const type = inner.type === "string_ascii" ? "ascii" : "utf8";
-	let str = "";
 
-	for (const chunk of inner.value[0].value) {
+const ESCAPE_SYMBOLS = {
+	"0": "\0",
+	"f": "\f",
+	"n": "\n",
+	"r": "\r",
+	"v": "\v",
+};
+export function SimplifyString(file: File, syntax: Syntax.Term_String_plain) {
+	let str = "";
+	for (const chunk of syntax.value[0].value) {
 		if (chunk.type == "literal") {
 			str += chunk.value;
 			continue;
 		}
 
 		const esc = chunk.value[0].value;
-		switch (esc) {
-			case "0": str += "\0"; break;
-			case "f": str += "\f"; break;
-			case "n": str += "\n"; break;
-			case "r": str += "\r"; break;
-			case "v": str += "\v"; break;
-			default: str += esc;
+		if (esc in ESCAPE_SYMBOLS) {
+			str += ESCAPE_SYMBOLS[esc as keyof typeof ESCAPE_SYMBOLS];
+			continue;
 		}
+
+		Panic(`Unknown string escape character "\\${esc}"`,
+			{ path: file.path, name: file.name, ref: chunk.ref }
+		);
 	}
 
-	return { type, str }
+	return str;
 }

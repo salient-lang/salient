@@ -32,10 +32,11 @@ constant ::= boolean
 	| string
 	| float | integer ;
 
-string ::= string_ascii | string_utf8 ;
-	string_ascii ::= %"\'" ( str_escape | !( "\'" ) )* %"\'" ;
-	string_utf8  ::= %"\"" ( str_escape | !( "\"" ) )* %"\"" ;
-	str_escape   ::= %"\\" !"" ;
+string ::= string_plain | string_template ;
+	string_plain ::= %"\"" ( str_escape | !"\"" )* %"\"" ;
+		str_escape ::= %"\\" !"" ;
+	string_template ::= %"\`" ( str_escape | !"`" )* %"`" ;
+		string_tag ::= %"${" expr %"}" ;
 
 boolean ::= "true" | "false" ;
 
@@ -127,7 +128,7 @@ statement ::= expr %terminate ;
 #  External
 #=============================
 external ::= %( "external" w+ ) ( ext_import | ext_export ) ;
-	ext_import ::= %( "import" w* "{" w* ) ext_imports* %( w* "}" w* "from" w*) string %(w* ";" w*) ;
+	ext_import ::= %( "import" w* "{" w* ) ext_imports* %( w* "}" w* "from" w*) string_plain %(w* ";" w*) ;
 		ext_imports    ::= function | ext_import_var ;
 		ext_import_var ::= %( "let" w* ) name %( w* ":" w* ) access %(w* ";" w*);
 	ext_export ::= "export" ;

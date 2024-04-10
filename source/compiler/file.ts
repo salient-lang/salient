@@ -124,13 +124,13 @@ function IngestStructure(file: File, syntax: Term_Structure) {
 function IngestExternal(file: File, syntax: Term_External) {
 	if (syntax.value[0].type !== "ext_import") throw new Error(`Unsupported external export`);
 
-	const name = SimplifyString(syntax.value[0].value[1]);
+	const name = SimplifyString(file, syntax.value[0].value[1]);
 	for (const inner of syntax.value[0].value[0].value) {
 		const line = inner.value[0];
 		const type = line.type;
 		switch (type) {
 			case "function": {
-				IngestFunction(file, line, name.str);
+				IngestFunction(file, line, name);
 			} break;
 			case "ext_import_var": throw new Error(`Import global unimplemented`);
 			default: AssertUnreachable(type);
