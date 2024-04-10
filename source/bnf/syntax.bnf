@@ -75,7 +75,7 @@ structure ::= %("struct" w*) ...name %w* struct_type? %( "{" w* ) struct_stmt* %
 
 container ::= %(w* "[" w*) ( container_item ( %(w* "," w*) container_item )* %w* %","? )? %("]" w*) ;
 	container_item  ::= container_map | container_value ;
-	container_map   ::= %"." name %(w* ":" w*) expr ;
+	container_map   ::= %"." name %(w* "=" w*) expr ;
 	container_value ::= expr ;
 
 
