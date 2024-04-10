@@ -1,0 +1,67 @@
+struct IPv4Address {
+	a: i8;
+	b: i8;
+	c: i8;
+	d: i8;
+}
+
+struct SockAddr_In {
+	sin_family: i16;
+	sin_port: i16;
+	sin_addr: IPv4Address;
+
+	// padding for IPv6 union support
+	sin_zero: i64;
+}
+
+struct SockAddr {
+	sin_family: i16;
+
+	// padding
+	pad_0: i64;
+	pad_1: i32;
+	pad_2: i16;
+}
+
+external import {
+	fn fd_close(fd: i32): i32;
+
+	fn sock_open(pf_net: i32, sock_stream: i32, protocol: i32, ptr: i32): i32;
+	fn sock_shutdown(fd: i32, how: i32): i32;
+
+	fn sock_bind(fd: i32, addr: SockAddr_In): i32;
+	fn sock_listen(fd: i32, backlog: i32): i32;
+	fn sock_accept_v2(fd: i32, flags: i32, sock_ptr: i32@, remote_addr: SockAddr_In@): i32;
+	fn sock_send(fd: i32, iovs: iovec@, iovs_len: i32, flags: i32, remote_addr: SockAddr): i32;
+
+} from "wasix_32v1";
+
+fn main() {
+	let fd_sock = 0;
+	sock_open(1, 1, 0, fd_sock@);
+
+	let bind_addr: SockAddr_In = [
+		.sin_family = 1 // AF_INET,
+		.sin_port   = 8080,
+		.sin_addr   = [ .a = 0, .b = 0, .c = 0, .d = 0 ],
+		.sin_zero   = 0
+	];
+	sock_bind(0, bind_addr);
+	sock_listen(fd_sock, 100);
+
+	loop();
+}
+
+
+fn loop(fd_sock: i32) {
+	let remote_addr: SockAddr = [ none ];
+
+	let fd_req = 0;
+	sock_accept_v2(fd_sock, 0, fd_req@, remote_addr@);
+
+	sock_send(fd_req, "HTTP/1.1 200 OK\r\n\r\nHello, World!", 1, 0, remote_addr);
+	sock_shutdown();
+	fd_close();
+
+	return_tail loop(fd_sock);
+}
