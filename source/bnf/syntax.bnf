@@ -32,14 +32,18 @@ constant ::= boolean
 	| string
 	| float | integer ;
 
-string ::= string_ascii | string_utf8 ;
-	string_ascii ::= %"\'" ( str_escape | !( "\'" ) )* %"\'" ;
-	string_utf8  ::= %"\"" ( str_escape | !( "\"" ) )* %"\"" ;
-	str_escape   ::= %"\\" !"" ;
+string ::= string_plain | string_template ;
+	string_plain ::= %"\"" ( str_hex_u8 | str_escape | !"\"" )* %"\"" ;
+		str_hex_u8  ::= %"\\x" ...( hexidecimal hexidecimal ) ;
+		str_escape  ::= %"\\" !"" ;
+	string_template ::= %"\`" ( str_hex_u8 | str_escape | string_tag | !"`" )* %"`" ;
+		string_tag ::= %"${" expr %"}" ;
 
 boolean ::= "true" | "false" ;
 
 void ::= "void" ;
+
+hexidecimal ::= "0"->"9" | "a" -> "f";
 
 integer ::= ...integer_u ;
 	integer_u ::= ( digit_nz digit* ) | zero ;
@@ -75,7 +79,7 @@ structure ::= %("struct" w*) ...name %w* struct_type? %( "{" w* ) struct_stmt* %
 
 container ::= %(w* "[" w*) ( container_item ( %(w* "," w*) container_item )* %w* %","? )? %("]" w*) ;
 	container_item  ::= container_map | container_value ;
-	container_map   ::= %"." name %(w* ":" w*) expr ;
+	container_map   ::= %"." name %(w* "=" w*) expr ;
 	container_value ::= expr ;
 
 
@@ -127,7 +131,7 @@ statement ::= expr %terminate ;
 #  External
 #=============================
 external ::= %( "external" w+ ) ( ext_import | ext_export ) ;
-	ext_import ::= %( "import" w* "{" w* ) ext_imports* %( w* "}" w* "from" w*) string %(w* ";" w*) ;
+	ext_import ::= %( "import" w* "{" w* ) ext_imports* %( w* "}" w* "from" w*) string_plain %(w* ";" w*) ;
 		ext_imports    ::= function | ext_import_var ;
 		ext_import_var ::= %( "let" w* ) name %( w* ":" w* ) access %(w* ";" w*);
 	ext_export ::= "export" ;

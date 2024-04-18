@@ -28,11 +28,13 @@ export default class Project {
 		this.stackReg = this.module.registerGlobal(
 			Intrinsic.i32,
 			true,
-			Instruction.const.i32(0)
+			Instruction.const.i32( this.module.dataSect.tail )
 		);
 		this.stackBase = new BasePointer(BasePointerType.global, this.stackReg.ref);
+		this.module.exportGlobal("_stack", this.stackReg);
 
-		this.module.addMemory(1, 1);
+		const memRef = this.module.addMemory(1, 1);
+		this.module.exportMemory("memory", memRef);
 
 		this.flags = {
 			tailCall: true
@@ -41,5 +43,10 @@ export default class Project {
 
 	markFailure() {
 		this.failed = true;
+	}
+
+
+	toBinary() {
+		return this.module.toBinary();
 	}
 }

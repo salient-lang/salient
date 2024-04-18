@@ -1,5 +1,6 @@
-import type { Byte } from "~/helper.ts";
+import { Byte, LatentValue } from "~/helper.ts";
 import { EncodeI32, EncodeU32 } from "~/wasm/type.ts";
+import { AlignUpInteger } from "~/compiler/helper.ts";
 
 
 const textEncoder = new TextEncoder();
@@ -16,9 +17,16 @@ class Entry {
 
 export default class DataSection {
 	entries: Entry[];
+	tail: LatentValue<number>;
 
 	constructor() {
 		this.entries = [];
+		this.tail = new LatentValue();
+		this.tail.resolve(0, true);
+	}
+
+	addData(data: string | BufferSource, align: number) {
+		return this.setData(AlignUpInteger(this.tail.get(), align), data);
 	}
 
 	setData(offset: number, data: string | BufferSource) {
@@ -26,12 +34,11 @@ export default class DataSection {
 			data = textEncoder.encode(data);
 		}
 
-		this.entries.push(new Entry(
-			offset,
-			data
-		));
+		const entry = new Entry(offset, data);
+		this.entries.push(entry);
 
-		return 0;
+		this.tail.resolve(Math.max(this.tail.get(), AlignUpInteger(offset + data.byteLength, 8)), true);
+		return entry;
 	}
 
 	toBinary (): Byte[] {
