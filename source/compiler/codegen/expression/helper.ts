@@ -83,11 +83,9 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	}
 
 	// Push the complete pointer to the stack
-	if (type.alloc) {
+	if (type.offset !== 0) {
 		ctx.block.push(Instruction.const.i32(type.offset));
 		ctx.block.push(Instruction.i32.add());
-	}
-
-	if (type.offset !== 0) ctx.block.push(Instruction.const.i32(type.offset));
+	};
 	return type;
 }
