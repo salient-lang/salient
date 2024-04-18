@@ -1,0 +1,78 @@
+external import {
+	fn fd_close(fd: i32): i32;
+
+	fn sock_open(pf_net: i32, sock_stream: i32, protocol: i32, ptr: BoxInt): i32;
+	// fn sock_open(pf_net: i32, sock_stream: i32, protocol: i32, ptr: i32@): i32;
+	fn sock_shutdown(fd: i32, how: i32): i32;
+
+	fn sock_bind(fd: i32, addr: SockAddr_In): i32;
+	fn sock_listen(fd: i32, backlog: i32): i32;
+
+
+	fn sock_accept_v2(fd: i32, flags: i32, sock_ptr: BoxInt, remote_addr: SockAddr): i32;
+	// fn sock_accept_v2(fd: i32, flags: i32, sock_ptr: i32@, remote_addr: SockAddr_In@): i32;
+	fn sock_send(fd: i32, iovs: i32, iovs_len: i32, flags: i32, remote_addr: SockAddr): i32;
+	// fn sock_send(fd: i32, iovs: iovec@, iovs_len: i32, flags: i32, remote_addr: SockAddr): i32;
+
+} from "wasix_32v1";
+
+struct IPv4Address {
+	a: i8; b: i8; c: i8; d: i8;
+}
+
+struct SockAddr_In {
+	sin_family: i16;
+	sin_port: i16;
+	sin_addr: IPv4Address;
+
+	// padding for IPv6 union support
+	sin_zero: i64;
+}
+
+struct SockAddr {
+	sin_family: i16;
+
+	// padding
+	_0: i64; _1: i32; _2: i16;
+}
+
+struct BoxInt {
+	value: i32;
+}
+
+fn main(): none {
+	let _fd: BoxInt = [ none ];
+	sock_open(1, 1, 0, _fd); // exploiting unsafe struct handling: sock_open(1, 1, 0, fd_sock@);
+	let server_fd = _fd.value;
+
+	let bind_addr: SockAddr_In = [
+		.sin_family = 1, // AF_INET
+		.sin_port   = 8080,
+		.sin_addr   = [ .a = 0, .b = 0, .c = 0, .d = 0 ],
+		.sin_zero   = 0 // char[8] padding for sockaddr compatibility
+	];
+	sock_bind(server_fd, bind_addr);
+	sock_listen(server_fd, 100);
+
+	loop(server_fd);
+
+	return;
+}
+
+fn loop(server_fd: i32): none {
+	let remote_addr: SockAddr = [ none ];
+
+	let _fd: BoxInt = [ none ];
+	sock_accept_v2(server_fd, 0, _fd, remote_addr); // exploiting unsafe struct handling: sock_accept_v2(server_fd, 0, fd_req@, remote_addr@);
+	let req_fd = _fd.value;
+
+	sock_send(req_fd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain; cgarset=utf-8\r\n\r\nHello, World!", 1, 0, remote_addr);
+
+	let SHUT_RDWR = 2;
+	sock_shutdown(req_fd, SHUT_RDWR);
+	fd_close(req_fd);
+
+	// wasmer doesn't support tail calls
+	// return_tail loop(server_fd);
+	loop(server_fd); return;
+}

@@ -252,11 +252,28 @@ export type Term_String_plain = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)*', value: Array<(Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)*', value: Array<(Term_Str_hex_u8 | Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_String_plain (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_String_plain,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Str_hex_u8 = {
+	type: 'str_hex_u8',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		_Literal
+	]
+}
+export declare function Parse_Str_hex_u8 (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Str_hex_u8,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
@@ -286,7 +303,7 @@ export type Term_String_template = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		{ type: '(...)*', value: Array<(Term_Str_escape | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)*', value: Array<(Term_Str_hex_u8 | Term_Str_escape | Term_String_tag | _Literal)>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 }
 export declare function Parse_String_template (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -342,6 +359,23 @@ export type Term_Void = {
 }
 export declare function Parse_Void (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Void,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Hexidecimal = {
+	type: 'hexidecimal',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(_Literal | _Literal)
+	]
+}
+export declare function Parse_Hexidecimal (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Hexidecimal,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
