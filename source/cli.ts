@@ -48,7 +48,7 @@ project.module.exportFunction("main", mainFunc.ref);
 project.module.startFunction(mainFunc.ref);
 
 TimerStart("serialize");
-await Deno.writeFile("out.wasm", project.module.toBinary());
+await Deno.writeFile("out.wasm", project.toBinary());
 TimerEnd("serialize");
 
 TimerStart("wasm2wat");

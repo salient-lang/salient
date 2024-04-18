@@ -6,6 +6,7 @@ import { Box, Byte } from "~/helper.ts";
 import { Constant } from "~/wasm/instruction/constant.ts";
 import { Function } from "~/wasm/function.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
+import { GlobalRegister } from "~/wasm/section/global.ts";
 
 
 
@@ -67,6 +68,10 @@ export default class Module {
 
 	exportFunction(name: string, func: FuncRef) {
 		return this.exportSect.bind(name, func);
+	}
+
+	exportGlobal(name: string, global: GlobalRegister) {
+		return this.exportSect.bind(name, global);
 	}
 
 	exportMemory(name: string, mem: MemoryRef) {
