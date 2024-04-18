@@ -6,7 +6,7 @@ repo_url: https://github.com/ajanibilby/salient
 edit_uri: https://github.com/ajanibilby/salient/tree/main/docs
 theme:
   name: material
-  # favicon: /icon/unicycle.png
+  favicon: /media/icon.png
   custom_dir: docs/overrides
   icon:
     admonition:
@@ -23,9 +23,10 @@ theme:
       example: octicons/beaker-16
       quote: octicons/quote-16
     repo: fontawesome/brands/github
-    logo: material/script-text
+    logo: material/sail-boat
   features:
     - search.suggest
+    - search.highlight
     - header.autohide
     - content.code.annotate
     - content.action.edit
@@ -50,8 +51,7 @@ theme:
       accent: purple
   language: en
 plugins:
-  - search:
-      prebuild_index: true
+  - search
   # - offline
   - git-revision-date:
       enabled_if_env: CI
@@ -64,7 +64,7 @@ markdown_extensions:
   - footnotes
   - md_in_html
   - meta
-  - glightbox
+  # - glightbox
   - md_in_html
   - pymdownx.arithmatex:
       generic: true
