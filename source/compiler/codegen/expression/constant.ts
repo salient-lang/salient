@@ -17,7 +17,7 @@ export function CompileConstant(ctx: Context, syntax: Syntax.Term_Constant, expe
 		case "boolean": return CompileBool(ctx, val);
 		case "float":   return CompileFloat(ctx, val, expect);
 		case "integer": return CompileInt(ctx, val, expect);
-		case "string":  throw new Error("Unimplemented string constant");
+		case "string":  return CompileString(ctx, val);
 		default: AssertUnreachable(val);
 	}
 }
@@ -121,6 +121,10 @@ function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsi
 }
 
 
+
+
+
+
 const ESCAPE_SYMBOLS = {
 	"0": "\0",
 	"f": "\f",
@@ -136,16 +140,53 @@ export function SimplifyString(file: File, syntax: Syntax.Term_String_plain) {
 			continue;
 		}
 
-		const esc = chunk.value[0].value;
-		if (esc in ESCAPE_SYMBOLS) {
-			str += ESCAPE_SYMBOLS[esc as keyof typeof ESCAPE_SYMBOLS];
-			continue;
+		switch (chunk.type) {
+			case "str_hex_u8": {
+				const hex: string = chunk.value[0].value;
+				str += String.fromCharCode(parseInt(hex, 16));
+				break;
+			}
+			case "str_escape": {
+				const esc = chunk.value[0].value;
+				if (esc in ESCAPE_SYMBOLS) {
+					str += ESCAPE_SYMBOLS[esc as keyof typeof ESCAPE_SYMBOLS];
+				} else Panic(`Unknown string escape character "\\${esc}"`,
+					{ path: file.path, name: file.name, ref: chunk.ref }
+				);
+				break;
+			}
+			default: AssertUnreachable(chunk);
 		}
-
-		Panic(`Unknown string escape character "\\${esc}"`,
-			{ path: file.path, name: file.name, ref: chunk.ref }
-		);
 	}
 
 	return str;
+}
+
+function CompileString(ctx: Context, syntax: Syntax.Term_String) {
+	switch (syntax.value[0].type) {
+		case "string_plain":    return CompilePlainString(ctx, syntax.value[0]);
+		case "string_template": return CompileTemplateString(ctx, syntax.value[0]);
+	}
+	AssertUnreachable(syntax.value[0]);
+}
+
+function CompilePlainString(ctx: Context, syntax: Syntax.Term_String_plain) {
+	const str = SimplifyString(ctx.file, syntax);
+	const module = ctx.file.owner.project.module;
+
+	const buffer = module.dataSect.addData(str, 1);
+
+	const ioVec = new Uint32Array(2);
+	ioVec[0] = buffer.offset;
+	ioVec[1] = buffer.data.byteLength;
+
+	const ptr = module.dataSect.addData(ioVec, 4);
+
+	ctx.block.push(Instruction.const.i32(ptr.offset));
+	return i32.value;
+}
+
+function CompileTemplateString(ctx: Context, syntax: Syntax.Term_String_template) {
+	throw new Error("Unimplemented template string compilation");
+	return i32.value;
 }

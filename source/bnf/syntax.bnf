@@ -33,14 +33,17 @@ constant ::= boolean
 	| float | integer ;
 
 string ::= string_plain | string_template ;
-	string_plain ::= %"\"" ( str_escape | !"\"" )* %"\"" ;
-		str_escape ::= %"\\" !"" ;
-	string_template ::= %"\`" ( str_escape | !"`" )* %"`" ;
+	string_plain ::= %"\"" ( str_hex_u8 | str_escape | !"\"" )* %"\"" ;
+		str_hex_u8  ::= %"\\x" ...( hexidecimal hexidecimal ) ;
+		str_escape  ::= %"\\" !"" ;
+	string_template ::= %"\`" ( str_hex_u8 | str_escape | string_tag | !"`" )* %"`" ;
 		string_tag ::= %"${" expr %"}" ;
 
 boolean ::= "true" | "false" ;
 
 void ::= "void" ;
+
+hexidecimal ::= "0"->"9" | "a" -> "f";
 
 integer ::= ...integer_u ;
 	integer_u ::= ( digit_nz digit* ) | zero ;
