@@ -15,6 +15,10 @@ export class GlobalRegister {
 		this.expr = expr;
 	}
 
+	get() {
+		return this.ref.get();
+	}
+
 	toBinary(): Byte[] {
 		return [
 			this.ref.type,
