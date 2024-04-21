@@ -32,7 +32,7 @@ export class LatentValue<T> {
 	}
 
 	clear() {
-		this.value === null;
+		this.value = null;
 	}
 
 	resolve(val: T, force = false) {
