@@ -35,7 +35,7 @@ export function CompileCall(ctx: Context, syntax: Syntax.Term_Expr_call, operand
 	const stackBk = ctx.scope.register.allocate(i32.bitcode);
 	ctx.block.push(Instruction.global.get(stackReg));
 	ctx.block.push(Instruction.local.tee(stackBk.ref));
-	ctx.block.push(Instruction.const.i32(ctx.scope.stack.getLatentSize()));
+	ctx.block.push(Instruction.const.i32(ctx.scope.stack.latentSize));
 	ctx.block.push(Instruction.i32.add());
 	ctx.block.push(Instruction.global.set(stackReg));
 
