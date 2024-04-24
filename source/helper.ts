@@ -20,26 +20,38 @@ export class Box<T> {
 
 export class LatentValue<T> {
 	private value: T | null;
+	private alias?: LatentValue<T>;
 
 	constructor() {
+		this.alias = undefined;
 		this.value = null;
 	}
 
 	get (): T {
+		if (this.alias) return this.alias.get();
 		if (this.value === null) throw new Error("Attempting to read latent value before it's been resolved");
-
 		return this.value;
 	}
 
-	clear() {
+	clear(): void {
+		if (this.alias) return this.alias.clear();
 		this.value = null;
 	}
 
 	resolve(val: T, force = false) {
-		if (this.value !== null && !force)
-			throw new Error("Attempt to re-resolve already resolved latent value");
+		if (this.alias) throw new Error("Attempting to resolve an aliased value");
+		if (this.value !== null && !force) throw new Error("Attempting to re-resolve already resolved latent value");
 
 		this.value = val;
+	}
+
+	resolveTo (alias: LatentValue<T>) {
+		this.clear();
+		this.alias = alias;
+	}
+
+	isResolved() {
+		return this.value !== null;
 	}
 }
 

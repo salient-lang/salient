@@ -19,12 +19,12 @@ class Region {
 
 enum StackEventType { allocation, free };
 class StackEvent {
-	type: StackEventType;
-	ref: AllocationRef;
+	type:  StackEventType;
+	alloc: StackAllocation;
 
-	constructor(type: StackEventType, ref: AllocationRef) {
+	constructor(type: StackEventType, ref: StackAllocation) {
 		this.type = type;
-		this.ref  = ref;
+		this.alloc  = ref;
 	}
 }
 
@@ -48,7 +48,7 @@ class StackScope {
 	//   - allocation when allocated before
 	//   - use after free
 	//   - free after free
-	private local: AllocationRef[];
+	private local: StackAllocation[];
 
 	constructor(ctx: StackScope['ctx'], parent: StackScope['parent']) {
 		this.ctx = ctx;
@@ -58,34 +58,36 @@ class StackScope {
 		this.local = [];
 	}
 
-	status(alloc: StackAllocation): boolean | null {
-		for (const ref of this.local) {
-			if (ref.alloc === alloc) return ref.allocated;
+	isParentAllocated(alloc: StackAllocation): boolean {
+		if (!this.parent) return false;
+
+		for (const a of this.local) {
+			if (alloc === a) return true;
 		}
 
-		if (this.parent) return this.parent.status(alloc);
-		return null;
+		return this.parent.isParentAllocated(alloc);
 	}
 
-	allocate(alloc: StackAllocation) {
-		const ref = new AllocationRef(alloc);
-		this.timeline.push(new StackEvent(StackEventType.allocation, ref));
+	allocate(size: number, align = 1) {
+		const alloc = new StackAllocation(this, size, align);
 
-		if (!DEBUG) return;
-		const status = this.status(alloc);
-		if (status !== null) console.error(new Error(`Attempting to allocate with status ${status}`));
+		this.timeline.push(new StackEvent(StackEventType.allocation, alloc));
+		this.local.push(alloc);
 
-		this.local.push(ref);
+		return alloc;
 	}
 
 	free(alloc: StackAllocation) {
-		const ref = new AllocationRef(alloc);
-		this.timeline.push(new StackEvent(StackEventType.free, ref));
+		this.timeline.push(new StackEvent(StackEventType.free, alloc));
 
 		if (!DEBUG) return;
-		const status = this.status(alloc);
-		if (status !== true) console.error(new Error(`Attempting to allocate with status ${status}`));
-		this.local.push(ref);
+		const index = this.local.findIndex(x => x === alloc);
+		if (index === -1) {
+			if (this.isParentAllocated(alloc)) console.error(new Error(`Attempting to free a parent's allocation (tag:${alloc.tag})`));
+			else console.error(new Error(`Attempting to free a non-allocated allocation (tag:${alloc.tag})`));
+		} else {
+			this.local.splice(index, 1);
+		}
 	}
 
 	checkpoint () {
@@ -93,14 +95,23 @@ class StackScope {
 
 		this.timeline.push(child);
 		this.ctx.scope(child);
+
+		return child;
 	}
 
 	restore() {
-		if (!this.parent) return;
-		this.ctx.scope(this.parent);
+		// Free items in reverse to make splicing more efficient
+		for (let i=this.local.length-1; 0<=i; i--) {
+			const remain = this.local[i];
+			this.free(remain);
+		}
+
+		if (this.parent) this.ctx.scope(this.parent);;
 	}
 
-	branch (n = 2) {
+	branch (n: number) {
+		if (n < 2) throw new Error(`Cannot branch ${n} times`);
+
 		const paths = new Array<StackScope>();
 		for (let i=0; i<n; i++) {
 			paths.push(new StackScope(this.ctx, this));
@@ -116,7 +127,7 @@ class StackScope {
 
 
 
-class StackAllocator {
+export class StackAllocator {
 	private entry: StackScope;
 	private current: StackScope;
 
@@ -129,18 +140,19 @@ class StackAllocator {
 	}
 
 	allocate(size: number, align = 1) {
-		const alloc = new StackAllocation(this, size, align);
-		this.current.allocate(alloc);
-
-		return alloc;
-	}
-
-	status(alloc: StackAllocation) {
-		return this.current.status(alloc);
+		return this.current.allocate(size, align);
 	}
 
 	free(alloc: StackAllocation) {
 		this.current.free(alloc);
+	}
+
+	checkpoint() {
+		return this.current.checkpoint();
+	}
+
+	branch(n: number) {
+		return this.current.branch(n);
 	}
 
 	scope(ctx: StackScope) {
@@ -148,29 +160,22 @@ class StackAllocator {
 	}
 
 	resolve() {
+		// Ensure all allocs are freed
+		this.entry.restore();
+
 		const mem = new MemoryTable();
-		const size = ResolveStack(mem, this.entry);
+		ResolveStack(mem, this.entry);
 
-		this.latentSize.resolve(size);
-	}
-}
-
-
-class AllocationRef {
-	allocated: boolean;
-	alloc: StackAllocation;
-
-	constructor (ref: AllocationRef['alloc']) {
-		this.allocated = true;
-		this.alloc = ref;
+		this.latentSize.resolve(mem.size);
 	}
 }
 
 export class StackAllocation {
-	private ctx: StackAllocator;
+	readonly ctx: StackScope;
 
 	private latent: LatentValue<number>;
 	private accessed: boolean;
+	private alias?: StackAllocation;
 
 	readonly align: number;
 	readonly size: number;
@@ -188,14 +193,29 @@ export class StackAllocation {
 	}
 
 	wasAccessed() {
+		if (this.alias) return false;
 		return this.accessed;
 	}
 
-	getOffset() {
-		if (DEBUG) {
-			const status = this.ctx.status(this);
-			if (status !== true) console.error(new Error(`Attempt to get an unallocated stack element (status: ${status})`));
-		}
+	isAlias() {
+		return !!this.alias;
+	}
+
+	moveTo(other: StackAllocation) {
+		if (this.alias) throw new Error("Stack allocation already moved");
+
+		if (other.size < this.size) throw new Error(`Cannot move stack allocation size:${this.size} to size:${other.size}`);
+
+		this.alias = other;
+
+		// remap for any getOffset already performed
+		this.latent.resolveTo(other.latent);
+
+		if (this.accessed) other.accessed = true;
+	}
+
+	getOffset(): LatentValue<number> {
+		if (this.alias) return this.alias.getOffset();
 
 		this.accessed = true;
 		return this.latent;
@@ -211,6 +231,8 @@ export class StackAllocation {
 
 
 class MemoryTable {
+	// only used when DEBUG === true
+	//   check if any allocations were made, but not freed
 	active : number; // number of allocations
 
 	table  : Array<Region>; // denote the empty region in the stack
@@ -218,7 +240,7 @@ class MemoryTable {
 	size   : number; // the maximum amount offset grew to
 
 	constructor () {
-		this.table  = [];
+		this.table  = [ new Region(0,0) ];
 		this.active = 0;
 		this.offset = 0;
 		this.size   = 0;
@@ -241,28 +263,28 @@ class MemoryTable {
 	clone () {
 		const out = new MemoryTable();
 		out.table  = this.table.map(r => r.clone());
-		out.active = this.active;
 		out.offset = this.offset;
 		out.size   = this.size;
+		out.active = 0;
 
 		return out;
 	}
 }
 
-function ResolveStack(mem: MemoryTable, scope: StackScope) {
+function ResolveStack(mem: MemoryTable, scope: StackScope): void {
 	for (const evt of scope.events()) {
 		if (evt instanceof StackEvent) {
 			// Ignore never accessed allocations
-			if (!evt.ref.alloc.wasAccessed()) continue;
+			if (!evt.alloc.wasAccessed()) continue;
 
 			switch (evt.type) {
 				case StackEventType.allocation: {
-					const offset = Allocate(mem, evt.ref.alloc.size, evt.ref.alloc.align);
-					evt.ref.alloc.getOffset().resolve(offset);
+					const offset = Allocate(mem, evt.alloc.size, evt.alloc.align);
+					evt.alloc.getOffset().resolve(offset);
 					break;
 				}
 				case StackEventType.free: {
-					Free(mem, evt.ref.alloc);
+					Free(mem, evt.alloc);
 					break;
 				}
 				default: throw "how can TS not assert if this is unreachable?";
@@ -282,10 +304,14 @@ function ResolveStack(mem: MemoryTable, scope: StackScope) {
 		}
 	}
 
-	return mem.size;
+	if (DEBUG && mem.active !== 0) console.warn(`Warn: Stack leak detected, ${mem.active} allocations not freed`);
 }
 
 function Allocate(mem: MemoryTable, size: number, align: number): number {
+	mem.active++;
+
+	// Double allocation aren't possible because user-facing `allocate` always makes a new object
+
 	// short circuit
 	if (size == 0) return 0;
 
@@ -346,6 +372,10 @@ function Allocate(mem: MemoryTable, size: number, align: number): number {
 
 
 function Free(mem: MemoryTable, alloc: StackAllocation): void {
+	mem.active--;
+
+	// Double free checks already ran in StackScope.free
+
 	// short circuit
 	if (alloc.size == 0) return;
 
