@@ -159,8 +159,7 @@ export class LinearType {
 			const reasonGiven = reasons.findIndex(x => x.start.index === this.consumedAt?.start.index) !== -1;
 
 			// You've been consumed, you have no children
-			if (reasonGiven) return;
-			reasons.push(this.consumedAt)
+			if (!reasonGiven) reasons.push(this.consumedAt);
 			return reasons;
 		};
 
@@ -171,6 +170,19 @@ export class LinearType {
 		if (reasons.length === 0) return null;
 
 		return reasons;
+	}
+
+	hasCompositionErrors() {
+		// like getCompositionErrors, but exits on first error
+
+		if (this.composable) return false;
+		if (this.consumedAt) return true;
+
+		for (const [_, child] of this.attributes) {
+			if (child.hasCompositionErrors()) return true;
+		}
+
+		return false;
 	}
 
 	markDefined() {

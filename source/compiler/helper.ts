@@ -29,6 +29,11 @@ export function Panic(x: string, source?: SourceMap): never {
 	Deno.exit(1);
 }
 
+export function Warn(x: string, source?: SourceMap) {
+	if (source) console.warn(x + SourceView(source.path, source.name, source.ref));
+	else        console.warn(x);
+}
+
 
 
 
