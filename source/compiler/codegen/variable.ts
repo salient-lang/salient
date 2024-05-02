@@ -37,7 +37,8 @@ export class Variable {
 
 	cleanup() {
 		if (this.isClone) return;
-		if (this.type.alloc) this.type.alloc.free();
+
+		// Variables are allocated on the stack, so they are automatically freed by scope
 	}
 
 	// toBinary() {
