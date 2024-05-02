@@ -151,7 +151,9 @@ export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, ope
 	}
 
 	if (returnType instanceof LinearType) returnType.dispose();
+	ctx.exited = true;
 	ctx.done = true;
+
 	return never;
 }
 

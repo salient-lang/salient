@@ -87,6 +87,9 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType): Op
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
 	);
 
+	const lifter = ctx.scope.stack.allocate(0, 0);
+
+	const stackIf = ctx.scope.stack.checkpoint();
 	const scopeIf = ctx.child();
 	const typeIf = CompileExpr(scopeIf, syntax.value[1], expect);
 	if (IsNamespace(typeIf)) Panic(
@@ -94,36 +97,59 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType): Op
 		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 	);
 	scopeIf.mergeBlock();
+	stackIf.restore();
 
-	let typeElse:  OperandType | null = null;
-	let scopeElse: Context     | null = null;
+	let typeIdx = 0x40;
+	if (typeIf instanceof IntrinsicValue)   typeIdx = ctx.file.getModule().makeType([], [typeIf.type.bitcode]);
+	else if (typeIf instanceof VirtualType) typeIdx = 0x40;
+	else if (typeIf instanceof LinearType) {
+		lifter.align = typeIf.getAlignment();
+		lifter.size = typeIf.getSize();
+
+		if (!typeIf.alloc) Panic(
+			`${colors.red("Error")}: Lifted struct somehow has no allocation\n`,
+			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[1].ref }
+		);
+
+		typeIf.alloc.moveTo(lifter);
+	}
+
 	if (syntax.value[2].value[0]) {
-		scopeElse = ctx.child();
-		typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
+		const stackElse = ctx.scope.stack.checkpoint();
+		const scopeElse = ctx.child();
+		const typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
 
 		if (IsNamespace(typeElse)) Panic(
 			`${colors.red("Error")}: Unsupported namespace yielded from else block\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
 		scopeElse.mergeBlock();
+		stackElse.restore();
 
-		if (typeIf != typeElse) Panic(
+		if (typeIf instanceof LinearType) {
+			if ( !(typeElse instanceof LinearType) || typeIf.type !== typeElse.type ) Panic(
+				`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.getTypeName()} != ${typeElse.getTypeName()}\n`,
+				{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
+			);
+
+			if (!typeElse.alloc) Panic(
+				`${colors.red("Error")}: Lifted struct somehow has no allocation\n`,
+				{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[2].value[0].value[0].ref }
+			);
+
+			typeElse.alloc.moveTo(lifter);
+		} else if (typeIf != typeElse) Panic(
 			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.getTypeName()} != ${typeElse.getTypeName()}\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
 
-		if (scopeIf.done && scopeElse.done) ctx.done = true;
+		ctx.exited ||= scopeIf.exited && scopeElse.exited;
+
+		ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
+	} else {
+		ctx.block.push(Instruction.if(typeIdx, scopeIf.block));
 	}
 
-	let typeIdx = 0x40;
-	if (typeIf instanceof IntrinsicValue) typeIdx = ctx.file.getModule().makeType([], [typeIf.type.bitcode]);
-	else if (typeIf instanceof VirtualType) typeIdx = 0x40;
-	else if (typeIf instanceof LinearType) Panic(
-		`${colors.red("Error")}: Unsupported structure raising\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-	);
-
-	ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
 	return typeIf;
 }
 
@@ -132,7 +158,8 @@ function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: SolidTyp
 	child.compile(syntax.value[0].value);
 	child.cleanup();
 
-	if (child.done) ctx.done = true;
+	ctx.exited ||= child.exited;
+	ctx.done   ||= child.done;
 
 	ctx.block.push(Instruction.block(0x40, child.block));
 	return child.raiseType;

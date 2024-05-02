@@ -23,6 +23,8 @@ export class Context {
 	file: File;
 	function: Function;
 	scope: Scope;
+
+	exited: boolean;
 	done: boolean;
 
 	raiseType: OperandType;
@@ -36,6 +38,7 @@ export class Context {
 		this.block = block;
 		this.file  = file;
 
+		this.exited = false;
 		this.done = false;
 	}
 
@@ -48,7 +51,7 @@ export class Context {
 				case "assign":    CompileAssign    (this, line); break;
 				case "statement": CompileStatement (this, line); break;
 				case "return":    CompileReturn    (this, line); break;
-				case "raise":     CompileRaise     (this, line); break;
+				case "lift":      CompileLift      (this, line); break;
 				default: AssertUnreachable(line);
 			}
 
@@ -76,7 +79,7 @@ export class Context {
 	}
 
 	cleanup() {
-		if (this.done) return;
+		if (this.exited) return;
 		this.scope.cleanup();
 	}
 }
@@ -325,6 +328,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 
 		ctx.scope.cleanup(true);
 		ctx.block.push(Instruction.return());
+		ctx.exited = true;
 		ctx.done = true;
 		return ctx.function.returns;
 	}
@@ -357,6 +361,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 
 		ctx.scope.cleanup(true);
 		ctx.block.push(Instruction.return());
+		ctx.exited = true;
 		ctx.done = true;
 		return never;
 	}
@@ -383,12 +388,13 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 
 	ctx.scope.cleanup(true);
 	ctx.block.push(Instruction.return());
+	ctx.exited = true;
 	ctx.done = true;
 
 	return never;
 }
 
-function CompileRaise(ctx: Context, syntax: Syntax.Term_Raise) {
+function CompileLift(ctx: Context, syntax: Syntax.Term_Lift) {
 	ctx.raiseType = CompileExpr(ctx, syntax.value[0]);
 	ctx.scope.cleanup();
 	ctx.done = true;

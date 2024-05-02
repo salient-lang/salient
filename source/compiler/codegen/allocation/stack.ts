@@ -177,8 +177,8 @@ export class StackAllocation {
 	private accessed: boolean;
 	private alias?: StackAllocation;
 
-	readonly align: number;
-	readonly size: number;
+	align: number;
+	size: number;
 
 	// for debug purposes
 	tag?: string;

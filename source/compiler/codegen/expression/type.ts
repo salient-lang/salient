@@ -207,7 +207,6 @@ export class LinearType {
 	dispose() {
 		if (this.retain) return;
 		if (!this.alloc) return;
-		this.alloc.free();
 	}
 
 	// This value is not stored in a variable, and parents should retain existence after child's consumption
@@ -238,6 +237,13 @@ export class LinearType {
 
 		this.type.link();
 		return this.type.size;
+	}
+
+	getAlignment() {
+		if (this.type instanceof IntrinsicValue) return this.type.type.align;
+
+		this.type.link();
+		return this.type.align;
 	}
 
 	getTypeName() {

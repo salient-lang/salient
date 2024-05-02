@@ -207,7 +207,7 @@ export default class Function {
 		ctx.compile(body.value[0].value);
 		scope.stack.resolve();
 
-		if (!ctx.done) {
+		if (!ctx.exited) {
 			console.error(`${colors.red("Error")}: Function ${colors.brightBlue(this.name)} does not return\n`+
 				SourceView(ctx.file.path, ctx.file.name, body.ref)
 			);
