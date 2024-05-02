@@ -143,9 +143,11 @@ function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType): Op
 			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
 		);
 
-		ctx.exited ||= scopeIf.exited && scopeElse.exited;
 
 		ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
+
+		ctx.exited ||= scopeIf.exited && scopeElse.exited;
+		ctx.block.push(Instruction.unreachable());
 	} else {
 		ctx.block.push(Instruction.if(typeIdx, scopeIf.block));
 	}
