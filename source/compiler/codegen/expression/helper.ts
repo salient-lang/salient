@@ -60,7 +60,7 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	if (strict) {
 		const errs = type.getCompositionErrors();
 		if (errs) {
-			console.error(`Unable to compose value due to some arguments being uninitialized since:\n`
+			console.error(`Unable to compose value due to some arguments being uninitialized since: ${errs.map(x => x.start.toString()).join(", ")}\n`
 				+ errs.map(x => SourceView(ctx.file.path, ctx.file.name, x, true)).join("")
 				+ SourceView(ctx.file.path, ctx.file.name, ref, false)
 			);

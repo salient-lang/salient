@@ -47,57 +47,78 @@ function RemapRefRange(syntax: SyntaxNode) {
 
 
 export function SourceView(path: string, name: string, range: ReferenceRange, compact?: boolean) {
-	const source = ReadByteRange(path, range.start.index-200, range.end.index+200);
-	if (source === null) return `${name}: ${range.toString()}\n`;
+	return range.start.line == range.end.line
+		? SingleLine(path, name, range, compact)
+		: MultiLine(path, name, range, compact);
+}
 
-	const begin = ExtractLine(source, range.start).replace(/\t/g, "  ");
+function SingleLine(path: string, name: string, range: ReferenceRange, compact?: boolean) {
+	const offset = Math.max(0, range.start.index - 200);
+	const slice = ReadByteRange(path, offset, range.end.index+200);
+	if (slice === null) return `${name}: ${range.toString()}\n`;
+
+	let s = slice.lastIndexOf("\n", range.start.index-offset);
+	if (s === -1) s = 0;
+	let e = slice.indexOf("\n", range.end.index-offset);
+	if (e === -1) e = slice.length;
+
+	let line = slice.slice(s, e).trimEnd();
+	let pad = line.length;
+	line = line.trimStart();
+	pad -= line.length;
+
+	const margin = `${range.start.line} │ `;
+	const underline = "\n"
+		+ " ".repeat(margin.length + range.start.col - pad)
+		+ "^".repeat(Math.max(1, range.end.col - range.start.col))
+		+ "\n";
+
+	const body = margin + line + underline;
+	return compact ? body : `  ${name}: ${range.toString()}\n`;
+}
+
+function MultiLine(path: string, name: string, range: ReferenceRange, compact?: boolean) {
+	const offset = Math.max(0, range.start.index - 200);
+	const slice = ReadByteRange(path, offset, range.end.index+200);
+	if (slice === null) return `${name}: ${range.toString()}\n`;
+
+	let s = slice.lastIndexOf("\n", range.start.index-offset);
+	if (s === -1) s = 0;
+	else s ++;
+	let e = slice.indexOf("\n", range.end.index-offset);
+	if (e === -1) e = slice.length;
+
+	const lines = slice.slice(s, e).split("\n");
+	const digits = Math.floor(Math.log10(range.end.line)) + 1;
+
+	let maxLen = 0;
+	function RenderLine(line: string, lnOff: number,) {
+		const ln = lnOff + range.start.line;
+		const src = line.replaceAll("\t", "  ");
+		maxLen = Math.max(src.length, maxLen);
+		return ` ${ln.toString().padStart(digits, " ")} │ ${src}\n`;
+	}
+
 	let body = "";
-
-	if (range.start.line === range.end.line) {
-		const margin = ` ${range.start.line} | `;
-
-		const trimmed = begin.trim();
-		const trimDiff = begin.length - trimmed.length;
-
-		const underline = "\n"
-			+ " ".repeat(margin.length + range.start.col - trimDiff)
-			+ "^".repeat(Math.max(1, range.end.col - range.start.col));
-
-		body = margin + trimmed + underline;
+	if (lines.length <= 5) {
+		body += lines.map(RenderLine).join("\n");
 	} else {
-		const eLine = " " + range.end.line.toString();
-		const sLine = range.start.line.toString().padStart(eLine.length, " ");
+		let begin = "";
+		for (let i=0; i<2; i++) {
+			begin += RenderLine(lines[i], i);
+		}
 
-		const finish = ExtractLine(source, range.end).replace(/\t/g, "  ");;
+		let end = "";
+		for (let i=lines.length-2; i<lines.length; i++) {
+			end += RenderLine(lines[i], i);
+		}
 
-		body = sLine + " | " + begin + "\n"
-			+ eLine + " | " + finish;
+		body += begin
+			+ ` ${" ".repeat(digits)} │${"░".repeat(maxLen+3)}\n`
+			+ end;
 	}
 
-	body += compact ? "\n" : `\n  ${name}: ${range.toString()}\n`;
-
-	return body;
-}
-
-function ExtractLine(source: string, ref: Reference) {
-	const begin = FindNewLine(source, ref.index, -1);
-	const end   = FindNewLine(source, ref.index, 1);
-
-	return source.slice(begin, end);
-}
-
-function FindNewLine(source: string, index: number, step: number) {
-	index += step;
-
-	while (index >= 0 && index < source.length && source[index] !== "\n") {
-		index += step;
-	}
-
-	if (source[index] === "\n") {
-		index -= step;
-	}
-
-	return Math.max(index, 0);
+	return compact ? body : body + `  ${name}: ${range.toString()}\n`;
 }
 
 
