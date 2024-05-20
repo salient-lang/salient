@@ -209,14 +209,6 @@ function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 		}
 	}
 
-	if (target.type instanceof IntrinsicValue) {
-		switch (target.base.locality) {
-			case BasePointerType.global: ctx.block.push(Instruction.global.get(target.base.ref)); break;
-			case BasePointerType.local:  ctx.block.push(Instruction.local.get(target.base.ref)); break;
-			default: AssertUnreachable(target.base.locality);
-		}
-	}
-
 	const expr = CompileExpr(ctx, value, target.getBaseType());
 	Assign(ctx, target, expr, syntax.ref);
 }
