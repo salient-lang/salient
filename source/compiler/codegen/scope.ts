@@ -86,6 +86,7 @@ export class Scope {
 			if (inherited instanceof LinearType) return inherited;
 
 			this.vars[name] = inherited.clone();
+			return this.vars[name];
 		}
 
 		return null;
