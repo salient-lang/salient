@@ -99,7 +99,7 @@ export class LinearType {
 
 			this.consumedAt = b.consumedAt;
 		} else {
-			assert(c instanceof BasePointer, "should be base pointer");
+			assert(c instanceof BasePointer, `should be base pointer, not ${c}`);
 
 			this.ownership = Ownership.owner;
 			this.consumedAt = undefined;
@@ -285,7 +285,7 @@ export class LinearType {
 
 
 	clone(): LinearType {
-		const nx = new LinearType(this.type, this.alloc, 0);
+		const nx = new LinearType(this.type, this.alloc, this.base);
 		nx.composable = this.composable;
 		nx.consumedAt = this.consumedAt;
 		nx.parent = this.parent;
