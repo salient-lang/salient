@@ -2,18 +2,19 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
-import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
-import { IntrinsicValue, VirtualType, bool, never } from "~/compiler/intrinsic.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
+import { SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix/index.ts";
 import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
-import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
+import { CompileIf } from "~/compiler/codegen/expression/flow-control.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
+import { never } from "~/compiler/intrinsic.ts";
+
 
 
 export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: SolidType, tailCall = false): OperandType {
@@ -78,81 +79,6 @@ function CompileName(ctx: Context, syntax: Syntax.Term_Name): OperandType {
 	}
 
 	return variable.type;
-}
-
-function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType): OperandType {
-	const cond = CompileExpr(ctx, syntax.value[0]);
-	if (cond instanceof LinearType && cond.type !== bool.value) Panic(
-		`${colors.red("Error")}: Invalid comparison type ${cond.type.getTypeName()}\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
-	);
-
-	const lifter = ctx.scope.stack.allocate(0, 0);
-
-	const stackIf = ctx.scope.stack.checkpoint();
-	const scopeIf = ctx.child();
-	const typeIf = CompileExpr(scopeIf, syntax.value[1], expect);
-	if (IsNamespace(typeIf)) Panic(
-		`${colors.red("Error")}: Unsupported namespace yielded from if block\n`,
-		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-	);
-	scopeIf.mergeBlock();
-	stackIf.restore();
-
-	let typeIdx = 0x40;
-	if (typeIf instanceof IntrinsicValue)   typeIdx = ctx.file.getModule().makeType([], [typeIf.type.bitcode]);
-	else if (typeIf instanceof VirtualType) typeIdx = 0x40;
-	else if (typeIf instanceof LinearType) {
-		lifter.align = typeIf.getAlignment();
-		lifter.size = typeIf.getSize();
-
-		if (!typeIf.alloc) Panic(
-			`${colors.red("Error")}: Lifted struct somehow has no allocation\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[1].ref }
-		);
-
-		typeIf.alloc.moveTo(lifter);
-	}
-
-	if (syntax.value[2].value[0]) {
-		const stackElse = ctx.scope.stack.checkpoint();
-		const scopeElse = ctx.child();
-		const typeElse = CompileExpr(scopeElse, syntax.value[2].value[0].value[0], expect);
-
-		if (IsNamespace(typeElse)) Panic(
-			`${colors.red("Error")}: Unsupported namespace yielded from else block\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-		);
-		scopeElse.mergeBlock();
-		stackElse.restore();
-
-		if (typeIf instanceof LinearType) {
-			if ( !(typeElse instanceof LinearType) || typeIf.type !== typeElse.type ) Panic(
-				`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.getTypeName()} != ${typeElse.getTypeName()}\n`,
-				{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-			);
-
-			if (!typeElse.alloc) Panic(
-				`${colors.red("Error")}: Lifted struct somehow has no allocation\n`,
-				{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[2].value[0].value[0].ref }
-			);
-
-			typeElse.alloc.moveTo(lifter);
-		} else if (typeIf != typeElse) Panic(
-			`${colors.red("Error")}: Type miss-match between if statement results, ${typeIf.getTypeName()} != ${typeElse.getTypeName()}\n`,
-			{ path: ctx.file.path, name: ctx.file.name, ref: syntax.ref }
-		);
-
-
-		ctx.block.push(Instruction.if(typeIdx, scopeIf.block, scopeElse?.block));
-
-		ctx.exited ||= scopeIf.exited && scopeElse.exited;
-		ctx.block.push(Instruction.unreachable());
-	} else {
-		ctx.block.push(Instruction.if(typeIdx, scopeIf.block));
-	}
-
-	return typeIf;
 }
 
 function CompileBlock(ctx: Context, syntax: Syntax.Term_Block, expect?: SolidType): OperandType {

@@ -266,7 +266,9 @@ export class LinearType {
 		return false;
 	}
 
-
+	/**
+	 * Overwrites this linear type with another
+	 */
 	infuse(other: LinearType) {
 		if (!this.like(other)) throw new Error("Cannot infuse a different type");
 
@@ -302,4 +304,18 @@ export class LinearType {
 
 		return nx;
 	}
+}
+
+
+
+
+export function GetSolidType(type: OperandType): SolidType | undefined {
+	if (type instanceof IntrinsicValue) return type.type;
+	if (type instanceof VirtualType) return undefined;
+	if (type instanceof LinearType) return GetSolidType(type.type);
+
+	if (IsNamespace(type)) return undefined;
+	if (IsSolidType(type)) return type;
+
+	return type;
 }
