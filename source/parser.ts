@@ -67,14 +67,14 @@ function SingleLine(path: string, name: string, range: ReferenceRange, compact?:
 	line = line.trimStart();
 	pad -= line.length;
 
-	const margin = `${range.start.line} │ `;
+	const margin = ` ${range.start.line} │ `;
 	const underline = "\n"
 		+ " ".repeat(margin.length + range.start.col - pad)
 		+ "^".repeat(Math.max(1, range.end.col - range.start.col))
 		+ "\n";
 
 	const body = margin + line + underline;
-	return compact ? body : `  ${name}: ${range.toString()}\n`;
+	return compact ? body : `${body}  ${name}: ${range.toString()}\n`;
 }
 
 function MultiLine(path: string, name: string, range: ReferenceRange, compact?: boolean) {
