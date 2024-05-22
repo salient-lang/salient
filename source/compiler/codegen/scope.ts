@@ -29,6 +29,7 @@ export class Scope {
 			this.stack = new StackAllocator();
 		}
 
+		// Child vars are copy on write
 		this.vars = {};
 	}
 
@@ -81,9 +82,6 @@ export class Scope {
 			if (inherited === null) return null;
 
 			if (readOnly) return inherited;
-
-			// Don't both cloning if the value can't be consumed in this scope
-			if (inherited instanceof LinearType) return inherited;
 
 			this.vars[name] = inherited.clone();
 			return this.vars[name];

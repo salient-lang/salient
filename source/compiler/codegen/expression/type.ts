@@ -285,6 +285,27 @@ export class LinearType {
 		}
 	}
 
+	compositionallyEquivalent(other: LinearType, carry: Array<[ReferenceRange?, ReferenceRange?]> = []) {
+		if (this.composable != other.composable) return false;
+
+		for (const [key, thisAttr] of this.attributes.entries()) {
+			const otherAttr = other.attributes.get(key);
+
+			if (!otherAttr) return false;
+			else {
+				const ok = thisAttr.compositionallyEquivalent(otherAttr, carry);;
+				if (!ok) return false;
+			}
+		}
+
+		// Check other doesn't have any attributes marked which this one does not
+		for (const key in other.attributes) {
+			if (!this.attributes.has(key)) return false;
+		}
+
+		return true;
+	}
+
 
 	clone(): LinearType {
 		const nx = new LinearType(this.type, this.alloc, this.base);
@@ -295,11 +316,7 @@ export class LinearType {
 		nx.retain = this.retain;
 
 		for (const [key, value] of this.attributes) {
-			if (value instanceof IntrinsicValue) {
-				nx.attributes.set(key, value);
-			} else {
-				nx.attributes.set(key, value.clone());
-			}
+			nx.attributes.set(key, value.clone());
 		}
 
 		return nx;

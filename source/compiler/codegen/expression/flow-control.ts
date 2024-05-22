@@ -9,6 +9,7 @@ import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
+import { ReferenceRange, SourceView } from "~/parser.ts";
 
 
 export function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidType): OperandType {
@@ -38,6 +39,7 @@ export function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidTy
 	}
 
 	const elseSyntax = syntax.value[2].value[0];
+	let flowFailures: string[];
 	if (elseSyntax) {
 		const brElse = CompileBranchBody(ctx, elseSyntax.value[0], GetSolidType(brIf.type));
 
@@ -63,8 +65,11 @@ export function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidTy
 
 		ctx.exited ||= brIf.scope.exited && brElse.scope.exited;
 		ctx.block.push(Instruction.unreachable());
+
+		ResolveBranchFlow(ctx, [brIf.scope, brElse.scope], true, syntax.ref);
 	} else {
 		ctx.block.push(Instruction.if(typeIdx, brIf.scope.block));
+		ResolveBranchFlow(ctx, [brIf.scope], false, syntax.ref);
 	}
 
 	return brIf.type;
@@ -111,4 +116,64 @@ function InlineBlock(ctx: Context, syntax: Syntax.Term_Expr) {
 	ctx.compile(block.value[0].value);
 
 	return ctx.raiseType;
+}
+
+function ResolveBranchFlow(parent: Context, branches: Context[], totality = false, ref: ReferenceRange) {
+	// If totality is true, execution must pass through at least one of these branches
+	// So it doesn't matter if any branch changes the state relative to the parent
+	// As long as all branches perform equivalent changes
+
+	const bad = [];
+
+	// Get list of parent variables which are changed in all branches
+	const override: string[] = [];
+	if (totality) {
+		outer: for (const name in branches[0].scope.vars) {
+			// Ignore child vars
+			if (!branches[0].scope.vars[name].isClone) continue;
+
+			for (let i=1; i<branches.length; i++) {
+				const branch = branches[i];
+				if (!branch.scope.vars[name]) continue outer;
+			}
+
+			override.push(name);
+		}
+	}
+
+	// Check all totality changes align each other (use first as ref)
+	const base = branches[0].scope.vars;
+	outer: for (const name of override) {
+		for (let i=1; i<branches.length; i++) {
+			const branch = branches[i];
+
+			const ok = base[name].type.compositionallyEquivalent(branch.scope.vars[name].type);
+			if (!ok) {
+				bad.push(name);
+				continue outer;
+			}
+		}
+
+		// TODO: Apply changes in base to parent
+	}
+
+	// Check all non-totality changes align with parent
+	for (const branch of branches) {
+		for (const name in branch.scope.vars) {
+			// Ignore child vars
+			if (!branch.scope.vars[name].isClone) continue;
+
+			// Skip, already processed
+			if (override.includes(name)) continue;
+
+			const ok = parent.scope.vars[name].type.compositionallyEquivalent(branch.scope.vars[name].type);
+			if (!ok) bad.push(name);
+		}
+	}
+
+	if (bad.length > 0) parent.markFailure(
+		`${colors.red("Error")}: Variables ${bad.map(colors.cyan).join(", ")} `
+			+ (bad.length == 1 ? "has" : "have")
+			+ ` an undeterminable states after branching here\n`,
+	ref);
 }
