@@ -2,6 +2,8 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import * as Instance from "~/bnf/syntax.js";
 import * as Syntax from "~/bnf/syntax.d.ts";
+
+/// <reference path="~/bnf/shared.d.ts" />
 import { ParseError, ReferenceRange, Reference, SyntaxNode } from "~/bnf/shared.js";
 import { Panic } from "~/compiler/helper.ts";
 
@@ -99,9 +101,16 @@ function MultiLine(path: string, name: string, range: ReferenceRange, compact?: 
 		return ` ${ln.toString().padStart(digits, " ")} │ ${src}\n`;
 	}
 
+	// TODO: Low priority
+	// This currently does not strip any padding
+	// So if every line in the section is indented by 4 space, that will remain
+	//
+	// Ideally it should calculate the minimum indentation in the snippet
+	// Then back shift based on that
+
 	let body = "";
 	if (lines.length <= 5) {
-		body += lines.map(RenderLine).join("\n");
+		body += lines.map(RenderLine).join("");
 	} else {
 		let begin = "";
 		for (let i=0; i<2; i++) {
@@ -118,7 +127,7 @@ function MultiLine(path: string, name: string, range: ReferenceRange, compact?: 
 			+ end;
 	}
 
-	return compact ? body : body + `  ${name}: ${range.toString()}\n`;
+	return compact ? body : body + `\n  ${name} ${range.toString()}\n`;
 }
 
 
