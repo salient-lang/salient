@@ -210,6 +210,7 @@
 				{ "include": "#declare" },
 				{ "include": "#assign" },
 				{ "include": "#return" },
+				{ "include": "#lift" },
 
 				{ "include": "#expression" }
 			]
@@ -341,6 +342,19 @@
 		},
 
 
+		"lift": {
+			"begin": "\\b(lift)\\s*",
+			"beginCaptures": {
+				"1": { "name": "keyword.control.lift" }
+			},
+			"end": "(;)",
+			"endCaptures": {
+				"1": { "name": "punctuation.terminator.statement" }
+			},
+			"patterns": [
+				{ "include": "#expression" }
+			]
+		},
 		"return": {
 			"begin": "\\b(return(_tail)?)\\s*",
 			"beginCaptures": {

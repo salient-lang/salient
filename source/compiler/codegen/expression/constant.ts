@@ -186,7 +186,7 @@ function CompilePlainString(ctx: Context, syntax: Syntax.Term_String_plain) {
 	return i32.value;
 }
 
-function CompileTemplateString(ctx: Context, syntax: Syntax.Term_String_template) {
+function CompileTemplateString(ctx: Context, syntax: Syntax.Term_String_template): never {
 	throw new Error("Unimplemented template string compilation");
-	return i32.value;
+	// return i32.value;
 }

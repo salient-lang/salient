@@ -71,7 +71,7 @@ function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree): Oper
 	});
 
 	const a = CompilePrecedence(ctx, lhs, goal);
-	if (a !== goal) Panic(
+	if (a instanceof LinearType ? a.type !== goal : a !== goal) Panic(
 		`${colors.red("Error")}: Type coerce is currently unimplemented\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});

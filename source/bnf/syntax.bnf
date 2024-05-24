@@ -92,13 +92,13 @@ function ::= func_head %w* ( block | ";" ) %w* ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 
 block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
-	block_stmt ::= assign | declare | return | raise | statement ;
+	block_stmt ::= assign | declare | return | lift | statement ;
 
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
 
 return ::= %"return" "_tail"? ( %w+ expr)? %( w* ";" w* );
-raise  ::= %"raise" %w+ expr %( ";" w* );  # TODO rename to lift
+lift   ::= %"lift" %w+ expr %( ";" w* );
 # drop  ::= %"drop" %w+ expr %( ";" w* );
 
 

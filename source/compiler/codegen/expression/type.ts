@@ -99,7 +99,7 @@ export class LinearType {
 
 			this.consumedAt = b.consumedAt;
 		} else {
-			assert(c instanceof BasePointer, "should be base pointer");
+			assert(c instanceof BasePointer, `should be base pointer, not ${c}`);
 
 			this.ownership = Ownership.owner;
 			this.consumedAt = undefined;
@@ -207,7 +207,6 @@ export class LinearType {
 	dispose() {
 		if (this.retain) return;
 		if (!this.alloc) return;
-		this.alloc.free();
 	}
 
 	// This value is not stored in a variable, and parents should retain existence after child's consumption
@@ -240,6 +239,13 @@ export class LinearType {
 		return this.type.size;
 	}
 
+	getAlignment() {
+		if (this.type instanceof IntrinsicValue) return this.type.type.align;
+
+		this.type.link();
+		return this.type.align;
+	}
+
 	getTypeName() {
 		if (this.type instanceof Structure) return this.type.name;
 
@@ -260,7 +266,9 @@ export class LinearType {
 		return false;
 	}
 
-
+	/**
+	 * Overwrites this linear type with another
+	 */
 	infuse(other: LinearType) {
 		if (!this.like(other)) throw new Error("Cannot infuse a different type");
 
@@ -277,9 +285,49 @@ export class LinearType {
 		}
 	}
 
+	compositionallyEquivalent(other: LinearType, carry: Array<[ReferenceRange?, ReferenceRange?]> = []) {
+		if (this.composable != other.composable) return false;
+
+		for (const [key, thisAttr] of this.attributes.entries()) {
+			const otherAttr = other.attributes.get(key);
+
+			if (!otherAttr) return false;
+			else {
+				const ok = thisAttr.compositionallyEquivalent(otherAttr, carry);;
+				if (!ok) return false;
+			}
+		}
+
+		// Check other doesn't have any attributes marked which this one does not
+		for (const key in other.attributes) {
+			if (!this.attributes.has(key)) return false;
+		}
+
+		return true;
+	}
+
+	infuseComposition(other: LinearType) {
+		this.composable = other.composable;
+		this.consumedAt = other.consumedAt;
+
+		for (const [key, otherAttr] of other.attributes) {
+			const thisAttr = this.attributes.get(key);
+
+			if (!thisAttr) this.attributes.set(key, otherAttr.clone());
+			else thisAttr.infuseComposition(otherAttr);
+
+			if (this.attributes.has(key)) this.attributes.delete(key);
+		}
+
+		// Remove unlabled attributes
+		for (const key in this.attributes) {
+			if (!other.attributes.has(key)) this.attributes.delete(key);
+		}
+	}
+
 
 	clone(): LinearType {
-		const nx = new LinearType(this.type, this.alloc, 0);
+		const nx = new LinearType(this.type, this.alloc, this.base);
 		nx.composable = this.composable;
 		nx.consumedAt = this.consumedAt;
 		nx.parent = this.parent;
@@ -287,13 +335,23 @@ export class LinearType {
 		nx.retain = this.retain;
 
 		for (const [key, value] of this.attributes) {
-			if (value instanceof IntrinsicValue) {
-				nx.attributes.set(key, value);
-			} else {
-				nx.attributes.set(key, value.clone());
-			}
+			nx.attributes.set(key, value.clone());
 		}
 
 		return nx;
 	}
+}
+
+
+
+
+export function GetSolidType(type: OperandType): SolidType | undefined {
+	if (type instanceof IntrinsicValue) return type.type;
+	if (type instanceof VirtualType) return undefined;
+	if (type instanceof LinearType) return GetSolidType(type.type);
+
+	if (IsNamespace(type)) return undefined;
+	if (IsSolidType(type)) return type;
+
+	return type;
 }
