@@ -7,10 +7,9 @@ import { MaybeSingularExprArg } from "~/compiler/codegen/expression/helper.ts";
 import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { Instruction } from "~/wasm/index.ts";
-import { SourceView } from "~/parser.ts";
+import { Panic, Warn } from "~/compiler/helper.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Assign } from "~/compiler/codegen/context.ts";
-import { Panic } from "~/compiler/helper.ts";
 
 export function StructBuilder(ctx: Context, syntax: Syntax.Term_Container, expect?: SolidType): OperandType {
 	if (!(expect instanceof Structure)) Panic(
@@ -47,7 +46,8 @@ function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Te
 		return;
 	}
 
-	const zeroed = ShouldZero(syntax);
+	const zeroingRef = ShouldZero(syntax);
+	const zeroed = zeroingRef !== null;
 	if (zeroed) {
 		ResolveLinearType(ctx, linear, syntax.ref, false);                 // address
 		ctx.block.push(Instruction.const.i32(0));                          // value
@@ -87,14 +87,21 @@ function NestedStructBuilder(ctx: Context, linear: LinearType, syntax: Syntax.Te
 	}
 
 	// All non inited attributes have been filled with zero
-	if (zeroed) linear.markDefined();
+	if (zeroed) {
+		if (!linear.hasCompositionErrors()) Warn(
+			`${colors.yellow("Warn")}: Unnecessary zeroing of structure as all elements are filled\n`, {
+			path: ctx.file.path, name: ctx.file.name, ref: zeroingRef
+		});
+
+		linear.markDefined();
+	}
 
 	return linear;
 }
 
 function ShouldZero(syntax: Syntax.Term_Container) {
 	const elms = syntax.value[0].value[0];
-	if (!elms) return false;
+	if (!elms) return null;
 
 	const chain = elms.value[1];
 	const lastI = chain.value.length-1;
@@ -103,13 +110,14 @@ function ShouldZero(syntax: Syntax.Term_Container) {
 		? chain.value[lastI].value[0].value[0]
 		: elms.value[0].value[0];
 
-	if (last_item.type === "container_map") return false;
+	if (last_item.type === "container_map") return null;
 
 	const expr_arg = MaybeSingularExprArg(last_item.value[0]);
-	if (expr_arg === null) return false;
-	if (expr_arg.type !== "name") return false;
+	if (expr_arg === null) return null;
+	if (expr_arg.type !== "name") return null;
 
-	return expr_arg.value[0].value === "none";
+	if (expr_arg.value[0].value !== "none") return null
+	return expr_arg.value[0].ref;
 }
 
 function MaybeNestedContainer(syntax: Syntax.Term_Expr) {

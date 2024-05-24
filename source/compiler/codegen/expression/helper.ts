@@ -1,4 +1,5 @@
 import type * as Syntax from "~/bnf/syntax.d.ts";
+import { red } from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import { AssertUnreachable, LatentOffset } from "~/helper.ts";
 import { BasePointerType, LinearType } from "~/compiler/codegen/expression/type.ts";
@@ -60,9 +61,15 @@ export function ResolveLinearType(ctx: Context, type: LinearType, ref: Reference
 	if (strict) {
 		const errs = type.getCompositionErrors();
 		if (errs) {
-			console.error(`Unable to compose value due to some arguments being uninitialized since:\n`
+			const range = ref.clone();
+			for (const err of errs) {
+				range.span(err);
+			}
+
+			console.error(`${red("Error")}: Unable to compose value due to some arguments being uninitialized since: ${errs.map(x => x.start.toString()).join(", ")}\n`
 				+ errs.map(x => SourceView(ctx.file.path, ctx.file.name, x, true)).join("")
-				+ SourceView(ctx.file.path, ctx.file.name, ref, false)
+				+ SourceView(ctx.file.path, ctx.file.name, ref, true)
+				+ `  ${ctx.file.name} ${range.toString()}\n`
 			);
 
 			ctx.file.markFailure();

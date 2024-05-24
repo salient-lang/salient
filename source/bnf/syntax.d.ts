@@ -917,7 +917,7 @@ export type Term_Block_stmt = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Assign | Term_Declare | Term_Return | Term_Raise | Term_Statement)
+		(Term_Assign | Term_Declare | Term_Return | Term_Lift | Term_Statement)
 	]
 }
 export declare function Parse_Block_stmt (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1008,8 +1008,8 @@ export declare function Parse_Return (i: string, refMapping?: boolean): _Shared.
 	isPartial: boolean
 }
 
-export type Term_Raise = {
-	type: 'raise',
+export type Term_Lift = {
+	type: 'lift',
 	start: number,
 	end: number,
 	count: number,
@@ -1018,8 +1018,8 @@ export type Term_Raise = {
 		Term_Expr
 	]
 }
-export declare function Parse_Raise (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_Raise,
+export declare function Parse_Lift (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Lift,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
