@@ -154,7 +154,7 @@ function ResolveBranchFlow(parent: Context, branches: Context[], totality = fals
 			}
 		}
 
-		// TODO: Apply changes in base to parent
+		parent.scope.vars[name].type.infuseComposition(base[name].type);
 	}
 
 	// Check all non-totality changes align with parent

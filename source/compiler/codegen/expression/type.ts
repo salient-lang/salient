@@ -306,6 +306,25 @@ export class LinearType {
 		return true;
 	}
 
+	infuseComposition(other: LinearType) {
+		this.composable = other.composable;
+		this.consumedAt = other.consumedAt;
+
+		for (const [key, otherAttr] of other.attributes) {
+			const thisAttr = this.attributes.get(key);
+
+			if (!thisAttr) this.attributes.set(key, otherAttr.clone());
+			else thisAttr.infuseComposition(otherAttr);
+
+			if (this.attributes.has(key)) this.attributes.delete(key);
+		}
+
+		// Remove unlabled attributes
+		for (const key in this.attributes) {
+			if (!other.attributes.has(key)) this.attributes.delete(key);
+		}
+	}
+
 
 	clone(): LinearType {
 		const nx = new LinearType(this.type, this.alloc, this.base);
