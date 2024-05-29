@@ -135,3 +135,8 @@ external ::= %( "external" w+ ) ( ext_import | ext_export ) ;
 		ext_imports    ::= function | ext_import_var ;
 		ext_import_var ::= %( "let" w* ) name %( w* ":" w* ) access %(w* ";" w*);
 	ext_export ::= "export" ;
+
+#=============================
+#  Test
+#=============================
+text ::= %( "test" w+ ) string_plain block %w+ ;

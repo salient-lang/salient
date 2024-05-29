@@ -1383,3 +1383,21 @@ export declare function Parse_Ext_export (i: string, refMapping?: boolean): _Sha
 	reach: null | _Shared.Reference,
 	isPartial: boolean
 }
+
+export type Term_Text = {
+	type: 'text',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_String_plain,
+		Term_Block
+	]
+}
+export declare function Parse_Text (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Text,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
