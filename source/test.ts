@@ -20,7 +20,7 @@ export async function Test() {
 	for (const t of targets) {
 		const stats = Deno.statSync(t);
 		if (stats.isFile) {
-			if (!t.endsWith("test.sa")) Panic(
+			if (!t.endsWith(".test.sa")) Panic(
 				`${colors.red("Error")}: Provided file ${colors.cyan(t)} isn't a test.sa file`
 			);
 
@@ -97,7 +97,7 @@ function RecursiveAdd(folder: string, set: Set<string>) {
 	const files = Deno.readDirSync(folder);
 	for (const file of files) {
 		const path = `${folder}/${file.name}`;
-		if (file.isFile && file.name.endsWith("test.sa")) set.add(path);
+		if (file.isFile && file.name.endsWith(".test.sa")) set.add(path);
 		else if (file.isDirectory) RecursiveAdd(path, set);
 	}
 };
