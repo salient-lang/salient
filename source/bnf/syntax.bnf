@@ -1,5 +1,5 @@
 program ::= %w* ( stmt_top %w* )* ;
-	stmt_top ::= function | structure | external ;
+	stmt_top ::= function | structure | external | test ;
 
 
 #=============================
@@ -139,4 +139,4 @@ external ::= %( "external" w+ ) ( ext_import | ext_export ) ;
 #=============================
 #  Test
 #=============================
-text ::= %( "test" w+ ) string_plain block %w+ ;
+test ::= %( "test" w+ ) string_plain %w* block ;
