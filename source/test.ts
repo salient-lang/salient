@@ -8,8 +8,6 @@ import TestCase from "~/compiler/test-case.ts";
 import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
 
-
-
 export async function Test() {
 	// Determine all of the files to test
 	const targets = Deno.args.length > 1
@@ -37,7 +35,8 @@ export async function Test() {
 
 	const index = new Array<TestCase>();
 
-	console.log("Compiling...");
+	console.log("Compilation");
+	const compStart = Date.now();
 	for (const path of files.values()) {
 		const file = mainPck.import(path);
 
@@ -48,10 +47,10 @@ export async function Test() {
 			index.push(test);
 		}
 	}
+	const compEnd = Date.now();
 
 	if (project.failed) Deno.exit(1);
-
-
+	console.log(`  Found and compiled ${index.length} test cases ${colors.gray(`(${compEnd-compStart}ms)`)}`)
 
 
 	// Run all of the tests
@@ -61,13 +60,13 @@ export async function Test() {
 	let fails = 0;
 	const exports = instance.exports;
 	let prev = "";
-	const start = Date.now();
+	const execStart = Date.now();
 	for (let i=0; i<index.length; i++) {
 		const test = index[i];
 
 		if (prev !== test.file.name) {
 			prev = test.file.name;
-			console.log("\n"+colors.gray(prev));
+			console.log("\n"+colors.gray(prev.replaceAll('\\', '/')));
 		}
 
 		const func = exports[`test${i}`];
@@ -84,12 +83,12 @@ export async function Test() {
 		);
 		if (!result) fails++;
 	}
-	const end = Date.now();
+	const execEnd = Date.now();
 
 	console.log(`\n ${fails == 0 ? colors.green("ok") : colors.red("FAIL")}`
 		+ ` | ${index.length-fails} passed`
 		+ ` | ${fails} failed`
-		+ colors.gray(` (${end-start}ms)`)
+		+ colors.gray(` (${execEnd-execStart}ms)`)
 	);
 }
 

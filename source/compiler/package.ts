@@ -1,4 +1,4 @@
-import { dirname, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
+import { relative } from "https://deno.land/std@0.201.0/path/mod.ts";
 
 import type Project from "~/compiler/project.ts";
 import { File } from "~/compiler/file.ts"
@@ -11,13 +11,13 @@ export default class Package {
 
 	failed: boolean;
 
-	constructor(project: Project, base: string, name: string = "~") {
+	constructor(project: Project, base: string, name = "~") {
 		this.project = project;
 		this.failed = false;
 		this.files = [];
 
 		this.name = name;
-		this.cwd = dirname(base);
+		this.cwd = base;
 	}
 
 	import(filePath: string) {
