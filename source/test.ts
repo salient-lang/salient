@@ -1,5 +1,6 @@
 /// <reference lib="deno.ns" />
 
+import * as duration from "https://deno.land/std@0.224.0/fmt/duration.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import { resolve } from "https://deno.land/std@0.201.0/path/mod.ts";
@@ -7,6 +8,11 @@ import { Panic } from "~/compiler/helper.ts";
 import TestCase from "~/compiler/test-case.ts";
 import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
+
+function Duration(start: number, end: number) {
+	if (start === end) return "0ms";
+	return duration.format(end-start, { ignoreZero: true })
+}
 
 export async function Test() {
 	// Determine all of the files to test
@@ -35,7 +41,7 @@ export async function Test() {
 
 	const index = new Array<TestCase>();
 
-	console.log("Compilation");
+	console.log("Compiling...");
 	const compStart = Date.now();
 	for (const path of files.values()) {
 		const file = mainPck.import(path);
@@ -50,7 +56,11 @@ export async function Test() {
 	const compEnd = Date.now();
 
 	if (project.failed) Deno.exit(1);
-	console.log(`  Found and compiled ${index.length} test cases ${colors.gray(`(${compEnd-compStart}ms)`)}`)
+	console.log(`\x1b[1A\r`
+		+ `Compiled`
+		+ ` ${colors.cyan(index.length.toString())} unit tests`
+		+ ` ${colors.gray(`(${Duration(compStart, compEnd)})`)}\n`
+	);
 
 
 	// Run all of the tests
@@ -66,7 +76,7 @@ export async function Test() {
 
 		if (prev !== test.file.name) {
 			prev = test.file.name;
-			console.log("\n"+colors.gray(prev.replaceAll('\\', '/')));
+			console.log(colors.gray(prev.replaceAll('\\', '/')));
 		}
 
 		const func = exports[`test${i}`];
@@ -77,18 +87,19 @@ export async function Test() {
 		const unitStart  = Date.now();
 		const result = func();
 		const unitEnd    = Date.now();
-		console.log(`  - ${result ? colors.green("ok") : colors.red("FAIL")}`
-			+ ` ${test.name}`
-			+ ` ${colors.gray(`(${unitEnd-unitStart}ms)`)}`
+		console.log(`${result ? colors.green(" ok") : colors.red("ERR")}`
+			+ ` │ ${test.name}`
+			+ ` ${colors.gray(`(${Duration(unitStart, unitEnd)})`)}`
 		);
 		if (!result) fails++;
 	}
 	const execEnd = Date.now();
 
-	console.log(`\n ${fails == 0 ? colors.green("ok") : colors.red("FAIL")}`
-		+ ` | ${index.length-fails} passed`
-		+ ` | ${fails} failed`
-		+ colors.gray(` (${execEnd-execStart}ms)`)
+	console.log(`\n${colors.gray("Final Results")}\n`
+		+ `${fails == 0 ? colors.green(" ok") : colors.red("ERR")}`
+		+ ` │ ${colors.cyan((index.length-fails).toString())} passed`
+		+ ` ${colors.cyan((fails).toString())} failed`
+		+ colors.gray(` (${Duration(execStart, execEnd)})`)
 	);
 }
 
