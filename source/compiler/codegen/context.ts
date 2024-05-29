@@ -6,7 +6,6 @@ import type { File } from "~/compiler/file.ts";
 
 import * as banned from "~/compiler/codegen/banned.ts";
 import Structure from "~/compiler/structure.ts";
-import Function from "~/compiler/function.ts";
 import { BasePointerType, LinearType, OperandType, SolidType, IsRuntimeType, IsSolidType } from "~/compiler/codegen/expression/type.ts";
 import { IntrinsicType, IntrinsicValue, none, never } from "~/compiler/intrinsic.ts";
 import { Instruction, AnyInstruction } from "~/wasm/index.ts";
@@ -21,19 +20,19 @@ import { Panic } from "~/compiler/helper.ts";
 
 export class Context {
 	file: File;
-	function: Function;
 	scope: Scope;
 
 	exited: boolean;
 	done: boolean;
 
+	returns: SolidType[] | VirtualType;
 	raiseType: OperandType;
 
 	block: AnyInstruction[];
 
-	constructor(file: File, func: Function, scope: Scope, block: AnyInstruction[]) {
-		this.function = func;
+	constructor(file: File, scope: Scope, block: AnyInstruction[], returnType: Context['returns']) {
 		this.raiseType = none;
+		this.returns = returnType;
 		this.scope = scope;
 		this.block = block;
 		this.file  = file;
@@ -75,7 +74,7 @@ export class Context {
 	}
 
 	child() {
-		return new Context(this.file, this.function, this.scope.child(), []);
+		return new Context(this.file, this.scope.child(), [], this.returns);
 	}
 
 	cleanup() {
@@ -312,7 +311,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 	}
 
 	// Guard: return none
-	if (ctx.function.returns instanceof VirtualType) {
+	if (ctx.returns instanceof VirtualType) {
 		if (maybe_expr) Panic(
 			`${colors.red("Error")}: This function should have no return value\n`,
 			{ path: ctx.file.path, name: ctx.file.name, ref }
@@ -322,7 +321,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 		ctx.block.push(Instruction.return());
 		ctx.exited = true;
 		ctx.done = true;
-		return ctx.function.returns;
+		return ctx.returns;
 	}
 
 	if (!maybe_expr) Panic(
@@ -330,21 +329,21 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 		{ path: ctx.file.path, name: ctx.file.name, ref }
 	);
 
-	if (ctx.function.returns.length !== 1) Panic(
+	if (ctx.returns.length !== 1) Panic(
 		`${colors.red("Error")}: Multi value return is currently not supported\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref }
 	);
 
-	const goal = ctx.function.returns[0];
-	const expr = CompileExpr(ctx, maybe_expr, goal.type || none);
+	const goal = ctx.returns[0];
+	const expr = CompileExpr(ctx, maybe_expr, goal || none);
 	if (!IsRuntimeType(expr)) Panic(
 		`${colors.red("Error")}: You can only return a runtime type, not ${colors.cyan(expr.getTypeName())}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref }
 	);
 
 	// Guard: simple intrinsic return
-	if (goal.type instanceof IntrinsicType) {
-		if (!goal.type.like(expr)) ctx.markFailure(`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`, ref);
+	if (goal instanceof IntrinsicType) {
+		if (!goal.like(expr)) ctx.markFailure(`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`, ref);
 
 		if (expr instanceof LinearType) {
 			ResolveLinearType(ctx, expr, ref, true);
@@ -358,8 +357,8 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 		return never;
 	}
 
-	if (expr instanceof IntrinsicValue || !expr.like(goal.type)) Panic(
-		`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.type.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`,
+	if (expr instanceof IntrinsicValue || !expr.like(goal)) Panic(
+		`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(goal.getTypeName())} got ${colors.cyan(expr.getTypeName())}\n`,
 		{ path: ctx.file.path, name: ctx.file.name, ref }
 	);
 
@@ -373,7 +372,7 @@ function CompileReturn(ctx: Context, syntax: Syntax.Term_Return): typeof never {
 	ResolveLinearType(ctx, expr, maybe_expr.ref, true);
 
 	// Transfer
-	ctx.block.push(Instruction.const.i32(goal.type.size));
+	ctx.block.push(Instruction.const.i32(goal.size));
 	ctx.block.push(Instruction.copy(0, 0));
 
 	expr.dispose();

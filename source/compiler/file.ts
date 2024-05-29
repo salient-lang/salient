@@ -1,7 +1,7 @@
 /// <reference lib="deno.ns" />
 
 import type Package from "./package.ts";
-import type { Term_Access, Term_External, Term_Function, Term_Program, Term_Structure } from "~/bnf/syntax.d.ts";
+import type { Term_Access, Term_Block, Term_External, Term_Function, Term_Program, Term_Structure, Term_Test } from "~/bnf/syntax.d.ts";
 
 import Structure from "~/compiler/structure.ts";
 import Function from "~/compiler/function.ts";
@@ -13,6 +13,7 @@ import { AssertUnreachable } from "~/helper.ts";
 import { SimplifyString } from "~/compiler/codegen/expression/constant.ts";
 import { VirtualType } from "~/compiler/intrinsic.ts";
 import { Parse } from "~/parser.ts";
+import TestCase from "~/compiler/test-case.ts";
 
 export type Namespace = Function | Import | Global | Structure | IntrinsicType | VirtualType ;
 
@@ -33,6 +34,7 @@ export class File {
 	path: string;
 
 	namespace: { [key: string]: Namespace };
+	tests: TestCase[];
 
 	constructor(owner: Package, path: string, name: string, data: string) {
 		this.owner = owner;
@@ -46,6 +48,7 @@ export class File {
 			i32, i64, u32, u64, // native int types
 			f32, f64            // native floats types
 		};
+		this.tests = [];
 		Ingest(this, Parse(
 			data,
 			this.path,
@@ -90,6 +93,7 @@ function Ingest(file: File, syntax: Term_Program) {
 			case "function":  IngestFunction(file, inner); break;
 			case "structure": IngestStructure(file, inner); break;
 			case "external":  IngestExternal(file, inner); break;
+			case "test":      IngestTest(file, inner); break;
 			default: AssertUnreachable(inner);
 		}
 	}
@@ -151,4 +155,8 @@ function IngestExternal(file: File, syntax: Term_External) {
 	// }
 
 	// throw new Error(`Cannot merge a function with a non-function ${func.name}`);
+}
+
+function IngestTest(file: File, syntax: Term_Test) {
+	file.tests.push(new TestCase(file, SimplifyString(file, syntax.value[0]), syntax.value[1]));
 }

@@ -132,7 +132,7 @@ export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, ope
 
 	if (!operand.ref) throw new Error("A function somehow compiled with no reference generated");
 
-	const expect = Array.isArray(ctx.function.returns) ? ctx.function.returns[0].type : ctx.function.returns;
+	const expect = Array.isArray(ctx.returns) ? ctx.returns[0] : ctx.returns;
 	const returnType = PrepareReturnTail(ctx, operand, syntax.ref);
 	if (returnType != expect) ctx.markFailure(
 		`${colors.red("Error")}: Return type miss-match, expected ${colors.cyan(expect.getTypeName())} got ${colors.cyan(returnType.getTypeName())}\n`,
@@ -143,7 +143,7 @@ export function CompileTailCall(ctx: Context, syntax: Syntax.Term_Expr_call, ope
 
 	ctx.scope.cleanup(true);
 
-	if (ctx.function.owner.owner.project.flags.tailCall) {
+	if (ctx.file.owner.project.flags.tailCall) {
 		ctx.block.push(Instruction.return_call(operand.ref));
 	} else {
 		ctx.block.push(Instruction.call(operand.ref));

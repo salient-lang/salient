@@ -33,7 +33,7 @@ export type Term_Stmt_top = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Function | Term_Structure | Term_External)
+		(Term_Function | Term_Structure | Term_External | Term_Test)
 	]
 }
 export declare function Parse_Stmt_top (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1379,6 +1379,24 @@ export type Term_Ext_export = {
 }
 export declare function Parse_Ext_export (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_Ext_export,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_Test = {
+	type: 'test',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_String_plain,
+		Term_Block
+	]
+}
+export declare function Parse_Test (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Test,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean

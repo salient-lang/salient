@@ -21,5 +21,8 @@ jobs:
         with:
           deno-version: v1.x
 
-      - name: Automated tests
+      - name: Compiler Source tests
         run: deno test
+
+      - name: Compiler behaviour tests
+        run: npm run test:reflect

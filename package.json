@@ -11,8 +11,12 @@
 		"build": "run-s build:*",
 		"build:syntax": "npx bnf-compile ./source/bnf/",
 		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
-		"test": "deno test",
-		"compile": "deno run -A ./source/cli.ts"
+		"test": "run-s test:*",
+		"test:deno": "deno test",
+		"test:reflect": "npm run sa-test ./tests/reflective",
+		"cli": "deno run -A ./source/cli.ts",
+		"sa-test": "deno run -A ./source/cli.ts test",
+		"compile": "deno run -A ./source/cli.ts compile"
 	},
 	"bin": {
 		"salient": "bin/cli.js"

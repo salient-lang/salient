@@ -12,7 +12,7 @@ import { FuncRef } from "~/wasm/funcRef.ts";
 import { Scope } from "~/compiler/codegen/scope.ts";
 
 
-class Argument {
+export class FunctionArg {
 	name: string;
 	type: SolidType;
 	ref: ReferenceRange;
@@ -37,8 +37,8 @@ export default class Function {
 	isLinking:  boolean;
 	isLinked:   boolean;
 
-	arguments: Argument[];
-	returns:   Argument[] | VirtualType;
+	arguments: FunctionArg[];
+	returns:   FunctionArg[] | VirtualType;
 
 	constructor(owner: File, ast: Term_Function, external?: string) {
 		this.external = external;
@@ -105,7 +105,7 @@ export default class Function {
 				continue;
 			}
 
-			this.arguments.push(new Argument(
+			this.arguments.push(new FunctionArg(
 				raw_args[i].value[0].value,
 				type,
 				raw_args[i].ref
@@ -122,7 +122,7 @@ export default class Function {
 			this.returns = retType;
 		} else {
 			this.returns = [
-				new Argument(
+				new FunctionArg(
 					"return",
 					retType,
 					head.value[2].ref
@@ -186,7 +186,10 @@ export default class Function {
 		this.ref = func.ref;
 
 		const scope = new Scope(func);
-		const ctx = new Context(this.getFile(), this, scope, func.code);
+		const ctx = new Context(
+			this.getFile(), scope, func.code,
+			Array.isArray(this.returns) ? this.returns.map(x => x.type) : this.returns
+		);
 
 		if (Array.isArray(this.returns)) for (const ret of this.returns) {
 			if (ret.type instanceof Structure) scope.registerArgument(ctx, ret.name, ret.type, ret.ref);

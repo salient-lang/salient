@@ -1,0 +1,32 @@
+test "Order of operations: Remainder" {
+	// if ( 10.0 - ( 3.0 / 2.0 ) - 8.0 != 10.0 - 3.0 / 2.0 - 8.0 ) {
+	// 	return 20;
+	// };
+
+	// (-2.5 % 2.0) * -3.0 == 10.0 - ((1.0 / 2.0) % 10.0) - 8.0;
+	// 1.5 == 1.5
+	// true == 1
+
+	// doing this in a single expression to also ensure == is applied correctly
+	if ( (-2.5 % 2.0) * -3.0 ) != ( 10.0 - ( (1.0 / 2.0) % 10.0 ) - 8.0 ) {
+		return false;
+	};
+
+	if ( (-2.5 % 2.0) * -3.0 != 10.0 - ( (1.0 / 2.0) % 10.0 ) - 8.0 ) {
+		return false;
+	};
+
+	if ( (-2.5 % 2.0) * -3.0 != 10.0 - ( 1.0 / 2.0 % 10.0 ) - 8.0 ) {
+		return false;
+	};
+
+	if ( -2.5 % 2.0 * -3.0 != 10.0 - ( 1.0 / 2.0 % 10.0 ) - 8.0 ) {
+		return false;
+	};
+
+	if ( -2.5 % 2.0 * -3.0 != 10.0 - 1.0 / 2.0 % 10.0 - 8.0 ) {
+		return false;
+	};
+
+	return true;
+}
