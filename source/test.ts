@@ -43,22 +43,32 @@ export async function Test() {
 
 	console.log("Compiling...");
 	const compStart = Date.now();
+	let testCases = 0;
 	for (const path of files.values()) {
-		const file = mainPck.import(path);
+		try {
+			const file = mainPck.import(path);
+			testCases += file.tests.length;
 
-		for (const test of file.tests) {
-			test.compile();
-			if (test.ref) project.module.exportFunction(`test${index.length}`, test.ref);
+			for (const test of file.tests) {
+				try {
+					test.compile();
+					if (!test.ref) continue;
 
-			index.push(test);
+					project.module.exportFunction(`test${index.length}`, test.ref);
+					index.push(test);
+				} catch (e) {
+					test.evict();
+				}
+			}
+		} catch (e) {
+			testCases++;
 		}
 	}
 	const compEnd = Date.now();
 
-	if (project.failed) Deno.exit(1);
 	console.log(`\x1b[1A\r`
 		+ `Compiled`
-		+ ` ${colors.cyan(index.length.toString())} unit tests`
+		+ ` ${colors.cyan(index.length.toString())} unit tests of ${files.size}`
 		+ ` ${colors.gray(`(${Duration(compStart, compEnd)})`)}\n`
 	);
 
@@ -67,7 +77,7 @@ export async function Test() {
 	const wasmModule = new WebAssembly.Module(project.module.toBinary());
 	const instance = await WebAssembly.instantiate(wasmModule, {});
 
-	let fails = 0;
+	let success = 0;
 	const exports = instance.exports;
 	let prev = "";
 	const execStart = Date.now();
@@ -85,22 +95,30 @@ export async function Test() {
 		);
 
 		const unitStart  = Date.now();
-		const result = func();
-		const unitEnd    = Date.now();
-		console.log(`${result ? colors.green(" ok") : colors.red("ERR")}`
+		let ok = false;
+		try {
+			const res = func();
+			if (res) ok = true;
+		} catch (e) { /* no op */ };
+		const unitEnd = Date.now();
+
+		console.log(`${ok ? colors.green(" ok") : colors.red("ERR")}`
 			+ ` │ ${test.name}`
 			+ ` ${colors.gray(`(${Duration(unitStart, unitEnd)})`)}`
 		);
-		if (!result) fails++;
+		if (ok) success++;
 	}
 	const execEnd = Date.now();
 
+	const ok = success === testCases;
 	console.log(`\n${colors.gray("Final Results")}\n`
-		+ `${fails == 0 ? colors.green(" ok") : colors.red("ERR")}`
-		+ ` │ ${colors.cyan((index.length-fails).toString())} passed`
-		+ ` ${colors.cyan((fails).toString())} failed`
+		+ `${ok ? colors.green(" ok") : colors.red("ERR")}`
+		+ ` │ ${colors.cyan((success).toString())} passed`
+		+ ` ${colors.cyan((testCases-success).toString())} failed`
 		+ colors.gray(` (${Duration(execStart, execEnd)})`)
 	);
+
+	if (project.failed) Deno.exit(1);
 }
 
 function RecursiveAdd(folder: string, set: Set<string>) {

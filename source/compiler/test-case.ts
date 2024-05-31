@@ -64,4 +64,11 @@ export default class TestCase {
 			ctx.file.markFailure();
 		}
 	}
+
+	evict() {
+		if (!this.ref) return;
+
+		const project = this.file.owner.project;
+		project.module.removeFunction(this.ref);
+	}
 }

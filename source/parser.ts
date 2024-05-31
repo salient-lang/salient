@@ -14,15 +14,16 @@ export function Parse(data: string, path: string, name: string): Syntax.Term_Pro
 
 	if (res instanceof ParseError) Panic(`${colors.red("FATAL ERROR")}: Syntax Parser Completely crashed`);
 
-	if (res.isPartial) Panic(
-		colors.red("Syntax Error") + "\n",
-		{
+	if (res.isPartial) {
+		console.error(colors.red("Syntax Error"));
+		console.error(SourceView(
 			path, name,
-			ref: res.reach
+			res.reach
 				? new ReferenceRange(res.root.ref.end, res.reach)
 				: ReferenceRange.blank()
-		}
-	);
+		));
+		throw new Error("Syntax Error");
+	}
 
 	// Fix changes which are too long due to `omit`ed syntax
 	RemapRefRange(res.root);

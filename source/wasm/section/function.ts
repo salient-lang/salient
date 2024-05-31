@@ -19,6 +19,16 @@ export default class FunctionSection {
 		this.funcs.push(func);
 	}
 
+	remove(ref: Function['ref']) {
+		for (let i=0; i<this.funcs.length; i++) {
+			if (this.funcs[i].ref === ref) {
+				this.funcs.splice(i, 1);
+
+				return;
+			}
+		}
+	}
+
 	headerToBinary(funcID: Box<number>) {
 		const buf: Byte[] = EncodeU32(this.funcs.length);
 

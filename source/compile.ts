@@ -9,6 +9,7 @@ import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
 import { DisplayTimers, TimerStart, TimerEnd } from "~/helper.ts";
 import { Panic } from "~/compiler/helper.ts";
+import { File } from "~/compiler/file.ts";
 
 
 export async function Compile(entry: string, config: {
@@ -24,7 +25,13 @@ export async function Compile(entry: string, config: {
 	const project = new Project();
 	const mainPck = new Package(project, dirname(root));
 
-	const mainFile = mainPck.import(root);
+	let mainFile: File;
+	try {
+		mainFile = mainPck.import(root);
+	} catch (e) {
+		Deno.exit(1);
+	}
+
 	const mainFunc = mainFile.namespace["main"];
 	if (!(mainFunc instanceof Function)) Panic(
 		`Main namespace is not a function: ${colors.cyan(mainFunc.constructor.name)}`
