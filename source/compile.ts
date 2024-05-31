@@ -1,6 +1,6 @@
 /// <reference lib="deno.ns" />
 
-import { resolve, join, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
+import { resolve, join, relative, dirname } from "https://deno.land/std@0.201.0/path/mod.ts";
 import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
@@ -22,7 +22,7 @@ export async function Compile(entry: string, config: {
 	);
 
 	const project = new Project();
-	const mainPck = new Package(project, root);
+	const mainPck = new Package(project, dirname(root));
 
 	const mainFile = mainPck.import(root);
 	const mainFunc = mainFile.namespace["main"];
