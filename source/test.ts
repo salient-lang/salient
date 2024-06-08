@@ -16,11 +16,32 @@ function Duration(milliseconds: number) {
 }
 
 export async function Test() {
+	const files = GetTargets();
+
+	// Compile all of the test cases
+	const cwd = resolve("./");
+	const project = new Project();
+	const mainPck = new Package(project, cwd);
+
+	const start = Date.now();
+	const compilation = CompileTests(files, mainPck);
+	const execution = await RunTests(project, compilation.index);
+	const duration = Date.now() - start;
+
+	const ok = compilation.ok && execution.ok;
+	const status = ( ok ? colors.green("ok") : colors.red("Fail ") );
+	console.log(`Overall ${status} ${colors.gray(`(${Duration(duration)})`)}`);
+
+	if (project.failed) Deno.exit(1);
+}
+
+function GetTargets(): Set<string> {
 	// Determine all of the files to test
 	const targets = Deno.args.length > 1
 		? Deno.args.slice(1)
 		: ['.'];
 
+	const start = Date.now();
 	const files = new Set<string>();
 	for (const t of targets) {
 		const stats = Deno.statSync(t);
@@ -32,46 +53,38 @@ export async function Test() {
 			files.add(t);
 		} else if (stats.isDirectory) RecursiveAdd(t, files);
 	}
+	const duration = Date.now() - start;
 
+	console.log(`Crawled ${colors.cyan(files.size.toString())} files ${colors.gray(`(${Duration(duration)})`)}\n`);
 
-
-	// Compile all of the test cases
-	const cwd = resolve("./");
-	const project = new Project();
-	const mainPck = new Package(project, cwd);
-
-
-	const compilation = CompileTests(files, mainPck);
-	const execution = await RunTests(project, compilation.index);
-
-	const ok = compilation.ok && execution.ok;
-	const status = ( ok ? colors.green("ok") : colors.red("Fail ") );
-	console.log(`Overall ${status}`);
-
-	if (project.failed) Deno.exit(1);
+	return files;
 }
 
 function CompileTests(files: Set<string>, mainPck: Package) {
 	const index = new Array<TestCase>();
 
-	const start = Date.now();
 	const errs: Error[] = [];
 	let filesPassed = 0;
 	let totalTests = 0;
 
 
 	const table: string[][] = [];
-	let duration = 0;
+	let parseTime = 0;
+	let compTime = 0;
+	const start = Date.now();
 	for (const path of files.values()) {
-		const start = Date.now();
 		let successes = 0;
 		let tests = 0;
 		let ok = true;
+
+		let unitTime = 0;
 		try {
 			const file = mainPck.import(path);
 			totalTests += file.tests.length;
+			parseTime += file.parseTime;
 			tests = file.tests.length;
 
+			const start = Date.now();
 			for (const test of file.tests) {
 				try {
 					test.compile();
@@ -87,31 +100,37 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 					ok = false;
 				}
 			}
+			unitTime = Date.now() - start;
+			compTime += unitTime;
 		} catch (e) {
 			ok = false;
 		}
-		const unitTime = Date.now()-start;
-		duration += unitTime;
 
 		table.push([
 			ok ? colors.green(" ok") : colors.red("ERR"),
 			path,
-			`${colors.cyan(successes.toString())} of ${colors.cyan(tests.toString())}`,
-			colors.gray(`(${Duration(unitTime)})`)
+			`${colors.cyan(successes.toString())}/${colors.cyan(tests.toString())}`,
+			colors.gray(`${Duration(parseTime)}/${Duration(unitTime)}`)
 		]);
 	}
+	const duration = Date.now() - start;
 
 	const { widths, body } = Table(table);
-	console.log("Compilation".padEnd(widths[0] + widths[1] + 5) + "Tests".padEnd(widths[2]+4) + "Time")
+	console.log("Parse/Compile".padEnd(widths[0] + widths[1] + 5) + "Unit".padEnd(widths[2]+4) + "Time")
 	console.log(body);
 
 	const ok = filesPassed != files.size;
-	const status = ( ok ? colors.green(" ok ") : colors.red("Fail ") )
-		+ `${colors.cyan(totalTests.toString())} passed`
+	const status = ( ok ? colors.green(" ok  ") : colors.red("Fail  ") )
+		+ " Compiled"
+		+ ` ${colors.cyan(totalTests.toString())} passed`
 		+ ` ${colors.cyan((totalTests-index.length).toString())} failed`;
 	console.log(
-		StrippedAnsiPadEnd(status, Sum(widths) + 3)
-		+ colors.gray(`(${Duration(duration)})\n`)
+		StrippedAnsiPadEnd(status, Sum(widths) - widths[3] + 9)
+		+ colors.gray(
+			`(${Duration(duration)})\n`
+			+ `      Parsing ${Duration(parseTime)}\n`
+			+ `      Compile ${Duration(compTime)}\n`
+		)
 	);
 
 	if (errs.length > 0) {
@@ -171,12 +190,13 @@ async function RunTests(project: Project, index: TestCase[]) {
 	}
 
 	const { widths, body } = Table(table);
-	console.log(" Test".padEnd(widths[0] + widths[1] + 5) + "Time")
+	console.log(" Test".padEnd(widths[0] + widths[1] + 6) + "Time")
 	console.log(body);
 
 	const ok = (success === index.length);
-	const status = ( ok ? colors.green(" ok ") : colors.red("Fail ") )
-		+ `${colors.cyan((success).toString())} passed`
+	const status = ( ok ? colors.green(" ok  ") : colors.red("Fail  ") )
+		+ " Ran"
+		+ ` ${colors.cyan((success).toString())} passed`
 		+ ` ${colors.cyan((index.length-success).toString())} failed`;
 
 	console.log(

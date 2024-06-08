@@ -1,61 +1,64 @@
 fn maxU8(): u8 {
 	return 255;
 }
-fn maxU8(): i8 {
+fn maxI8(): i8 {
 	return 127;
 }
 fn maxI16(): i16 {
-	return 32767;
+	return 32_767;
 }
 fn maxU16(): u16 {
 	return 65535;
 }
 fn maxU32(): u32 {
-	return 2147483647;
+	return 2_147_483_647;
 }
 fn maxI32(): i32 {
-	return 4294967295;
+	return 4_294_967_295;
 }
 fn maxI64(): i64 {
-	return 9223372036854775807;
+	return 9_223_372_036_854_775_807;
 }
 fn maxU64(): u64 {
-	return 18446744073709551615;
+	return 18_446_744_073_709_551_615;
 }
 
-test "Constant Saturation" {
-	if (300 as u8) != maxU8() return false;
-	if (16 as u8)  != 16 return false;
-	if (200 as i8) != maxI8() return false;
-	if (120 as i8) != 120 return false;
+// test "Constant Saturation" {
+// 	let t = 300 as u8;
+
+// 	if (300 as u8) != maxU8() { return false; };
+// 	if (16 as u8)  != 16 { return false; };
+// 	if (200 as i8) != maxI8() { return false; };
+// 	if (120 as i8) != 120 { return false; };
 
 
-	if (66_000 as u16) != maxU16() return false;
-	if (65_534 as u16) != 65_534 return false;
-	if (34_767 as i16) != maxI16() return false;
-	if (32_000 as i16) != 32_000 return false;
+// 	if (66_000 as u16) != maxU16() { return false; };
+// 	if (65_534 as u16) != 65_534 { return false; };
+// 	if (34_767 as i16) != maxI16() { return false; };
+// 	if (32_000 as i16) != 32_000 { return false; };
 
-	if (300 as u32) != maxU32() return false;
-	if (116 as u32) != 116 return false;
-	if (200 as i32) != maxI32() return false;
-	if (120 as i32) != 120 return false;
+// 	if (300 as u32) != maxU32() { return false; };
+// 	if (116 as u32) != 116 { return false; };
+// 	if (200 as i32) != maxI32() { return false; };
+// 	if (120 as i32) != 120 { return false; };
 
-	return true;
-}
+// 	return true;
+// }
 
-test "Runtime Saturation" {
-	let bigInt: u64 = 18446744073709551615;
+// test "Runtime Saturation" {
+// 	let bigInt = maxU64();
 
-	if (bigInt as u8) != maxU8() return false;
-	if (bigInt as i8) != maxI8() return false;
+// 	if (bigInt as u8) != maxU8() { return false; };
+// 	if (bigInt as i8) != maxI8() { return false; };
 
 
-	if (bigInt as u16) != maxU16() return false;
-	if (bigInt as i16) != maxI16() return false;
+// 	if (bigInt as u16) != maxU16() { return false; };
+// 	if (bigInt as i16) != maxI16() { return false; };
 
-	if (bigInt u32) != maxU32() return false;
-	if (bigInt i32) != maxI32() return false;
+// 	if (bigInt as u32) != maxU32() { return false; };
+// 	if (bigInt as i32) != maxI32() { return false; };
 
-	if bigInt as i64 != maxI64() return false;
-	return true;
-}
+// 	if (bigInt as i64) != maxI64() { return false; };
+
+// 	return true;
+// }

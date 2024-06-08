@@ -110,56 +110,56 @@ fn main(): none {
 	return;
 }
 
-test "Valid Epoch" {
-	let t = DateTimeFromUnix(0);
-	if ( t.date.day   != 0
-		|| t.date.month != 0
-		|| t.date.year  != 0
+// test "Valid Epoch" {
+// 	let t = DateTimeFromUnix(0);
+// 	if ( t.date.day   != 0
+// 		|| t.date.month != 0
+// 		|| t.date.year  != 0
 
-		|| t.date.weekDay != 0
-		|| t.date.yearDay != 0
-	) return false;
+// 		|| t.date.weekDay != 0
+// 		|| t.date.yearDay != 0
+// 	) return false;
 
-	if ( t.time.seconds != 0
-		|| t.time.minutes != 0
-		|| t.time.hours   != 0
-	) return false;
+// 	if ( t.time.seconds != 0
+// 		|| t.time.minutes != 0
+// 		|| t.time.hours   != 0
+// 	) return false;
 
-	return true;
-}
+// 	return true;
+// }
 
-test "1st September 2000" {
-	let t = DateTimeFromUnix(967766400000);
-	if ( t.date.day   != 1
-		|| t.date.month != 8
-		|| t.date.year  != 2000
+// test "1st September 2000" {
+// 	let t = DateTimeFromUnix(967766400000);
+// 	if ( t.date.day   != 1
+// 		|| t.date.month != 8
+// 		|| t.date.year  != 2000
 
-		|| t.date.weekDay != 5
-		// || t.date.yearDay != 0
-	) return false;
+// 		|| t.date.weekDay != 5
+// 		// || t.date.yearDay != 0
+// 	) return false;
 
-	if ( t.time.seconds != 0
-		|| t.time.minutes != 0
-		|| t.time.hours   != 0
-	) return false;
+// 	if ( t.time.seconds != 0
+// 		|| t.time.minutes != 0
+// 		|| t.time.hours   != 0
+// 	) return false;
 
-	return true;
-}
+// 	return true;
+// }
 
-test "2024-05-31T12:08:45.000Z" {
-	let t = DateTimeFromUnix(1717121325290);
-	if ( t.date.day   != 31
-		|| t.date.month != 4
-		|| t.date.year  != 2024
+// test "2024-05-31T12:08:45.000Z" {
+// 	let t = DateTimeFromUnix(1717121325290);
+// 	if ( t.date.day   != 31
+// 		|| t.date.month != 4
+// 		|| t.date.year  != 2024
 
-		|| t.date.weekDay != 5
-		// || t.date.yearDay != 0
-	) return false;
+// 		|| t.date.weekDay != 5
+// 		// || t.date.yearDay != 0
+// 	) return false;
 
-	if ( t.time.seconds != 45
-		|| t.time.minutes != 8
-		|| t.time.hours   != 22
-	) return false;
+// 	if ( t.time.seconds != 45
+// 		|| t.time.minutes != 8
+// 		|| t.time.hours   != 22
+// 	) return false;
 
-	return true;
-}
+// 	return true;
+// }

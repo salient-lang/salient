@@ -1,7 +1,7 @@
 /// <reference lib="deno.ns" />
 
 import type Package from "./package.ts";
-import type { Term_Access, Term_Block, Term_External, Term_Function, Term_Program, Term_Structure, Term_Test } from "~/bnf/syntax.d.ts";
+import type { Term_Access, Term_External, Term_Function, Term_Program, Term_Structure, Term_Test } from "~/bnf/syntax.d.ts";
 
 import Structure from "~/compiler/structure.ts";
 import Function from "~/compiler/function.ts";
@@ -35,6 +35,7 @@ export class File {
 
 	namespace: { [key: string]: Namespace };
 	tests: TestCase[];
+	parseTime: number;
 
 	constructor(owner: Package, path: string, name: string, data: string) {
 		this.owner = owner;
@@ -48,12 +49,18 @@ export class File {
 			i32, i64, u32, u64, // native int types
 			f32, f64            // native floats types
 		};
+
+		this.parseTime = 0;
 		this.tests = [];
-		Ingest(this, Parse(
+
+		const start = Date.now();
+		const tree = Parse(
 			data,
 			this.path,
 			this.name
-		));
+		);
+		this.parseTime = Date.now() - start;
+		Ingest(this, tree);
 	}
 
 	markFailure() {
