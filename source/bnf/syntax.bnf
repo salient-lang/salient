@@ -46,7 +46,8 @@ void ::= "void" ;
 hexidecimal ::= "0"->"9" | "a" -> "f";
 
 integer ::= ...integer_u ;
-	integer_u ::= ( digit_nz digit* ) | zero ;
+	digitish  ::= %"_" | digit;
+	integer_u ::= ( digit_nz digitish* ) | zero ;
 	zero ::= "0" ;
 float ::= ...( integer "." integer_u ( "e" integer )? ) ;
 

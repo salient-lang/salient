@@ -398,6 +398,23 @@ export declare function Parse_Integer (i: string, refMapping?: boolean): _Shared
 	isPartial: boolean
 }
 
+export type Term_Digitish = {
+	type: 'digitish',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		(Term_Digit)
+	]
+}
+export declare function Parse_Digitish (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Digitish,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
 export type Term_Integer_u = {
 	type: 'integer_u',
 	start: number,
@@ -413,7 +430,7 @@ export type Term_Integer_u = {
 	ref: _Shared.ReferenceRange,
 	value: [
 		Term_Digit_nz,
-		{ type: '(...)*', value: Array<Term_Digit>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
+		{ type: '(...)*', value: Array<Term_Digitish>, start: number, end: number, count: number, ref: _Shared.ReferenceRange }
 	]
 } | Term_Zero)
 	]
