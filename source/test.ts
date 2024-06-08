@@ -83,6 +83,7 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 			totalTests += file.tests.length;
 			parseTime += file.parseTime;
 			tests = file.tests.length;
+			filesPassed++;
 
 			const start = Date.now();
 			for (const test of file.tests) {
@@ -92,7 +93,6 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 
 					mainPck.project.module.exportFunction(`test${index.length}`, test.ref);
 					index.push(test);
-					filesPassed++;
 					successes++;
 				} catch (e) {
 					test.evict();
@@ -103,6 +103,7 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 			unitTime = Date.now() - start;
 			compTime += unitTime;
 		} catch (e) {
+			totalTests++;
 			ok = false;
 		}
 
