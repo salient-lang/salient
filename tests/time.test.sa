@@ -110,6 +110,8 @@ fn main(): none {
 	return;
 }
 
+fish
+
 // test "Valid Epoch" {
 // 	let t = DateTimeFromUnix(0);
 // 	if ( t.date.day   != 0

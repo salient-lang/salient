@@ -29,7 +29,7 @@ export async function Test() {
 	const duration = Date.now() - start;
 
 	const ok = compilation.ok && execution.ok;
-	const status = ( ok ? colors.green("ok") : colors.red("Fail ") );
+	const status = ok ? colors.green("ok") : colors.red("ERR");
 	console.log(`Overall ${status} ${colors.gray(`(${Duration(duration)})`)}`);
 
 	if (project.failed) Deno.exit(1);
@@ -65,7 +65,8 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 
 	const errs: Error[] = [];
 	let filesPassed = 0;
-	let totalTests = 0;
+	let testSuccess = 0;
+	let testFail = 0;
 
 
 	const table: string[][] = [];
@@ -73,14 +74,13 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 	let compTime = 0;
 	const start = Date.now();
 	for (const path of files.values()) {
-		let successes = 0;
-		let tests = 0;
+		let tests = 1;
+		let pass = 0;
 		let ok = true;
 
 		let unitTime = 0;
 		try {
 			const file = mainPck.import(path);
-			totalTests += file.tests.length;
 			parseTime += file.parseTime;
 			tests = file.tests.length;
 			filesPassed++;
@@ -93,8 +93,10 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 
 					mainPck.project.module.exportFunction(`test${index.length}`, test.ref);
 					index.push(test);
-					successes++;
+					testSuccess++;
+					pass++;
 				} catch (e) {
+					testFail++;
 					test.evict();
 					errs.push(e);
 					ok = false;
@@ -103,14 +105,14 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 			unitTime = Date.now() - start;
 			compTime += unitTime;
 		} catch (e) {
-			totalTests++;
+			testFail++;
 			ok = false;
 		}
 
 		table.push([
 			ok ? colors.green(" ok") : colors.red("ERR"),
 			path,
-			`${colors.cyan(successes.toString())}/${colors.cyan(tests.toString())}`,
+			`${colors.cyan(pass.toString())}/${colors.cyan(tests.toString())}`,
 			colors.gray(`${Duration(parseTime)}/${Duration(unitTime)}`)
 		]);
 	}
@@ -120,11 +122,11 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 	console.log("Parse/Compile".padEnd(widths[0] + widths[1] + 5) + "Unit".padEnd(widths[2]+4) + "Time")
 	console.log(body);
 
-	const ok = filesPassed != files.size;
-	const status = ( ok ? colors.green(" ok  ") : colors.red("Fail  ") )
+	const ok = testFail === 0;
+	const status = ( ok ? colors.green(" ok  ") : colors.red("ERR  ") )
 		+ " Compiled"
-		+ ` ${colors.cyan(totalTests.toString())} passed`
-		+ ` ${colors.cyan((totalTests-index.length).toString())} failed`;
+		+ ` ${colors.cyan(testSuccess.toString())} passed`
+		+ ` ${colors.cyan(testFail.toString())} failed`;
 	console.log(
 		StrippedAnsiPadEnd(status, Sum(widths) - widths[3] + 9)
 		+ colors.gray(
@@ -195,7 +197,7 @@ async function RunTests(project: Project, index: TestCase[]) {
 	console.log(body);
 
 	const ok = (success === index.length);
-	const status = ( ok ? colors.green(" ok  ") : colors.red("Fail  ") )
+	const status = ( ok ? colors.green(" ok  ") : colors.red("ERR  ") )
 		+ " Ran"
 		+ ` ${colors.cyan((success).toString())} passed`
 		+ ` ${colors.cyan((index.length-success).toString())} failed`;
