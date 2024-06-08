@@ -1,3 +1,5 @@
+import { stripAnsiCode } from "https://deno.land/std@0.201.0/fmt/colors.ts";
+
 export type Byte = number;
 export function isByte(value: number): value is Byte {
 	return Number.isInteger(value) && value >= 0 && value <= 255;
@@ -115,4 +117,43 @@ export function DisplayTimers() {
 	}
 
 	console.info(str);
+}
+
+
+
+export function Table(data: string[][]) {
+	const widths = Array<number>();
+	for (const line of data) {
+		for (let col=0; col<line.length; col++) {
+			widths[col] = Math.max(
+				widths[col] || 0,
+				stripAnsiCode(line[col]).length
+			);
+		}
+	}
+	widths[widths.length-1]++;
+
+	return {
+		widths,
+		body: widths.map(x => "─".repeat(x)).join("─┬─") + "\n"
+			+ data.map(line =>
+				line.map((cell, i) => StrippedAnsiPadEnd(cell, widths[i])).join(" │ ")
+			).join("\n") + "\n"
+			+ widths.map(x => "─".repeat(x)).join("─┴─")
+	}
+}
+
+export function StrippedAnsiPadEnd(str: string, length: number) {
+	return str + " ".repeat(length - stripAnsiCode(str).length)
+}
+
+type NdNumArray = Array<number | NdNumArray>;
+export function Sum(data: NdNumArray): number {
+	let tally = 0;
+	for (const elm of data) {
+		if (Array.isArray(elm)) tally += Sum(elm);
+		else tally += elm;
+	}
+
+	return tally;
 }
