@@ -66,18 +66,22 @@ const wrapper = {
 	const: constFuncs,
 	...varFuncs,
 	i32: {
+		const: constFuncs.i32,
 		...memFuncs.i32,
 		...numFuncs.i32,
 	},
 	i64: {
+		const: constFuncs.i64,
 		...memFuncs.i64,
-		...numFuncs.i32,
+		...numFuncs.i64,
 	},
 	f32: {
+		const: constFuncs.f32,
 		...numFuncs.f32,
 		...memFuncs.f32,
 	},
 	f64: {
+		const: constFuncs.f64,
 		...numFuncs.f64,
 		...memFuncs.f64,
 	},

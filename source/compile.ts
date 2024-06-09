@@ -29,6 +29,7 @@ export async function Compile(entry: string, config: {
 	try {
 		mainFile = mainPck.import(root);
 	} catch (e) {
+		console.error(e);
 		Deno.exit(1);
 	}
 

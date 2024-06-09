@@ -1,9 +1,10 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
+import * as WasmTypes from "~/wasm/type.ts";
 import Structure from "~/compiler/structure.ts";
-import { IntrinsicValue, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";
+import { IntrinsicValue, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64, IntrinsicType } from "~/compiler/intrinsic.ts";
 import { OperandType, SolidType, IsSolidType, LinearType } from "~/compiler/codegen/expression/type.ts";
-import { ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
+import { InlineClamp, ResolveLinearType } from "~/compiler/codegen/expression/helper.ts";
 import { PrecedenceTree } from "~/compiler/codegen/expression/precedence.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { Instruction } from "~/wasm/index.ts";
@@ -13,7 +14,7 @@ import { Panic } from "~/compiler/helper.ts";
 
 
 export function CompileInfix(ctx: Context, lhs: PrecedenceTree, op: string, rhs: PrecedenceTree, ref: ReferenceRange, expect?: SolidType, tailCall = false): OperandType {
-	if (op === "as") return CompileAs(ctx, lhs, rhs);
+	if (op === "as") return CompileAs(ctx, lhs, rhs, ref);
 	if (op === ".")  return CompileStaticAccess(ctx, lhs, rhs, expect);
 
 	let a = CompilePrecedence(ctx, lhs, expect);
@@ -63,20 +64,121 @@ function CompilePrecedence(ctx: Context, elm: PrecedenceTree, expect?: SolidType
 
 
 
-function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree): OperandType {
+function CompileAs(ctx: Context, lhs: PrecedenceTree, rhs: PrecedenceTree, ref: ReferenceRange): OperandType {
 	const goal = CompilePrecedence(ctx, rhs);
 	if (!IsSolidType(goal)) Panic(
 		`${colors.red("Error")}: Cannot type coerce to non-solid type\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
 	});
 
+	if (!(goal instanceof IntrinsicType)) Panic(
+		`${colors.red("Error")}: Cannot type coerce to non-intrinsic type\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: rhs.ref
+	});
+
 	const a = CompilePrecedence(ctx, lhs, goal);
-	if (a instanceof LinearType ? a.type !== goal : a !== goal) Panic(
+
+	if (!(a instanceof IntrinsicValue) && !(a instanceof LinearType)) Panic(
 		`${colors.red("Error")}: Type coerce is currently unimplemented (${a.getTypeName()})\n`, {
 		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
 	});
 
-	return a;
+	const value = a instanceof LinearType
+		? ResolveLinearType(ctx, a, ref)
+		: a;
+
+	if (value instanceof LinearType) Panic(
+		`${colors.red("Error")}: Type coerce is currently unimplemented (${a.getTypeName()})\n`, {
+		path: ctx.file.path, name: ctx.file.name, ref: lhs.ref
+	});
+
+	if (goal === f32 || goal === f64) {
+		CoerceToFloat(ctx, value.type, goal);
+	} else {
+		CoerceToInt(ctx, value.type, goal);
+	}
+
+	return goal.value;
+}
+
+function CoerceToFloat(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
+	if (type === f32) {
+		if (goal == f32) { /* no-op */ }
+		else if (goal === f64) ctx.block.push(Instruction.f64.promote_f32());
+		else throw "Logic failure";
+
+		return goal;
+	}
+
+	if (type === f64) {
+		if (goal == f64) { /* no-op */ }
+		else if (goal === f32) ctx.block.push(Instruction.f32.demote_f64());
+		else throw "Logic failure";
+
+		return goal;
+	}
+
+	if (type.bitcode === WasmTypes.Intrinsic.i32) {
+		if (type.signed) ctx.block.push(Instruction.i32.trunc_f32_s());
+		else ctx.block.push(Instruction.i32.trunc_f32_u());
+	} else {
+		if (type.signed) ctx.block.push(Instruction.i32.trunc_f64_s());
+		else ctx.block.push(Instruction.i32.trunc_f64_u());
+	}
+
+	return goal;
+}
+
+function CoerceToInt(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
+	// Is the value on the stack already in the right bitcode?
+	let corrected = false;
+
+	// Encoding conversions
+	if (type === f32) {
+		if (goal.bitcode === WasmTypes.Intrinsic.i32) {
+			if (goal.signed) ctx.block.push(Instruction.f32.convert_i32_s());
+			else ctx.block.push(Instruction.f32.convert_i32_u());
+		} else {
+			if (goal.signed) ctx.block.push(Instruction.f32.convert_i64_s());
+			else ctx.block.push(Instruction.f32.convert_i64_u());
+		}
+		corrected = true;
+	} else if (type === f64) {
+		if (goal.bitcode === WasmTypes.Intrinsic.i32) {
+			if (goal.signed) ctx.block.push(Instruction.f64.convert_i32_s());
+			else ctx.block.push(Instruction.f64.convert_i32_u());
+		} else {
+			if (goal.signed) ctx.block.push(Instruction.f64.convert_i64_s());
+			else ctx.block.push(Instruction.f64.convert_i64_u());
+		}
+		corrected = true;
+	} else {
+		corrected = type.bitcode === goal.bitcode;
+	}
+
+
+	// Bound the value to the correct size for the target
+	if (goal.effectiveSize() < type.effectiveSize()) {
+		const max = Math.pow(2, goal.effectiveSize());
+		const min = goal.signed
+			? Math.pow(2, goal.size-1)
+			: 0;
+		InlineClamp(ctx, type, min, max);
+	}
+
+	if (!corrected) {
+		if (goal === i32) {
+			if (type.signed) { /* how */ }
+			else ctx.block.push(Instruction.i32.warp_i64());
+		}
+		else {
+			if (type.signed) ctx.block.push(Instruction.i64.extend_i32_s());
+			else ctx.block.push(Instruction.i64.extend_i32_s());
+		}
+	}
+
+
+	return goal;
 }
 
 

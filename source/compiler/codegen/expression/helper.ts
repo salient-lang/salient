@@ -1,10 +1,11 @@
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import { red } from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
+import * as WasmTypes from "~/wasm/type.ts";
 import { AssertUnreachable, LatentOffset } from "~/helper.ts";
 import { BasePointerType, LinearType } from "~/compiler/codegen/expression/type.ts";
 import { ReferenceRange } from "~/bnf/shared.js";
-import { IntrinsicType } from "~/compiler/intrinsic.ts";
+import { IntrinsicType, f32, f64, i32, i64 } from "~/compiler/intrinsic.ts";
 import { Instruction } from "~/wasm/index.ts";
 import { SourceView } from "~/parser.ts";
 import { Context } from "~/compiler/codegen/context.ts";
@@ -54,6 +55,54 @@ export function Load(ctx: Context, type: IntrinsicType, offset: number | LatentO
 
 		default: ctx.markFailure(`Unhandled store type ${type.name}`, ref);
 	}
+}
+
+
+export function InlineClamp(ctx: Context, type: IntrinsicType, min: number | null, max: number | null) {
+	let scope;
+	switch (type.bitcode) {
+		case WasmTypes.Intrinsic.i32: scope = Instruction.i32; break;
+		case WasmTypes.Intrinsic.i64: scope = Instruction.i64; break;
+		case WasmTypes.Intrinsic.f32: scope = Instruction.f32; break;
+		case WasmTypes.Intrinsic.f64: scope = Instruction.f64; break;
+		default: throw "Assert failed";
+	}
+
+	const x = ctx.scope.register.allocate(type.bitcode);
+
+	if (min !== null) {
+		ctx.block.push(Instruction.local.tee(x.ref));
+		ctx.block.push(scope.const(min));
+
+		if ("lt" in scope) ctx.block.push(scope.lt());
+		else {
+			if (type.signed) ctx.block.push(scope.lt_s());
+			else ctx.block.push(scope.lt_u());
+		}
+
+		ctx.block.push(Instruction.if(type.bitcode,
+			[ scope.const(min) ],
+			[ Instruction.local.get(x.ref) ],
+		));
+	}
+
+	if (max !== null) {
+		ctx.block.push(Instruction.local.tee(x.ref));
+		ctx.block.push(scope.const(max));
+
+		if ("gt" in scope) ctx.block.push(scope.gt());
+		else {
+			if (type.signed) ctx.block.push(scope.gt_s());
+			else ctx.block.push(scope.gt_u());
+		}
+
+		ctx.block.push(Instruction.if(type.bitcode,
+			[ scope.const(max) ],
+			[ Instruction.local.get(x.ref) ],
+		));
+	}
+
+	x.free();
 }
 
 
