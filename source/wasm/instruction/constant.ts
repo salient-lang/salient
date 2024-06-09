@@ -1,5 +1,5 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
-import { EncodeF32, EncodeF64, EncodeI32, EncodeI64 } from "~/wasm/type.ts";
+import { EncodeF32, EncodeF64, EncodeI32, EncodeI64, EncodeU32, EncodeU64 } from "~/wasm/type.ts";
 import { LatentOffset, LatentValue, Byte } from "~/helper.ts";
 
 
@@ -25,22 +25,24 @@ export class Constant {
 	}
 
 	toBinary(): Byte[] {
+		const val = this.read();
+
 		switch (this.type) {
 			case Type.i32: return [
 				this.type,
-				...EncodeI32(this.read())
+				...(val < 0 ? EncodeI32(val) : EncodeU32(val))
 			];
 			case Type.i64: return [
 				this.type,
-				...EncodeI64(this.read())
+				...(val < 0 ? EncodeI64(val) : EncodeU64(val))
 			];
 			case Type.f32: return [
 				this.type,
-				...EncodeF32(this.read())
+				...EncodeF32(val)
 			];
 			case Type.f64: return [
 				this.type,
-				...EncodeF64(this.read())
+				...EncodeF64(val)
 			];
 		}
 

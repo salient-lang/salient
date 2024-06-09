@@ -46,16 +46,16 @@ export function EncodeLimitType(min: number, max?: number): Byte[] {
 
 
 export function EncodeF32(val: number): Byte[] {
-	let buffer = new ArrayBuffer(4);
-	let view = new DataView(buffer);
+	const buffer = new ArrayBuffer(4);
+	const view = new DataView(buffer);
 	view.setFloat32(0, val, true);
 
 	return [...(new Uint8Array(buffer))];
 }
 
 export function EncodeF64(val: number): Byte[] {
-	let buffer = new ArrayBuffer(8);
-	let view = new DataView(buffer);
+	const buffer = new ArrayBuffer(8);
+	const view = new DataView(buffer);
 	view.setFloat64(0, val, true);
 
 	return [...(new Uint8Array(buffer))];
@@ -67,7 +67,7 @@ export function EncodeSignedLEB(val: number): Byte[] {
 	if (val % 1 !== 0)
 		throw new Error(`Requested u32 encode for non integer value ${val}`);
 
-	let result: Byte[] = [];
+	const result: Byte[] = [];
 
 	// LEB128 encoding: https://en.wikipedia.org/wiki/LEB128#Encode_signed_32-bit_integer
 	while (true) {
@@ -86,10 +86,8 @@ export function EncodeSignedLEB(val: number): Byte[] {
 	return result;
 }
 export function EncodeUnsignedLEB(val: number): Byte[] {
-	if (val % 1 !== 0)
-		throw new Error(`Requested u32 encode for non integer value ${val}`);
-	if (val < 0)
-		throw new Error(`Requested u32 encode for signed integer value ${val}`);
+	if (val % 1 !== 0) throw new Error(`Requested u32 encode for non integer value ${val}`);
+	if (val < 0) throw new Error(`Requested u32 encode for signed integer value ${val}`);
 
 	// LEB128 encoding: https://en.wikipedia.org/wiki/LEB128#Encode_unsigned_32-bit_integer
 	const result: Byte[] = [];
@@ -102,32 +100,24 @@ export function EncodeUnsignedLEB(val: number): Byte[] {
 			byte |= 0b10000000;
 		}
 		result.push(byte);
-	} while(val !== 0);
+	} while(val > 0);
 	return result;
 }
 
 export function EncodeU32(val: number) {
-	if (val > 2**32)
-		throw new Error(`Requested to encode an u32 with too large a number ${val}`);
-
+	// if (val > 2**32) throw new Error(`Requested to encode an u32 with too large a number ${val}`);
 	return EncodeUnsignedLEB(val);
 }
 export function EncodeI32(val: number) {
-	if (Math.abs(val) > 2**31)
-		throw new Error(`Requested to encode an i32 with too large a number ${val}`);
-
+	// if (Math.abs(val) > 2**31) throw new Error(`Requested to encode an i32 with too large a number ${val}`);
 	return EncodeSignedLEB(val);
 }
 
 export function EncodeU64(val: number) {
-	if (val > 2**64)
-		throw new Error(`Requested to encode an u64 with too large a number ${val}`);
-
+	// if (val > 2**64) throw new Error(`Requested to encode an u64 with too large a number ${val}`);
 	return EncodeUnsignedLEB(val);
 }
 export function EncodeI64(val: number) {
-	if (Math.abs(val) > 2**63)
-		throw new Error(`Requested to encode an i64 with too large a number ${val}`);
-
-	return EncodeUnsignedLEB(val);
+	// if (Math.abs(val) > 2**63) throw new Error(`Requested to encode an i64 with too large a number ${val}`);
+	return EncodeSignedLEB(val);
 }

@@ -130,45 +130,59 @@ function CoerceToFloat(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
 }
 
 function CoerceToInt(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
-	// Is the value on the stack already in the right bitcode?
-	let corrected = false;
-
 	// Encoding conversions
 	if (type === f32) {
 		if (goal.bitcode === WasmTypes.Intrinsic.i32) {
-			if (goal.signed) ctx.block.push(Instruction.f32.convert_i32_s());
-			else ctx.block.push(Instruction.f32.convert_i32_u());
+			if (goal.signed) {
+				ctx.block.push(Instruction.f32.convert_i32_s());
+				type = i32;
+			} else {
+				ctx.block.push(Instruction.f32.convert_i32_u());
+				type = u32;
+			}
 		} else {
-			if (goal.signed) ctx.block.push(Instruction.f32.convert_i64_s());
-			else ctx.block.push(Instruction.f32.convert_i64_u());
+			if (goal.signed) {
+				ctx.block.push(Instruction.f32.convert_i64_s());
+				type = i64;
+			} else {
+				ctx.block.push(Instruction.f32.convert_i64_u());
+				type = u64;
+			}
 		}
-		corrected = true;
 	} else if (type === f64) {
 		if (goal.bitcode === WasmTypes.Intrinsic.i32) {
-			if (goal.signed) ctx.block.push(Instruction.f64.convert_i32_s());
-			else ctx.block.push(Instruction.f64.convert_i32_u());
+			if (goal.signed) {
+				ctx.block.push(Instruction.f64.convert_i32_s());
+				goal = i32;
+			} else {
+				ctx.block.push(Instruction.f64.convert_i32_u());
+				type = u32;
+			}
 		} else {
-			if (goal.signed) ctx.block.push(Instruction.f64.convert_i64_s());
-			else ctx.block.push(Instruction.f64.convert_i64_u());
+			if (goal.signed) {
+				ctx.block.push(Instruction.f64.convert_i64_s());
+				type = i64;
+			}
+			else {
+				ctx.block.push(Instruction.f64.convert_i64_u());
+				type = u64;
+			}
 		}
-		corrected = true;
-	} else {
-		corrected = type.bitcode === goal.bitcode;
 	}
 
 
 	// Bound the value to the correct size for the target
-	if (goal.effectiveSize() < type.effectiveSize()) {
-		const max = Math.pow(2, goal.effectiveSize());
-		const min = goal.signed
-			? Math.pow(2, goal.size-1)
+	if (goal.tciBitDepth() < type.tciBitDepth()) {
+		const max = Math.pow(2, goal.tciBitDepth()) + ( (goal.signed && type.signed) ? -1 : 0 );
+		const min = (goal.signed && type.signed)
+			? -Math.pow(2, goal.tciBitDepth())
 			: 0;
 		InlineClamp(ctx, type, min, max);
 	}
 
-	if (!corrected) {
-		if (goal === i32) {
-			if (type.signed) { /* how */ }
+	if (type.bitcode != goal.bitcode) {
+		if (goal.bitcode == WasmTypes.Intrinsic.i32) {
+			if (type.signed) ctx.block.push(Instruction.i32.warp_i64());
 			else ctx.block.push(Instruction.i32.warp_i64());
 		}
 		else {

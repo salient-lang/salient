@@ -69,7 +69,6 @@ export function InlineClamp(ctx: Context, type: IntrinsicType, min: number | nul
 	}
 
 	const x = ctx.scope.register.allocate(type.bitcode);
-
 	if (min !== null) {
 		ctx.block.push(Instruction.local.tee(x.ref));
 		ctx.block.push(scope.const(min));

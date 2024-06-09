@@ -192,8 +192,8 @@ const wrapper = {
 		trunc_f64_s : () => i32trunc_f64_s,
 		trunc_f64_u : () => i32trunc_f64_u,
 
-		extend8_s       : () => i32extend8_s,
-		extend16_s      : () => i32extend16_s,
+		extend_8_s       : () => i32extend8_s,
+		extend_16_s      : () => i32extend16_s,
 		reinterpret_f32 : () => i32reinterpret_f32,
 	},
 	i64: {
@@ -228,6 +228,9 @@ const wrapper = {
 		rotl: () => i64rotl,
 		rotr: () => i64rotr,
 
+		extend_8_s:  ()=> i64extend8_s,
+		extend_16_s: () => i64extend16_s,
+		extend_32_s: () => i64extend32_s,
 		extend_i32_s: () => i64extend_i32_s,
 		extend_i32_u: () => i64extend_i32_u,
 		trunc_f32_s: () => i64trunc_f32_s,
@@ -236,10 +239,6 @@ const wrapper = {
 		trunc_f64_u: () => i64trunc_f64_u,
 
 		reinterpret_f64: () => i64reinterpret_f64,
-
-		extend8_s: ()=> i64extend8_s,
-		extend16_s: () => i64extend16_s,
-		extend32_s: () => i64extend32_s,
 	},
 	f32: {
 		eq : () => f32eq ,

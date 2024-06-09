@@ -43,9 +43,9 @@ export class IntrinsicType {
 		return this.bitcode;
 	}
 
-	effectiveSize() {
-		if (this.signed) return this.size - 1;
-		else return this.size;
+	tciBitDepth() {
+		if (this.signed) return this.size*8 - 1;
+		else return this.size*8;
 	}
 }
 
