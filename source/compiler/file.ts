@@ -1,5 +1,3 @@
-/// <reference lib="deno.ns" />
-
 import type Package from "./package.ts";
 import type { Term_Access, Term_External, Term_Function, Term_Program, Term_Structure, Term_Test } from "~/bnf/syntax.d.ts";
 

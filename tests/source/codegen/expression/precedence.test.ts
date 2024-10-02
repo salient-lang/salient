@@ -1,4 +1,3 @@
-/// <reference lib="deno.ns" />
 import { assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
 import { GetPrecedence } from "~/compiler/codegen/expression/precedence.ts";

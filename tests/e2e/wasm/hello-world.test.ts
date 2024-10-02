@@ -1,4 +1,3 @@
-/// <reference lib="deno.ns" />
 import { fail, assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
 import { Module, Instruction, Type } from "~/wasm/index.ts";

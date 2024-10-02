@@ -1,4 +1,3 @@
-/// <reference lib="deno.ns" />
 import { assertNotEquals, assert, assertEquals } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
 import * as CompilerFunc from "~/compiler/function.ts";

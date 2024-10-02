@@ -1,4 +1,3 @@
-/// <reference lib="deno.ns" />
 import { assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
 import { StackAllocator } from "~/compiler/codegen/allocation/stack.ts"

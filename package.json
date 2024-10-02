@@ -7,24 +7,10 @@
 	"files": [
 		"bin/*"
 	],
-	"scripts": {
-		"build": "npx run-s build:*",
-		"build:syntax": "npx bnf-compile ./source/bnf/",
-		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
-		"test": "npx run-s test:*",
-		"test:deno": "deno test",
-		"test:reflect": "npm run sa-test ./tests",
-		"cli": "deno run -A ./source/cli.ts",
-		"sa-test": "deno run -A ./source/cli.ts test",
-		"compile": "deno run -A ./source/cli.ts compile"
-	},
-	"bin": {
-		"salient": "bin/cli.js"
-	},
 	"preferGlobal": true,
 	"engineStrict": true,
 	"engines": {
-		"node": ">=18"
+		"deno": ">=2"
 	},
 	"repository": {
 		"type": "git",
@@ -35,13 +21,5 @@
 	"bugs": {
 		"url": "https://github.com/ajanibilby/salient/issues"
 	},
-	"homepage": "https://salient.moe",
-	"dependencies": {
-		"chalk": "^5.3.0"
-	},
-	"devDependencies": {
-		"bnf-parser": "^4.1.0",
-		"npm-run-all": "^4.1.5",
-		"typescript": "^5.2.2"
-	}
+	"homepage": "https://salient.moe"
 }

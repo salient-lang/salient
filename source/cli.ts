@@ -1,5 +1,3 @@
-/// <reference lib="deno.ns" />
-
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import { Compile } from "~/compile.ts";

@@ -1,5 +1,3 @@
-/// <reference lib="deno.ns" />
-
 import { resolve, join, relative, dirname } from "https://deno.land/std@0.201.0/path/mod.ts";
 import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
