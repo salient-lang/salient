@@ -8,10 +8,10 @@
 		"bin/*"
 	],
 	"scripts": {
-		"build": "run-s build:*",
+		"build": "npx run-s build:*",
 		"build:syntax": "npx bnf-compile ./source/bnf/",
 		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
-		"test": "run-s test:*",
+		"test": "npx run-s test:*",
 		"test:deno": "deno test",
 		"test:reflect": "npm run sa-test ./tests",
 		"cli": "deno run -A ./source/cli.ts",
