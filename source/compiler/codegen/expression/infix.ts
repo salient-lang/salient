@@ -119,11 +119,11 @@ function CoerceToFloat(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
 	}
 
 	if (type.bitcode === WasmTypes.Intrinsic.i32) {
-		if (type.signed) ctx.block.push(Instruction.i32.trunc_f32_s());
-		else ctx.block.push(Instruction.i32.trunc_f32_u());
+		if (type.signed) ctx.block.push(Instruction.f32.convert_i32_s());
+		else ctx.block.push(Instruction.f32.convert_i32_u());
 	} else {
-		if (type.signed) ctx.block.push(Instruction.i32.trunc_f64_s());
-		else ctx.block.push(Instruction.i32.trunc_f64_u());
+		if (type.signed) ctx.block.push(Instruction.f64.convert_i64_s());
+		else ctx.block.push(Instruction.f64.convert_i64_u());
 	}
 
 	return goal;
@@ -134,38 +134,38 @@ function CoerceToInt(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
 	if (type === f32) {
 		if (goal.bitcode === WasmTypes.Intrinsic.i32) {
 			if (goal.signed) {
-				ctx.block.push(Instruction.f32.convert_i32_s());
+				ctx.block.push(Instruction.i32.trunc_sat_f32_s());
 				type = i32;
 			} else {
-				ctx.block.push(Instruction.f32.convert_i32_u());
+				ctx.block.push(Instruction.i32.trunc_sat_f32_u());
 				type = u32;
 			}
 		} else {
 			if (goal.signed) {
-				ctx.block.push(Instruction.f32.convert_i64_s());
+				ctx.block.push(Instruction.i64.trunc_sat_f32_s());
 				type = i64;
 			} else {
-				ctx.block.push(Instruction.f32.convert_i64_u());
+				ctx.block.push(Instruction.i64.trunc_sat_f32_u());
 				type = u64;
 			}
 		}
 	} else if (type === f64) {
 		if (goal.bitcode === WasmTypes.Intrinsic.i32) {
 			if (goal.signed) {
-				ctx.block.push(Instruction.f64.convert_i32_s());
+				ctx.block.push(Instruction.i32.trunc_sat_f64_s());
 				goal = i32;
 			} else {
-				ctx.block.push(Instruction.f64.convert_i32_u());
-				type = u32;
+				ctx.block.push(Instruction.i32.trunc_sat_f64_u());
+				type = i32;
 			}
 		} else {
 			if (goal.signed) {
-				ctx.block.push(Instruction.f64.convert_i64_s());
+				ctx.block.push(Instruction.i64.trunc_sat_f64_s());
 				type = i64;
 			}
 			else {
-				ctx.block.push(Instruction.f64.convert_i64_u());
-				type = u64;
+				ctx.block.push(Instruction.i64.trunc_sat_f64_u());
+				type = i64;
 			}
 		}
 	}

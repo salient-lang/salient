@@ -34,3 +34,22 @@ test "Integer Saturation" {
 
 	return true;
 }
+
+test "Float Saturation" {
+	if (300.0 as u8) != 255 { return false; };
+	if ( 16.0 as u8) !=  16 { return false; };
+	if (200.0 as i8) != 127 { return false; };
+	if (120.0 as i8) != 120 { return false; };
+
+	if (-300.0 as u8) != 0 { return false; };
+	if ( -16.0 as u8) !=    0 { return false; };
+	if (-200.0 as i8) != -128 { return false; };
+	if (-120.0 as i8) != -120 { return false; };
+
+	if (66000.0 as u16) != 65535 { return false; };
+	if (65534.0 as u16) != 65534 { return false; };
+	if (34767.0 as i16) != 32767 { return false; };
+	if (32000.0 as i16) != 32000 { return false; };
+
+	return true;
+}

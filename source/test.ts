@@ -93,10 +93,10 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 					index.push(test);
 					testSuccess++;
 					pass++;
-				} catch (e) {
+				} catch (e: unknown) {
 					testFail++;
 					test.evict();
-					errs.push(e);
+					errs.push(e as Error);
 					ok = false;
 				}
 			}
