@@ -19,7 +19,12 @@ Deno.test("EncodeSignedLEB: small positive integer", () => {
 });
 
 Deno.test("EncodeSignedLEB: small negative integer", () => {
+	assertEquals(toHex(EncodeSignedLEB(-8)), "78");
+	assertEquals(toHex(EncodeSignedLEB(-10)), "76");
 	assertEquals(toHex(EncodeSignedLEB(-100)), "9c7f");
+	assertEquals(toHex(EncodeSignedLEB(-123456)), "c0bb78");
+	assertEquals(toHex(EncodeSignedLEB(-2141192192)), "8080808378");
+	assertEquals(toHex(EncodeSignedLEB(-9019283812387)), "dd9fabc600");
 });
 
 Deno.test("EncodeSignedLEB: should throw an error for non-integers", () => {

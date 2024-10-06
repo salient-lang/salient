@@ -73,7 +73,7 @@ export function InlineClamp(ctx: Context, type: IntrinsicType, min: number | nul
 		ctx.block.push(Instruction.local.tee(x.ref));
 		ctx.block.push(scope.const(min));
 
-		if ("lt" in scope) ctx.block.push(scope.lt());
+		if ("lt" in scope) ctx.block.push(scope.lt());  // float
 		else {
 			if (type.signed) ctx.block.push(scope.lt_s());
 			else ctx.block.push(scope.lt_u());
@@ -89,7 +89,7 @@ export function InlineClamp(ctx: Context, type: IntrinsicType, min: number | nul
 		ctx.block.push(Instruction.local.tee(x.ref));
 		ctx.block.push(scope.const(max));
 
-		if ("gt" in scope) ctx.block.push(scope.gt());
+		if ("gt" in scope) ctx.block.push(scope.gt()); // float
 		else {
 			if (type.signed) ctx.block.push(scope.gt_s());
 			else ctx.block.push(scope.gt_u());

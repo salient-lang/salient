@@ -42,11 +42,6 @@ export class IntrinsicType {
 	getBitcode() {
 		return this.bitcode;
 	}
-
-	tciBitDepth() {
-		if (this.signed) return this.size*8 - 1;
-		else return this.size*8;
-	}
 }
 
 export class IntrinsicValue {

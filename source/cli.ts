@@ -5,7 +5,7 @@ import { Panic } from "~/compiler/helper.ts";
 import { Test } from "~/test.ts";
 
 if (Deno.args.includes("--version")) {
-	console.log("version: 0.0.0");
+	console.info("version: 0.0.0");
 	Deno.exit(0);
 }
 

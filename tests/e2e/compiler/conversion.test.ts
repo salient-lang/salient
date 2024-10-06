@@ -1,4 +1,5 @@
-import { fail, assertNotEquals, assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.201.0/assert/assert_equals.ts";
+import { assertNotEquals, assert } from "https://deno.land/std@0.201.0/assert/mod.ts";
 
 import * as CompilerFunc from "~/compiler/function.ts";
 import Package from "~/compiler/package.ts";
@@ -6,34 +7,18 @@ import Project from "~/compiler/project.ts";
 import { FuncRef } from "~/wasm/funcRef.ts";
 
 const source = `
-fn i64_to_i32(val: i64): i32 {
-	return val as i32;
-}
-fn i32_to_i16(val: i32): i16 {
-	return val as i16;
+fn i32_to_u8(val: i16): u8 {
+	return val as u8;
 }
 fn i32_to_i8(val: i16): i8 {
 	return val as i8;
 }
-fn i64_to_u32(val: i64): u32 {
-	return val as u32;
-}
 fn i32_to_u16(val: i32): u16 {
 	return val as u16;
 }
-fn i32_to_u8(val: i16): u8 {
-	return val as u8;
-}
-
-// fn f32_to_i32(val: f32): i32 {
-// 	return val as i32;
-// }
-// fn f32_to_i8(val: f32): i8 {
-// 	return val as i8;
-// }
-// fn f64_to_i64(val: f64): i64 {
-// 	return val as i64;
-// }`;
+fn i32_to_i16(val: i32): i16 {
+	return val as i16;
+}`;
 
 Deno.test(`Import test`, async () => {
 	const project = new Project();
@@ -41,15 +26,10 @@ Deno.test(`Import test`, async () => {
 	const mainFile = mainPck.importRaw(source);
 
 	const funcNames = [
-		"i64_to_i32",
-		"i32_to_i16",
-		"i32_to_i8",
-		"i64_to_u32",
-		"i32_to_u16",
 		"i32_to_u8",
-		// "f32_to_i32",
-		// "f32_to_i8",
-		// "f64_to_i64"
+		"i32_to_i8",
+		"i32_to_u16",
+		"i32_to_i16",
 	]
 	for (const funcName of funcNames) {
 		const func = mainFile.namespace[funcName];
@@ -71,20 +51,13 @@ Deno.test(`Import test`, async () => {
 		funcs[name] = exports[name] as (val: number) => number;
 	}
 
-	console.log(funcs.i32_to_u8(300));
-	console.log(funcs.i32_to_u8(16));
-	console.log(funcs.i32_to_i8(200));
-	console.log(funcs.i32_to_i8(120));
+	assertEquals(funcs.i32_to_u8(300), 255);
+	assertEquals(funcs.i32_to_u8( 16),  16);
+	assertEquals(funcs.i32_to_i8(200), 127);
+	assertEquals(funcs.i32_to_i8(120), 120);
 
-	console.log(funcs.i32_to_u16(66_000));
-	console.log(funcs.i32_to_u16(65_534));
-	console.log(funcs.i32_to_i16(34_767));
-	console.log(funcs.i32_to_i16(32_000));
-
-	console.log(funcs.i64_to_u32(17179869184));
-	console.log(funcs.i64_to_u32(116));
-	console.log(funcs.i64_to_i32(17179869184));
-	console.log(funcs.i64_to_i32(120));
-
-	console.log(funcs.i32_to_u16(-2333));
+	assertEquals(funcs.i32_to_u8(-300),    0);
+	assertEquals(funcs.i32_to_u8(-16),     0);
+	assertEquals(funcs.i32_to_i8(-200), -128);
+	assertEquals(funcs.i32_to_i8(-120), -120);
 });

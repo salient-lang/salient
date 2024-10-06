@@ -28,7 +28,7 @@ export async function Test() {
 
 	const ok = compilation.ok && execution.ok;
 	const status = ok ? colors.green("ok") : colors.red("ERR");
-	console.log(`Overall ${status} ${colors.gray(`(${Duration(duration)})`)}`);
+	console.info(`Overall ${status} ${colors.gray(`(${Duration(duration)})`)}`);
 
 	if (project.failed) Deno.exit(1);
 }
@@ -53,7 +53,7 @@ function GetTargets(): Set<string> {
 	}
 	const duration = Date.now() - start;
 
-	console.log(`Crawled ${colors.cyan(files.size.toString())} files ${colors.gray(`(${Duration(duration)})`)}\n`);
+	console.info(`Crawled ${colors.cyan(files.size.toString())} files ${colors.gray(`(${Duration(duration)})`)}\n`);
 
 	return files;
 }
@@ -117,15 +117,15 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 	const duration = Date.now() - start;
 
 	const { widths, body } = Table(table);
-	console.log("Parse/Compile".padEnd(widths[0] + widths[1] + 5) + "Unit".padEnd(widths[2]+4) + "Time")
-	console.log(body);
+	console.info("Parse/Compile".padEnd(widths[0] + widths[1] + 5) + "Unit".padEnd(widths[2]+4) + "Time")
+	console.info(body);
 
 	const ok = testFail === 0;
 	const status = ( ok ? colors.green(" ok  ") : colors.red("ERR  ") )
 		+ " Compiled"
 		+ ` ${colors.cyan(testSuccess.toString())} passed`
 		+ ` ${colors.cyan(testFail.toString())} failed`;
-	console.log(
+	console.info(
 		StrippedAnsiPadEnd(status, Sum(widths) - widths[3] + 9)
 		+ colors.gray(
 			`(${Duration(duration)})\n`
@@ -135,7 +135,7 @@ function CompileTests(files: Set<string>, mainPck: Package) {
 	);
 
 	if (errs.length > 0) {
-		console.log(`\n\n${colors.red("Compilation Errors")}:`)
+		console.info(`\n\n${colors.red("Compilation Errors")}:`)
 		for (const err in errs) {
 			console.error(err);
 		}
@@ -191,8 +191,8 @@ async function RunTests(project: Project, index: TestCase[]) {
 	}
 
 	const { widths, body } = Table(table);
-	console.log(" Test".padEnd(widths[0] + widths[1] + 6) + "Time")
-	console.log(body);
+	console.info(" Test".padEnd(widths[0] + widths[1] + 6) + "Time")
+	console.info(body);
 
 	const ok = (success === index.length);
 	const status = ( ok ? colors.green(" ok  ") : colors.red("ERR  ") )
@@ -200,7 +200,7 @@ async function RunTests(project: Project, index: TestCase[]) {
 		+ ` ${colors.cyan((success).toString())} passed`
 		+ ` ${colors.cyan((index.length-success).toString())} failed`;
 
-	console.log(
+	console.info(
 		StrippedAnsiPadEnd(status, widths[0] + widths[1] + 6)
 		+ colors.gray(`(${Duration(duration)})\n`)
 	);

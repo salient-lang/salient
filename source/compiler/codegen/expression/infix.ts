@@ -170,13 +170,15 @@ function CoerceToInt(ctx: Context, type: IntrinsicType, goal: IntrinsicType) {
 		}
 	}
 
+	const goalDepth = goal.signed ? goal.size*8 - 1 : goal.size*8;
+	const typeDepth = type.signed ? type.size*8 - 1 : type.size*8;
 
 	// Bound the value to the correct size for the target
-	if (goal.tciBitDepth() < type.tciBitDepth()) {
-		const max = Math.pow(2, goal.tciBitDepth()) + ( (goal.signed && type.signed) ? -1 : 0 );
-		const min = (goal.signed && type.signed)
-			? -Math.pow(2, goal.tciBitDepth())
-			: 0;
+	if (goalDepth < typeDepth) {
+		const max = (1 << goalDepth) - 1;
+		const min = !goal.signed && !type.signed ? null
+			: ( goal.signed ? -(1 << goalDepth) : 0 );
+
 		InlineClamp(ctx, type, min, max);
 	}
 

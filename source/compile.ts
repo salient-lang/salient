@@ -64,8 +64,8 @@ export async function Compile(entry: string, config: {
 	}
 	if (config.time) TimerEnd("wasm2wat");
 
-	console.log(new TextDecoder().decode(stdout));
-	console.log(`  out: "out.wasm" + "out.wat"\n`);
+	console.info(new TextDecoder().decode(stdout));
+	console.info(`  out: "out.wasm" + "out.wat"\n`);
 
 	if (config.time) DisplayTimers();
 }

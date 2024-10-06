@@ -1,4 +1,5 @@
 // https://webassembly.github.io/spec/core/binary/instructions.html#numeric-instructions
+import { EncodeU32 } from "~/wasm/type.ts";
 import { Byte } from "~/helper.ts";
 
 export class NumericInstruction {
@@ -10,6 +11,20 @@ export class NumericInstruction {
 
 	toBinary(): Byte[] {
 		return [this.code];
+	}
+}
+
+export class NumericInstructionExt {
+	code: Byte;
+	ext: number;
+
+	constructor(code: Byte, ext: number) {
+		this.code = code;
+		this.ext = ext;
+	}
+
+	toBinary(): Byte[] {
+		return [this.code, ...EncodeU32(this.ext)];
 	}
 }
 
@@ -152,6 +167,16 @@ const i64extend16_s  = new NumericInstruction(0xC3);
 const i64extend32_s  = new NumericInstruction(0xC4);
 
 
+const i32trunc_sat_f32_s = new NumericInstructionExt(0xFC, 0);
+const i32trunc_sat_f32_u = new NumericInstructionExt(0xFC, 1);
+const i32trunc_sat_f64_s = new NumericInstructionExt(0xFC, 2);
+const i32trunc_sat_f64_u = new NumericInstructionExt(0xFC, 3);
+const i64trunc_sat_f32_s = new NumericInstructionExt(0xFC, 4);
+const i64trunc_sat_f32_u = new NumericInstructionExt(0xFC, 5);
+const i64trunc_sat_f64_s = new NumericInstructionExt(0xFC, 6);
+const i64trunc_sat_f64_u = new NumericInstructionExt(0xFC, 7);
+
+
 
 const wrapper = {
 	i32: {
@@ -191,6 +216,10 @@ const wrapper = {
 		trunc_f32_u : () => i32trunc_f32_u,
 		trunc_f64_s : () => i32trunc_f64_s,
 		trunc_f64_u : () => i32trunc_f64_u,
+		trunc_sat_f32_s : () => i32trunc_sat_f32_s,
+		trunc_sat_f32_u : () => i32trunc_sat_f32_u,
+		trunc_sat_f64_s : () => i32trunc_sat_f64_s,
+		trunc_sat_f64_u : () => i32trunc_sat_f64_u,
 
 		extend_8_s       : () => i32extend8_s,
 		extend_16_s      : () => i32extend16_s,
@@ -237,6 +266,10 @@ const wrapper = {
 		trunc_f32_u: () => i64trunc_f32_u,
 		trunc_f64_s: () => i64trunc_f64_s,
 		trunc_f64_u: () => i64trunc_f64_u,
+		trunc_sat_f32_s: () => i64trunc_sat_f32_s,
+		trunc_sat_f32_u: () => i64trunc_sat_f32_u,
+		trunc_sat_f64_s: () => i64trunc_sat_f64_s,
+		trunc_sat_f64_u: () => i64trunc_sat_f64_u,
 
 		reinterpret_f64: () => i64reinterpret_f64,
 	},

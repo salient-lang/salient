@@ -30,11 +30,11 @@ export class Constant {
 		switch (this.type) {
 			case Type.i32: return [
 				this.type,
-				...(val < 0 ? EncodeI32(val) : EncodeU32(val))
+				...EncodeI32(val)
 			];
 			case Type.i64: return [
 				this.type,
-				...(val < 0 ? EncodeI64(val) : EncodeU64(val))
+				...EncodeI64(val)
 			];
 			case Type.f32: return [
 				this.type,

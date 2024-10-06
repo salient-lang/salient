@@ -1,28 +1,3 @@
-fn maxU8(): u8 {
-	return 255;
-}
-fn maxI8(): i8 {
-	return 127;
-}
-fn maxI16(): i16 {
-	return 32_767;
-}
-fn maxU16(): u16 {
-	return 65_535;
-}
-fn maxU32(): u32 {
-	return 4_294_967_295;
-}
-fn maxI32(): i32 {
-	return 2_147_483_647;
-}
-fn maxI64(): i64 {
-	return 9_223_372_036_854_775_807;
-}
-fn maxU64(): u64 {
-	return 18_446_744_073_709_551_615;
-}
-
 // Stop auto type cohersion
 fn int(val: i64): i64 {
 	return val;
@@ -35,19 +10,23 @@ fn main(): none {
 	return;
 }
 
-test "Constant Saturation" {
-	// if (int(300) as u8) != maxU8() { return false; };
-	// if (int(16)  as u8) != 16      { return false; };
-	// if (int(200) as i8) != maxI8() { return false; };
-	// if (int(120) as i8) != 120     { return false; };
+test "Integer Saturation" {
+	if (int(300) as u8) != 255 { return false; };
+	if (int( 16) as u8) !=  16 { return false; };
+	if (int(200) as i8) != 127 { return false; };
+	if (int(120) as i8) != 120 { return false; };
 
+	if (int(-300) as u8) !=    0 { return false; };
+	if (int( -16) as u8) !=    0 { return false; };
+	if (int(-200) as i8) != -128 { return false; };
+	if (int(-120) as i8) != -120 { return false; };
 
-	// if (int(66_000) as u16) != maxU16() { return false; };
-	// if (int(65_534) as u16) != 65_534   { return false; };
-	// if (int(34_767) as i16) != maxI16() { return false; };
-	// if (int(32_000) as i16) != 32_000   { return false; };
+	if (int(66_000) as u16) != 65_535 { return false; };
+	if (int(65_534) as u16) != 65_534 { return false; };
+	if (int(34_767) as i16) != 32_767 { return false; };
+	if (int(32_000) as i16) != 32_000 { return false; };
 
-	// Cannot do big integers (+31bits) because JS moment
+	// // Cannot do big integers (+31bits) because JS moment
 	// if (int(17179869184) as u32) != maxU32() { return false; };
 	// if (int(116)         as u32) != 116      { return false; };
 	// if (int(17179869184) as i32) != maxI32() { return false; };
@@ -55,22 +34,3 @@ test "Constant Saturation" {
 
 	return true;
 }
-
-// test "Runtime Saturation" {
-// 	let bigInt = maxU32();
-
-// 	if (bigInt as u8) != maxU8() { return false; };
-// 	if (bigInt as i8) != maxI8() { return false; };
-
-
-// 	if (bigInt as u16) != maxU16() { return false; };
-// 	if (bigInt as i16) != maxI16() { return false; };
-
-// 	if (bigInt as u32) != maxU32() { return false; };
-// 	if (bigInt as i32) != maxI32() { return false; };
-
-// 	// Cannot do big integers (+31bits) because JS moment
-// 	// if (bigInt as i64) != maxI64() { return false; };
-
-// 	return true;
-// }
