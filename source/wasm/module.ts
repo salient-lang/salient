@@ -57,6 +57,9 @@ export default class Module {
 
 		return func;
 	}
+	removeFunction(func: Function['ref']) {
+		this.funcSect.remove(func);
+	}
 
 	registerGlobal(type: Intrinsic, mut: boolean, expr: Constant) {
 		return this.globalSect.bind(type, mut, expr);

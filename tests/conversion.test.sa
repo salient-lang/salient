@@ -1,0 +1,55 @@
+// Stop auto type cohersion
+fn int(val: i64): i64 {
+	return val;
+}
+
+fn main(): none {
+	let v: i64 = 10;
+	let t = v as u8;
+
+	return;
+}
+
+test "Integer Saturation" {
+	if (int(300) as u8) != 255 { return false; };
+	if (int( 16) as u8) !=  16 { return false; };
+	if (int(200) as i8) != 127 { return false; };
+	if (int(120) as i8) != 120 { return false; };
+
+	if (int(-300) as u8) !=    0 { return false; };
+	if (int( -16) as u8) !=    0 { return false; };
+	if (int(-200) as i8) != -128 { return false; };
+	if (int(-120) as i8) != -120 { return false; };
+
+	if (int(66_000) as u16) != 65_535 { return false; };
+	if (int(65_534) as u16) != 65_534 { return false; };
+	if (int(34_767) as i16) != 32_767 { return false; };
+	if (int(32_000) as i16) != 32_000 { return false; };
+
+	// // Cannot do big integers (+31bits) because JS moment
+	// if (int(17179869184) as u32) != maxU32() { return false; };
+	// if (int(116)         as u32) != 116      { return false; };
+	// if (int(17179869184) as i32) != maxI32() { return false; };
+	// if (int(120)         as i32) != 120      { return false; };
+
+	return true;
+}
+
+test "Float Saturation" {
+	if (300.0 as u8) != 255 { return false; };
+	if ( 16.0 as u8) !=  16 { return false; };
+	if (200.0 as i8) != 127 { return false; };
+	if (120.0 as i8) != 120 { return false; };
+
+	if (-300.0 as u8) != 0 { return false; };
+	if ( -16.0 as u8) !=    0 { return false; };
+	if (-200.0 as i8) != -128 { return false; };
+	if (-120.0 as i8) != -120 { return false; };
+
+	if (66000.0 as u16) != 65535 { return false; };
+	if (65534.0 as u16) != 65534 { return false; };
+	if (34767.0 as i16) != 32767 { return false; };
+	if (32000.0 as i16) != 32000 { return false; };
+
+	return true;
+}

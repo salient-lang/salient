@@ -5,14 +5,16 @@ import { LinearType } from "~/compiler/codegen/expression/type.ts";
 export class IntrinsicType {
 	readonly bitcode: number;
 	readonly name: string;
+	readonly signed: boolean;
 	readonly align: number;
 	readonly size: number;
 
 	// Used to differentiate i8 the type, and i8 the value
 	readonly value: IntrinsicValue;
 
-	constructor(name: string, bitcode: number, size: number) {
+	constructor(name: string, signed: boolean, bitcode: number, size: number) {
 		this.name = name;
+		this.signed = signed;
 		this.bitcode = bitcode;
 		this.align = size;
 		this.size = size;
@@ -87,18 +89,18 @@ export class VirtualType {
 }
 
 
-export const bool = new IntrinsicType("bool", Types.Intrinsic.i32, 1);
+export const bool = new IntrinsicType("bool", false, Types.Intrinsic.i32, 1);
 
-export const  u8 = new IntrinsicType( "u8", Types.Intrinsic.i32, 1);
-export const  i8 = new IntrinsicType( "i8", Types.Intrinsic.i32, 1);
-export const i16 = new IntrinsicType("i16", Types.Intrinsic.i32, 2);
-export const u16 = new IntrinsicType("u16", Types.Intrinsic.i32, 2);
-export const i32 = new IntrinsicType("i32", Types.Intrinsic.i32, 4);
-export const u32 = new IntrinsicType("u32", Types.Intrinsic.i32, 4);
-export const i64 = new IntrinsicType("i64", Types.Intrinsic.i64, 8);
-export const u64 = new IntrinsicType("u64", Types.Intrinsic.i64, 8);
-export const f32 = new IntrinsicType("f32", Types.Intrinsic.f32, 4);
-export const f64 = new IntrinsicType("f64", Types.Intrinsic.f64, 8);
+export const  u8 = new IntrinsicType( "u8", false, Types.Intrinsic.i32, 1);
+export const  i8 = new IntrinsicType( "i8", true,  Types.Intrinsic.i32, 1);
+export const u16 = new IntrinsicType("u16", false, Types.Intrinsic.i32, 2);
+export const i16 = new IntrinsicType("i16", true,  Types.Intrinsic.i32, 2);
+export const u32 = new IntrinsicType("u32", false, Types.Intrinsic.i32, 4);
+export const i32 = new IntrinsicType("i32", true,  Types.Intrinsic.i32, 4);
+export const u64 = new IntrinsicType("u64", false, Types.Intrinsic.i64, 8);
+export const i64 = new IntrinsicType("i64", true,  Types.Intrinsic.i64, 8);
+export const f32 = new IntrinsicType("f32", false,  Types.Intrinsic.f32, 4);
+export const f64 = new IntrinsicType("f64", false,  Types.Intrinsic.f64, 8);
 
 export const never = new VirtualType("never");
 export const none  = new VirtualType("none");

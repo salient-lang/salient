@@ -124,7 +124,6 @@ function CompileFloat(ctx: Context, syntax: Syntax.Term_Float, expect?: Intrinsi
 
 
 
-
 const ESCAPE_SYMBOLS = {
 	"0": "\0",
 	"f": "\f",

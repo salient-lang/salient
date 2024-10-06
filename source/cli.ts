@@ -1,5 +1,3 @@
-/// <reference lib="deno.ns" />
-
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import { Compile } from "~/compile.ts";
@@ -7,7 +5,7 @@ import { Panic } from "~/compiler/helper.ts";
 import { Test } from "~/test.ts";
 
 if (Deno.args.includes("--version")) {
-	console.log("version: 0.0.0");
+	console.info("version: 0.0.0");
 	Deno.exit(0);
 }
 

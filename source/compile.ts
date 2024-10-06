@@ -1,6 +1,4 @@
-/// <reference lib="deno.ns" />
-
-import { resolve, join, relative } from "https://deno.land/std@0.201.0/path/mod.ts";
+import { resolve, join, relative, dirname } from "https://deno.land/std@0.201.0/path/mod.ts";
 import { existsSync } from "https://deno.land/std@0.201.0/fs/mod.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
@@ -9,6 +7,7 @@ import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
 import { DisplayTimers, TimerStart, TimerEnd } from "~/helper.ts";
 import { Panic } from "~/compiler/helper.ts";
+import { File } from "~/compiler/file.ts";
 
 
 export async function Compile(entry: string, config: {
@@ -22,9 +21,16 @@ export async function Compile(entry: string, config: {
 	);
 
 	const project = new Project();
-	const mainPck = new Package(project, root);
+	const mainPck = new Package(project, dirname(root));
 
-	const mainFile = mainPck.import(root);
+	let mainFile: File;
+	try {
+		mainFile = mainPck.import(root);
+	} catch (e) {
+		console.error(e);
+		Deno.exit(1);
+	}
+
 	const mainFunc = mainFile.namespace["main"];
 	if (!(mainFunc instanceof Function)) Panic(
 		`Main namespace is not a function: ${colors.cyan(mainFunc.constructor.name)}`
@@ -58,8 +64,8 @@ export async function Compile(entry: string, config: {
 	}
 	if (config.time) TimerEnd("wasm2wat");
 
-	console.log(new TextDecoder().decode(stdout));
-	console.log(`  out: "out.wasm" + "out.wat"\n`);
+	console.info(new TextDecoder().decode(stdout));
+	console.info(`  out: "out.wasm" + "out.wat"\n`);
 
 	if (config.time) DisplayTimers();
 }

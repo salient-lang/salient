@@ -1,25 +1,45 @@
-/// <reference lib="deno.ns" />
-
 import * as duration from "https://deno.land/std@0.224.0/fmt/duration.ts";
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
-import { resolve } from "https://deno.land/std@0.201.0/path/mod.ts";
-import { Panic } from "~/compiler/helper.ts";
 import TestCase from "~/compiler/test-case.ts";
 import Package from "~/compiler/package.ts";
 import Project from "~/compiler/project.ts";
+import { StrippedAnsiPadEnd, Sum, Table } from "~/helper.ts";
+import { resolve } from "https://deno.land/std@0.201.0/path/mod.ts";
+import { Panic } from "~/compiler/helper.ts";
 
-function Duration(start: number, end: number) {
-	if (start === end) return "0ms";
-	return duration.format(end-start, { ignoreZero: true })
+function Duration(milliseconds: number) {
+	if (milliseconds == 0) return "0ms";
+	return duration.format(milliseconds, { ignoreZero: true });
 }
 
 export async function Test() {
+	const files = GetTargets();
+
+	// Compile all of the test cases
+	const cwd = resolve("./");
+	const project = new Project();
+	const mainPck = new Package(project, cwd);
+
+	const start = Date.now();
+	const compilation = CompileTests(files, mainPck);
+	const execution = await RunTests(project, compilation.index);
+	const duration = Date.now() - start;
+
+	const ok = compilation.ok && execution.ok;
+	const status = ok ? colors.green("ok") : colors.red("ERR");
+	console.info(`Overall ${status} ${colors.gray(`(${Duration(duration)})`)}`);
+
+	if (project.failed) Deno.exit(1);
+}
+
+function GetTargets(): Set<string> {
 	// Determine all of the files to test
 	const targets = Deno.args.length > 1
 		? Deno.args.slice(1)
 		: ['.'];
 
+	const start = Date.now();
 	const files = new Set<string>();
 	for (const t of targets) {
 		const stats = Deno.statSync(t);
@@ -31,52 +51,120 @@ export async function Test() {
 			files.add(t);
 		} else if (stats.isDirectory) RecursiveAdd(t, files);
 	}
+	const duration = Date.now() - start;
 
+	console.info(`Crawled ${colors.cyan(files.size.toString())} files ${colors.gray(`(${Duration(duration)})`)}\n`);
 
+	return files;
+}
 
-	// Compile all of the test cases
-	const cwd = resolve("./");
-	const project = new Project();
-	const mainPck = new Package(project, cwd);
-
+function CompileTests(files: Set<string>, mainPck: Package) {
 	const index = new Array<TestCase>();
 
-	console.log("Compiling...");
-	const compStart = Date.now();
+	const errs: Error[] = [];
+	let filesPassed = 0;
+	let testSuccess = 0;
+	let testFail = 0;
+
+
+	const table: string[][] = [];
+	let parseTime = 0;
+	let compTime = 0;
+	const start = Date.now();
 	for (const path of files.values()) {
-		const file = mainPck.import(path);
+		let tests = 1;
+		let pass = 0;
+		let ok = true;
 
-		for (const test of file.tests) {
-			test.compile();
-			if (test.ref) project.module.exportFunction(`test${index.length}`, test.ref);
+		let unitTime = 0;
+		try {
+			const file = mainPck.import(path);
+			parseTime += file.parseTime;
+			tests = file.tests.length;
+			filesPassed++;
 
-			index.push(test);
+			const start = Date.now();
+			for (const test of file.tests) {
+				try {
+					test.compile();
+					if (!test.ref) continue;
+
+					mainPck.project.module.exportFunction(`test${index.length}`, test.ref);
+					index.push(test);
+					testSuccess++;
+					pass++;
+				} catch (e: unknown) {
+					testFail++;
+					test.evict();
+					errs.push(e as Error);
+					ok = false;
+				}
+			}
+			unitTime = Date.now() - start;
+			compTime += unitTime;
+		} catch (e) {
+			testFail++;
+			ok = false;
 		}
-	}
-	const compEnd = Date.now();
 
-	if (project.failed) Deno.exit(1);
-	console.log(`\x1b[1A\r`
-		+ `Compiled`
-		+ ` ${colors.cyan(index.length.toString())} unit tests`
-		+ ` ${colors.gray(`(${Duration(compStart, compEnd)})`)}\n`
+		table.push([
+			ok ? colors.green(" ok") : colors.red("ERR"),
+			path,
+			`${colors.cyan(pass.toString())}/${colors.cyan(tests.toString())}`,
+			colors.gray(`${Duration(parseTime)}/${Duration(unitTime)}`)
+		]);
+	}
+	const duration = Date.now() - start;
+
+	const { widths, body } = Table(table);
+	console.info("Parse/Compile".padEnd(widths[0] + widths[1] + 5) + "Unit".padEnd(widths[2]+4) + "Time")
+	console.info(body);
+
+	const ok = testFail === 0;
+	const status = ( ok ? colors.green(" ok  ") : colors.red("ERR  ") )
+		+ " Compiled"
+		+ ` ${colors.cyan(testSuccess.toString())} passed`
+		+ ` ${colors.cyan(testFail.toString())} failed`;
+	console.info(
+		StrippedAnsiPadEnd(status, Sum(widths) - widths[3] + 9)
+		+ colors.gray(
+			`(${Duration(duration)})\n`
+			+ `      Parsing ${Duration(parseTime)}\n`
+			+ `      Compile ${Duration(compTime)}\n`
+		)
 	);
 
+	if (errs.length > 0) {
+		console.info(`\n\n${colors.red("Compilation Errors")}:`)
+		for (const err in errs) {
+			console.error(err);
+		}
+	}
 
+	return { ok, index, };
+}
+
+async function RunTests(project: Project, index: TestCase[]) {
 	// Run all of the tests
 	const wasmModule = new WebAssembly.Module(project.module.toBinary());
 	const instance = await WebAssembly.instantiate(wasmModule, {});
 
-	let fails = 0;
+	const table: string[][] = [];
+
+	let success = 0;
 	const exports = instance.exports;
 	let prev = "";
-	const execStart = Date.now();
+	let duration = 0;
 	for (let i=0; i<index.length; i++) {
 		const test = index[i];
 
 		if (prev !== test.file.name) {
 			prev = test.file.name;
-			console.log(colors.gray(prev.replaceAll('\\', '/')));
+			table.push([
+				"",
+				colors.gray(prev.replaceAll('\\', '/')),
+				""
+			]);
 		}
 
 		const func = exports[`test${i}`];
@@ -84,24 +172,42 @@ export async function Test() {
 			`${colors.red("Internal Error")}: Test case ${colors.cyan(i.toString())} isn't in wasm module`
 		);
 
-		const unitStart  = Date.now();
-		const result = func();
-		const unitEnd    = Date.now();
-		console.log(`${result ? colors.green(" ok") : colors.red("ERR")}`
-			+ ` │ ${test.name}`
-			+ ` ${colors.gray(`(${Duration(unitStart, unitEnd)})`)}`
-		);
-		if (!result) fails++;
-	}
-	const execEnd = Date.now();
+		const start = Date.now();
+		let ok = false;
+		try {
+			const res = func();
+			if (res) ok = true;
+		} catch (e) { /* no op */ };
+		const unitTime = Date.now()-start;
 
-	console.log(`\n${colors.gray("Final Results")}\n`
-		+ `${fails == 0 ? colors.green(" ok") : colors.red("ERR")}`
-		+ ` │ ${colors.cyan((index.length-fails).toString())} passed`
-		+ ` ${colors.cyan((fails).toString())} failed`
-		+ colors.gray(` (${Duration(execStart, execEnd)})`)
+		duration += unitTime;
+
+		table.push([
+			ok ? colors.green(" ok") : colors.red("ERR"),
+			test.name,
+			colors.gray(`(${Duration(unitTime)})`)
+		])
+		if (ok) success++;
+	}
+
+	const { widths, body } = Table(table);
+	console.info(" Test".padEnd(widths[0] + widths[1] + 6) + "Time")
+	console.info(body);
+
+	const ok = (success === index.length);
+	const status = ( ok ? colors.green(" ok  ") : colors.red("ERR  ") )
+		+ " Ran"
+		+ ` ${colors.cyan((success).toString())} passed`
+		+ ` ${colors.cyan((index.length-success).toString())} failed`;
+
+	console.info(
+		StrippedAnsiPadEnd(status, widths[0] + widths[1] + 6)
+		+ colors.gray(`(${Duration(duration)})\n`)
 	);
+
+	return { ok };
 }
+
 
 function RecursiveAdd(folder: string, set: Set<string>) {
 	const files = Deno.readDirSync(folder);
