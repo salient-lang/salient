@@ -33,7 +33,7 @@ export type Term_Stmt_top = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Function | Term_Structure | Term_External | Term_Test)
+		(Term_Function | Term_Structure | Term_Data | Term_External | Term_Test)
 	]
 }
 export declare function Parse_Stmt_top (i: string, refMapping?: boolean): _Shared.ParseError | {

@@ -1,4 +1,4 @@
-import { stripAnsiCode } from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import { stripAnsiCode } from "fmt/colors";
 
 export type Byte = number;
 export function isByte(value: number): value is Byte {

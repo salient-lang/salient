@@ -1,4 +1,4 @@
-import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import * as colors from "fmt/colors";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import { IntrinsicType, bool, u8, i8, u16, i16, u32, i32, u64, i64, f32, f64 } from "~/compiler/intrinsic.ts";

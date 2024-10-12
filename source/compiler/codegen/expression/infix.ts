@@ -1,4 +1,4 @@
-import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import * as colors from "fmt/colors";
 
 import * as WasmTypes from "~/wasm/type.ts";
 import Structure from "~/compiler/structure.ts";

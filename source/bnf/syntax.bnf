@@ -1,5 +1,5 @@
 program ::= %w* ( stmt_top %w* )* ;
-	stmt_top ::= function | structure | external | test ;
+	stmt_top ::= function | structure | data | external | test ;
 
 
 #=============================

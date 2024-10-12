@@ -3,7 +3,7 @@
 		"build:all": "deno task build:syntax & deno task build:compiler",
 		"build:syntax": "deno run -A npm:bnf-parser ./source/bnf/",
 		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
-		"test": "deno test && deno task test:salient",
+		"test:all": "deno test && deno task test:salient",
 		"test:deno": "deno test",
 		"test:salient": "deno run -A ./source/cli.ts test ./tests",
 		"cli": "deno run -A ./source/cli.ts",
@@ -18,8 +18,7 @@
 	"imports": {
 		"~/": "./source/",
 		"bnf-parser": "npm:bnf-parser@^4.1.3",
-		"npm-run-all": "npm:npm-run-all@^4.1.5",
-		"chalk": "npm:chalk@^5.3.0"
+		"fmt/colors": "https://deno.land/std@0.201.0/fmt/colors.ts"
 	},
 	"lint": {
 		"include": ["source/"],

@@ -1,4 +1,4 @@
-import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import * as colors from "fmt/colors";
 
 import type { Term_Access, Term_Function } from "~/bnf/syntax.d.ts";
 import type { File, Namespace } from "./file.ts";

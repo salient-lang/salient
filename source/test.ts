@@ -1,5 +1,5 @@
 import * as duration from "https://deno.land/std@0.224.0/fmt/duration.ts";
-import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import * as colors from "fmt/colors";
 
 import TestCase from "~/compiler/test-case.ts";
 import Package from "~/compiler/package.ts";

@@ -1,4 +1,4 @@
-import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import * as colors from "fmt/colors";
 
 import type { File, Namespace } from "./file.ts";
 import { ReferenceRange, SourceView } from "~/parser.ts";

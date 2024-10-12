@@ -1,5 +1,5 @@
 import type * as Syntax from "~/bnf/syntax.d.ts";
-import { red } from "https://deno.land/std@0.201.0/fmt/colors.ts";
+import { red } from "fmt/colors";
 
 import * as WasmTypes from "~/wasm/type.ts";
 import { AssertUnreachable, LatentOffset } from "~/helper.ts";
