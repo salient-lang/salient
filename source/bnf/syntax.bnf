@@ -78,6 +78,8 @@ structure ::= %("struct" w*) ...name %w* struct_type? %( "{" w* ) struct_stmt* %
 		struct_attr   ::= ...name %( w* ":" w* ) access %terminate ;
 		struct_spread ::= %( "..." ) access %terminate ;
 
+data ::= %("data" w*) ...name %w* %( "{" w* ) struct_stmt* %( w* "}" w* );
+
 container ::= %(w* "[" w*) ( container_item ( %(w* "," w*) container_item )* %w* %","? )? %("]" w*) ;
 	container_item  ::= container_map | container_value ;
 	container_map   ::= %"." name %(w* "=" w*) expr ;
@@ -112,11 +114,10 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 		| "%" | "*" | "/" | "+" | "-"
 		| "as" | "instanceof"
 		| "." | "->" ;
-	expr_postfix ::= expr_call | expr_get | expr_param | expr_loan ;
+	expr_postfix ::= expr_call | expr_get | expr_param ;
 		expr_param ::= %"#[" %w* arg_list? %w* %"]" ;
 		expr_call  ::=  %"(" %w* arg_list? %w* %")" ;
 		expr_get   ::=  %"[" %w* arg_list? %w* %"]" ;
-		expr_loan  ::= "@" | "$" ;
 	expr_arg ::= expr_prefix? %w* expr_val %w* expr_postfix* ;
 	expr_val ::= constant | expr_brackets | block | container | if | name ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
