@@ -1,8 +1,8 @@
 import * as colors from "fmt/colors";
 
-import type { Term_Data } from "~/bnf/syntax.d.ts";
-import type { File, Namespace } from "~/compiler/file.ts";
 import Structure from "~/compiler/structure.ts";
+import type { File, Namespace } from "~/compiler/file.ts";
+import type { Term_Data } from "~/bnf/syntax.d.ts";
 import { IsSolidType, SolidType } from "~/compiler/codegen/expression/type.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/bnf/shared.d.ts";
