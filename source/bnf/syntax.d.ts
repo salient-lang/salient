@@ -364,8 +364,8 @@ export declare function Parse_Void (i: string, refMapping?: boolean): _Shared.Pa
 	isPartial: boolean
 }
 
-export type Term_Hexidecimal = {
-	type: 'hexidecimal',
+export type Term_Hexadecimal = {
+	type: 'hexadecimal',
 	start: number,
 	end: number,
 	count: number,
@@ -374,8 +374,8 @@ export type Term_Hexidecimal = {
 		(_Literal | _Literal)
 	]
 }
-export declare function Parse_Hexidecimal (i: string, refMapping?: boolean): _Shared.ParseError | {
-	root: _Shared.SyntaxNode & Term_Hexidecimal,
+export declare function Parse_Hexadecimal (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_Hexadecimal,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
