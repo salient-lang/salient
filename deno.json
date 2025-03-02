@@ -3,7 +3,7 @@
 		"build": "npx run-s build:*",
 		"build:syntax": "npx bnf-compile ./source/bnf/",
 		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
-		"test": "deno test && deno task test:salient",
+		"test": "deno task 'test:*'",
 		"test:deno": "deno test",
 		"test:salient": "deno run -A ./source/cli.ts test ./tests",
 		"cli": "deno run -A ./source/cli.ts",

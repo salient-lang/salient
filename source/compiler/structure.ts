@@ -136,7 +136,7 @@ export default class Structure {
 			}
 		}
 
-		const ordered = this.storage === "sparse" || this.storage === "linear";
+		const ordered = this.storage === "sparse"  || this.storage === "linear";
 		const padded  = this.storage === "aligned" || this.storage === "sparse";
 		let offset = 0;
 		if (ordered) {

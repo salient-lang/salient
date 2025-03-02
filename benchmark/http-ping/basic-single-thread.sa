@@ -16,11 +16,11 @@ external import {
 
 } from "wasix_32v1";
 
-struct IPv4Address {
+struct IPv4Address: linear {
 	a: i8; b: i8; c: i8; d: i8;
 }
 
-struct SockAddr_In {
+struct SockAddr_In: linear {
 	sin_family: i16;
 	sin_port: i16;
 	sin_addr: IPv4Address;
@@ -29,14 +29,14 @@ struct SockAddr_In {
 	sin_zero: i64;
 }
 
-struct SockAddr {
+struct SockAddr: linear {
 	sin_family: i16;
 
 	// padding
 	_0: i64; _1: i32; _2: i16;
 }
 
-struct BoxInt {
+struct BoxInt: linear {
 	value: i32;
 }
 
@@ -66,7 +66,7 @@ fn loop(server_fd: i32): none {
 	sock_accept_v2(server_fd, 0, _fd, remote_addr); // exploiting unsafe struct handling: sock_accept_v2(server_fd, 0, fd_req@, remote_addr@);
 	let req_fd = _fd.value;
 
-	sock_send(req_fd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain; cgarset=utf-8\r\n\r\nHello, World!", 1, 0, remote_addr);
+	sock_send(req_fd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nHello, World!", 1, 0, remote_addr);
 
 	let SHUT_RDWR = 2;
 	sock_shutdown(req_fd, SHUT_RDWR);
