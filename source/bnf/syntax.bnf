@@ -118,12 +118,16 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 		expr_get   ::=  %"[" %w* arg_list? %w* %"]" ;
 		expr_loan  ::= "@" | "$" ;
 	expr_arg ::= expr_prefix? %w* expr_val %w* expr_postfix* ;
-	expr_val ::= constant | expr_brackets | block | container | if | name ;
+	expr_val ::= constant | expr_brackets | block | container | if | while | for | name ;
 	expr_brackets ::= %( "(" w* ) expr %( w* ")" ) ;
 
 arg_list ::= expr ( %(w* "," w*) expr )* ;
 
-if ::= %("if" w*) expr %w* expr %w* ( %"else" %w* expr )? ;
+if ::= %("if" w+) expr %w* expr %w* ( %"else" %w* expr )? ;
+
+while ::= %("while" w+) expr %w* expr ;
+for ::= %("for" w+ "(") for_i %(")") statement ;
+	for_i ::= expr %(";" %w*) expr %(";" %w*) expr ;
 
 statement ::= expr %terminate ;
 
