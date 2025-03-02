@@ -37,8 +37,8 @@ export class File {
 
 	constructor(owner: Package, path: string, name: string, data: string) {
 		this.owner = owner;
-		this.name = name;
-		this.path = path;
+		this.name = name.replaceAll("\\", "/");
+		this.path = path.replaceAll("\\", "/");
 
 		this.namespace = {
 			none, never,

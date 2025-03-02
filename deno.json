@@ -1,7 +1,7 @@
 {
 	"tasks": {
 		"build": "npx run-s build:*",
-		"build:syntax": "npx bnf-compile ./source/bnf/",
+		"build:syntax": "deno run -A npm:bnf-parser ./source/bnf/",
 		"build:compiler": "deno compile --output salient.exe -A ./source/cli.ts",
 		"test": "deno task 'test:*'",
 		"test:deno": "deno test",
