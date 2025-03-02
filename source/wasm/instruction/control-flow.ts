@@ -36,17 +36,16 @@ export class Block {
 }
 
 export class Loop {
-	type: number;
 	n: Any[];
 
-	constructor(typeIdx: number, n?: Any[]) {
-		this.type = typeIdx;
+	constructor(n?: Any[]) {
 		this.n = n ? n : [];
 	}
 
 	toBinary(): Byte[] {
 		return [
 			0x03,
+			0x40,
 			...this.n.flatMap(x => x.toBinary()),
 			0x0b
 		];

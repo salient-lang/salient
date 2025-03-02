@@ -3,6 +3,7 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
+import { CompileIf, CompileWhile } from "~/compiler/codegen/expression/flow-control.ts";
 import { SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix/index.ts";
@@ -10,7 +11,6 @@ import { CompileConstant } from "~/compiler/codegen/expression/constant.ts";
 import { CompilePrefix } from "~/compiler/codegen/expression/prefix.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { Instruction } from "~/wasm/index.ts";
-import { CompileIf } from "~/compiler/codegen/expression/flow-control.ts";
 import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
 import { never } from "~/compiler/intrinsic.ts";
@@ -27,6 +27,8 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 		case "block":          res = CompileBlock(ctx, val, expect);     break;
 		case "name":           res = CompileName(ctx, val);              break;
 		case "if":             res = CompileIf(ctx, val, expect);        break;
+		case "while":          res = CompileWhile(ctx, val, expect);     break;
+		case "for":            throw new Error("Unimplemented");
 		default: AssertUnreachable(val);
 	}
 

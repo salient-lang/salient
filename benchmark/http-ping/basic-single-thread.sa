@@ -1,4 +1,5 @@
 external import {
+	fn fd_write(fd: i32, iovs: i32, iovs_len: i32, nwritten: BoxInt): i32;
 	fn fd_close(fd: i32): i32;
 
 	fn sock_open(pf_net: i32, sock_stream: i32, protocol: i32, ptr: BoxInt): i32;
@@ -7,7 +8,7 @@ external import {
 
 	fn sock_bind(fd: i32, addr: SockAddr_In): i32;
 	fn sock_listen(fd: i32, backlog: i32): i32;
-
+	fn sock_status(fd: i32, status: BoxInt): i32;
 
 	fn sock_accept_v2(fd: i32, flags: i32, sock_ptr: BoxInt, remote_addr: SockAddr): i32;
 	// fn sock_accept_v2(fd: i32, flags: i32, sock_ptr: i32@, remote_addr: SockAddr_In@): i32;
@@ -41,9 +42,15 @@ struct BoxInt: linear {
 }
 
 fn main(): none {
-	let _fd: BoxInt = [ none ];
-	sock_open(1, 1, 0, _fd); // exploiting unsafe struct handling: sock_open(1, 1, 0, fd_sock@);
-	let server_fd = _fd.value;
+	let _ptr: BoxInt = [ none ];
+	let err = sock_open(1, 1, 0, _ptr);
+	if err != 0 {
+		fd_write(1, "failed to open socket", 1, _ptr);
+		return;
+	};
+	let server_fd = _ptr.value;
+
+
 
 	let bind_addr: SockAddr_In = [
 		.sin_family = 1, // AF_INET
@@ -51,10 +58,28 @@ fn main(): none {
 		.sin_addr   = [ .a = 0, .b = 0, .c = 0, .d = 0 ],
 		.sin_zero   = 0 // char[8] padding for sockaddr compatibility
 	];
-	sock_bind(server_fd, bind_addr);
-	sock_listen(server_fd, 100);
+	err = sock_bind(server_fd, bind_addr);
+	if err != 0 {
+		fd_write(1, "failed to bind socket", 1, _ptr);
+		return;
+	};
 
-	loop(server_fd);
+	err = sock_listen(server_fd, 100);
+	if err != 0 {
+		fd_write(1, "failed to listen to socket", 1, _ptr);
+		return;
+	};
+
+	let ready = 0;
+	while ready != 0 {
+		err = sock_status(server_fd, _ptr);
+		ready = _ptr.value;
+	};
+
+	fd_write(1, "listening on port 8080\n", 1, _ptr);
+	while true {
+		loop(server_fd);
+	};
 
 	return;
 }
@@ -63,16 +88,17 @@ fn loop(server_fd: i32): none {
 	let remote_addr: SockAddr = [ none ];
 
 	let _fd: BoxInt = [ none ];
-	sock_accept_v2(server_fd, 0, _fd, remote_addr); // exploiting unsafe struct handling: sock_accept_v2(server_fd, 0, fd_req@, remote_addr@);
+	let err = sock_accept_v2(server_fd, 0, _fd, remote_addr);
+	if err != 0 { return; };
+
 	let req_fd = _fd.value;
 
+	fd_write(1, "sending response\n", 1, _fd);
 	sock_send(req_fd, "HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nHello, World!", 1, 0, remote_addr);
 
 	let SHUT_RDWR = 2;
 	sock_shutdown(req_fd, SHUT_RDWR);
 	fd_close(req_fd);
 
-	// wasmer doesn't support tail calls
-	// return_tail loop(server_fd);
-	loop(server_fd); return;
+	return;
 }

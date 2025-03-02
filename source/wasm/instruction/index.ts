@@ -96,7 +96,7 @@ const wrapper = {
 
 	block: (typeIdx: number, n?: Any[])                 => new Block(typeIdx, n),
 	if   : (typeIdx: number, t?: Any[], f?: Any[])      => new IfBlock(typeIdx, t, f),
-	loop : (typeIdx: number, n?: Any[])                 => new Loop(typeIdx, n),
+	loop : (n?: Any[])                 => new Loop(n),
 	return_call : (funcRef: FuncRef | number) => new ReturnCall(funcRef),
 	call : (funcRef: FuncRef | number) => new Call(funcRef),
 	br_if: (i: number)                 => new Br_If(i),

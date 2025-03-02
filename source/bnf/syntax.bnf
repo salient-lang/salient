@@ -123,10 +123,10 @@ expr ::= expr_arg %w* ( ...expr_infix %w* expr_arg %w* )* ;
 
 arg_list ::= expr ( %(w* "," w*) expr )* ;
 
-if ::= %("if" w*) expr %w* expr ( %"else" %w* expr )? ;
+if ::= %("if" w+) expr %w* expr ( %"else" %w* expr )? ;
 
 while ::= %("while" w+) expr %w* expr ;
-for ::= %("for" w+ "(") for_i %(")") statement ;
+for   ::= %("for" w+ "(") for_i %(")") expr ;
 	for_i ::= statement statement statement ;
 
 statement ::= expr %terminate ;
@@ -136,9 +136,9 @@ statement ::= expr %terminate ;
 #  External
 #=============================
 external ::= %( "external" w+ ) ( ext_import | ext_export ) ;
-	ext_import ::= %( "import" w* "{" w* ) ext_imports* %( w* "}" w* "from" w*) string_plain %(w* ";" w*) ;
+	ext_import ::= %( "import" w+ "{" w* ) ext_imports* %( w* "}" w* "from" w*) string_plain %(w* ";" w*) ;
 		ext_imports    ::= function | ext_import_var ;
-		ext_import_var ::= %( "let" w* ) name %( w* ":" w* ) access %(w* ";" w*);
+		ext_import_var ::= %( "let" w+ ) name %( w* ":" w* ) access %(w* ";" w*);
 	ext_export ::= "export" ;
 
 #=============================

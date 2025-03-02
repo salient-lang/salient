@@ -1215,7 +1215,7 @@ export type Term_Expr_val = {
 	count: number,
 	ref: _Shared.ReferenceRange,
 	value: [
-		(Term_Constant | Term_Expr_brackets | Term_Block | Term_Container | Term_If | Term_Name)
+		(Term_Constant | Term_Expr_brackets | Term_Block | Term_Container | Term_If | Term_While | Term_For | Term_Name)
 	]
 }
 export declare function Parse_Expr_val (i: string, refMapping?: boolean): _Shared.ParseError | {
@@ -1292,6 +1292,61 @@ export type Term_If = {
 }
 export declare function Parse_If (i: string, refMapping?: boolean): _Shared.ParseError | {
 	root: _Shared.SyntaxNode & Term_If,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_While = {
+	type: 'while',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Expr,
+		Term_Expr
+	]
+}
+export declare function Parse_While (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_While,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_For = {
+	type: 'for',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_For_i,
+		Term_Statement
+	]
+}
+export declare function Parse_For (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_For,
+	reachBytes: number,
+	reach: null | _Shared.Reference,
+	isPartial: boolean
+}
+
+export type Term_For_i = {
+	type: 'for_i',
+	start: number,
+	end: number,
+	count: number,
+	ref: _Shared.ReferenceRange,
+	value: [
+		Term_Statement,
+		Term_Statement,
+		Term_Statement
+	]
+}
+export declare function Parse_For_i (i: string, refMapping?: boolean): _Shared.ParseError | {
+	root: _Shared.SyntaxNode & Term_For_i,
 	reachBytes: number,
 	reach: null | _Shared.Reference,
 	isPartial: boolean
