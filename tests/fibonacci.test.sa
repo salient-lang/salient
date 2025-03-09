@@ -11,6 +11,17 @@ fn fib_tail(n: i32, a: i32, b: i32): i32 {
 	};
 }
 
+fn fib_loop(n: i32): i32 {
+	let o = 1;
+
+	while (n > 1) {
+		o = o + o;
+		n = n - 1;
+	};
+
+	return o;
+}
+
 test "fibonacci recursive call" {
 	if fib_recur(3)  != 2        { return false; };
 	if fib_recur(4)  != 3        { return false; };
@@ -29,6 +40,12 @@ test "fibonacci tail call" {
 	if fib_tail(6, 0, 1)  != 8        { return false; };
 	if fib_tail(24, 0, 1) != 46368    { return false; };
 	if fib_tail(38, 0, 1) != 39088169 { return false; };
+
+	return true;
+}
+
+test "fibonaaci while loop" {
+	if fib_loop(3) != 2 { return false; };
 
 	return true;
 }

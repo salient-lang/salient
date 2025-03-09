@@ -2,8 +2,8 @@ import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
 import Structure from "~/compiler/structure.ts";
+import { CompileFor, CompileIf, CompileWhile } from "~/compiler/codegen/expression/flow-control.ts";
 import { ArrayBuilder, StructBuilder } from "~/compiler/codegen/expression/container.ts";
-import { CompileIf, CompileWhile } from "~/compiler/codegen/expression/flow-control.ts";
 import { SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
 import { AssertUnreachable } from "~/helper.ts";
 import { CompilePostfixes } from "~/compiler/codegen/expression/postfix/index.ts";
@@ -22,13 +22,13 @@ export function CompileArg(ctx: Context, syntax: Syntax.Term_Expr_arg, expect?: 
 	let res: OperandType;
 	switch (val.type) {
 		case "container":      res = CompileContainer(ctx, val, expect); break;
-		case "constant":       res = CompileConstant(ctx, val, expect);  break;
-		case "expr_brackets":  res = CompileBrackets(ctx, val, expect);  break;
-		case "block":          res = CompileBlock(ctx, val, expect);     break;
-		case "name":           res = CompileName(ctx, val);              break;
-		case "if":             res = CompileIf(ctx, val, expect);        break;
-		case "while":          res = CompileWhile(ctx, val, expect);     break;
-		case "for":            throw new Error("Unimplemented");
+		case "constant":       res = CompileConstant (ctx, val, expect); break;
+		case "expr_brackets":  res = CompileBrackets (ctx, val, expect); break;
+		case "block":          res = CompileBlock    (ctx, val, expect); break;
+		case "name":           res = CompileName     (ctx, val);         break;
+		case "if":             res = CompileIf       (ctx, val, expect); break;
+		case "while":          res = CompileWhile    (ctx, val);         break;
+		case "for":            res = CompileFor      (ctx, val);         break;
 		default: AssertUnreachable(val);
 	}
 

@@ -1,14 +1,15 @@
 import * as colors from "https://deno.land/std@0.201.0/fmt/colors.ts";
 
 import type * as Syntax from "~/bnf/syntax.d.ts";
+import { CompileAssign, CompileDeclare, CompileStatement, Context } from "~/compiler/codegen/context.ts";
 import { IntrinsicValue, VirtualType, bool, none } from "~/compiler/intrinsic.ts";
 import { LinearType, SolidType, OperandType } from "~/compiler/codegen/expression/type.ts";
+import { AssertUnreachable } from "~/helper.ts";
 import { ReferenceRange } from "~/parser.ts";
 import { GetSolidType } from "~/compiler/codegen/expression/type.ts";
 import { CompileExpr } from "~/compiler/codegen/expression/index.ts";
 import { IsNamespace } from "~/compiler/file.ts";
 import { Instruction } from "~/wasm/index.ts";
-import { Context } from "~/compiler/codegen/context.ts";
 import { Panic } from "~/compiler/helper.ts";
 
 
@@ -75,10 +76,9 @@ export function CompileIf(ctx: Context, syntax: Syntax.Term_If, expect?: SolidTy
 }
 
 
-export function CompileWhile(ctx: Context, syntax: Syntax.Term_While, expect?: SolidType) {
+export function CompileWhile(ctx: Context, syntax: Syntax.Term_While) {
 	const stack = ctx.scope.stack.checkpoint();
 	const scope = ctx.child();
-
 
 	const cond = CompileExpr(scope, syntax.value[0]);
 	if (cond instanceof LinearType && cond.type !== bool.value) Panic(
@@ -103,9 +103,48 @@ export function CompileWhile(ctx: Context, syntax: Syntax.Term_While, expect?: S
 	stack.restore();
 
 	ctx.block.push(Instruction.block(0x40, [
-		Instruction.loop(scope.block),
-		Instruction.noop()
+		Instruction.loop(scope.block)
 	]));
+
+	return none;
+}
+
+export function CompileFor(ctx: Context, syntax: Syntax.Term_For) {
+	const checkpoint = ctx.scope.stack.checkpoint();
+	const block = ctx.child()
+
+	const init = syntax.value[0].value[0];
+	switch (init.type) {
+		case "declare":   CompileDeclare  (block, init); break;
+		case "assign":    CompileAssign   (block, init); break;
+		case "statement": CompileStatement(block, init); break;
+		default: AssertUnreachable(init);
+	}
+
+	const loop = block.child();
+
+	const cond = CompileExpr(loop, syntax.value[0].value[1]);
+	if (cond instanceof LinearType && cond.type !== bool.value) Panic(
+		`${colors.red("Error")}: Invalid comparison type ${cond.type.getTypeName()}\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
+	);
+
+	loop.block.push(Instruction.i32.const(0));
+	loop.block.push(Instruction.i32.eq());
+	loop.block.push(Instruction.br_if(1));
+
+	const type = InlineBlock(loop, syntax.value[1]) || CompileExpr(loop, syntax.value[1], bool);
+	if (type !== none) Panic(`${colors.red("Error")}: Loop body cannot lift a value\n`,
+		{ path: ctx.file.path, name: ctx.file.name, ref: syntax.value[0].ref }
+	);
+
+	loop.block.push(Instruction.br(0));
+
+	loop.mergeBlock();
+	checkpoint.restore();
+
+	block.block.push(Instruction.loop(loop.block));
+	ctx.block.push(Instruction.block(0x40, block.block));
 
 	return none;
 }

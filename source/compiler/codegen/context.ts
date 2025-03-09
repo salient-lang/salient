@@ -84,7 +84,7 @@ export class Context {
 }
 
 
-function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
+export function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	const name = syntax.value[0].value[0].value;
 	const type = syntax.value[1].value[0];
 	const expr = syntax.value[2].value[0];
@@ -174,7 +174,7 @@ function CompileDeclare(ctx: Context, syntax: Syntax.Term_Declare) {
 	Assign(ctx, variable.type, resolveType, syntax.ref);
 }
 
-function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
+export function CompileAssign(ctx: Context, syntax: Syntax.Term_Assign) {
 	const accessors = syntax.value[0].value[1];
 	const name  = syntax.value[0].value[0].value[0].value;
 	const value = syntax.value[1];
@@ -273,7 +273,7 @@ export function Assign(ctx: Context, target: LinearType, expr: OperandType, ref:
 }
 
 
-function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
+export function CompileStatement(ctx: Context, syntax: Syntax.Term_Statement) {
 	const res = CompileExpr(ctx, syntax.value[0]);
 
 	if (res instanceof LinearType) res.dispose();

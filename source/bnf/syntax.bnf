@@ -93,7 +93,7 @@ function ::= func_head %w* ( block | ";" ) %w* ;
 		func_arg ::= ...name %( w* ":" w* ) access ;
 
 block ::= %( "{" w* ) block_stmt* %( w* "}" w* ) ;
-	block_stmt ::= assign | declare | return | lift | statement ;
+	block_stmt ::= declare | assign | return | lift | statement ;
 
 func_call ::= access func_call_body;
 	func_call_body ::= %( w* "(" w* ) ( expr %w* ( %( "," w* ) expr %w* )* )? %( ")" w* ) ;
@@ -127,7 +127,7 @@ if ::= %("if" w+) expr %w* expr ( %"else" %w* expr )? ;
 
 while ::= %("while" w+) expr %w* expr ;
 for   ::= %("for" w+ "(") for_i %(")") expr ;
-	for_i ::= statement statement statement ;
+	for_i ::= (declare | assign | statement) expr %terminate (assign | statement) ;
 
 statement ::= expr %terminate ;
 
