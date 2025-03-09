@@ -32,7 +32,43 @@ export class TokenFloat {
 	}
 }
 
-function ParseName(str: string, cursor: Reference): TokenName | null {
+export class TokenBoolean {
+	readonly value: boolean;
+	readonly ref: ReferenceRange;
+
+	constructor (raw: boolean, ref: ReferenceRange) {
+		this.value = raw;
+		this.ref   = ref;
+	}
+}
+
+export class TokenString {
+	readonly value: string;
+	readonly ref: ReferenceRange;
+
+	constructor (raw: string, ref: ReferenceRange) {
+		this.value = raw;
+		this.ref   = ref;
+	}
+}
+
+
+
+function ParseHex(char: number): number {
+	let int = char - 48;
+	if (int < 0) return -1;
+	if (int > 9) int -= 7;
+	if (int < 0) return -1;
+	if (int > 15) int -= 32;
+	if (int < 0) return -1;
+
+	return int;
+}
+
+
+
+
+function ParseName (str: string, cursor: Reference): TokenName | TokenBoolean | null {
 	let char = str.charCodeAt(cursor.index);
 
 	if (char < 65)  return null;
@@ -54,7 +90,11 @@ function ParseName(str: string, cursor: Reference): TokenName | null {
 		buffer += String.fromCharCode(char);
 	}
 
-	return new TokenName(buffer, new ReferenceRange(start, cursor.clone()));
+	const ref = new ReferenceRange(start, cursor.clone());
+	if (buffer === "true") return new TokenBoolean(true, ref);
+	if (buffer === "false") return new TokenBoolean(false, ref);
+
+	return new TokenName(buffer, ref);
 }
 
 function ParseNumber(str: string, cursor: Reference): TokenInteger | null {
@@ -88,12 +128,9 @@ function ParseNumber(str: string, cursor: Reference): TokenInteger | null {
 		const s = cursor.index;
 		while (cursor.index < str.length) {
 			char = str.charCodeAt(cursor.index);
-			let int = char - 48;
-			if (int < 0) break;
-			if (int > 9) int -= 7;
-			if (int < 0) break;
-			if (int > 15) int -= 32;
-			if (int < 0) break;
+
+			const int = ParseHex(char);
+			if (int < 0) return null;
 
 			base = base << 4;
 			base += int;
@@ -170,7 +207,69 @@ function ParseNumber(str: string, cursor: Reference): TokenInteger | null {
 	return new TokenFloat(base+frac, new ReferenceRange(start, cursor.clone()));
 }
 
-export type AnyToken = TokenName | TokenInteger | TokenFloat;
+function ParseString (str: string, cursor: Reference): TokenString | null {
+	let char = str.charCodeAt(cursor.index);
+
+	if (char !== 34 && char !== 39) return null;
+
+	const entry = char;
+	const start = cursor.clone();
+	let buffer  = "";
+
+	let escaping = false;
+	cursor.advance(false);
+	while (cursor.index < str.length) {
+		char = str.charCodeAt(cursor.index);
+		if (escaping) {
+			if (char === 120) {
+				cursor.advance(false);
+				escaping = false;
+
+				const s = cursor.index;
+
+				let base = 0;
+				for (let i=0; i < 2 && cursor.index < str.length; i++) {
+					const char = str.charCodeAt(cursor.index);
+					const int = ParseHex(char);
+					if (int < 0) return null;
+
+					base = base << 4;
+					base += int;
+					cursor.advance(false);
+				}
+
+				if (cursor.index === s) return null;
+
+				buffer += String.fromCharCode(base);
+				continue;
+			}
+
+
+			buffer += String.fromCharCode(char);
+			cursor.advance(false);
+			escaping = false;
+			continue;
+		}
+
+		if (char === entry) {
+			cursor.advance(false);
+			break;
+		}
+
+		if (char === 92) { // "\"
+			cursor.advance(false);
+			escaping = true;
+			continue;
+		}
+
+		cursor.advance(char === newLine);
+		buffer += String.fromCharCode(char);
+	}
+
+	return new TokenString(buffer, new ReferenceRange(start, cursor.clone()));
+}
+
+export type AnyToken = TokenName | TokenInteger | TokenFloat | TokenBoolean | TokenString;
 
 
 const newLine  = "\n".charCodeAt(0);
@@ -180,7 +279,8 @@ export function ParseTokens (str: string): AnyToken[] | Reference {
 
 	while (cursor.index < str.length) {
 		const token = ParseName(str, cursor)
-			|| ParseNumber(str, cursor);
+			|| ParseNumber(str, cursor)
+			|| ParseString(str, cursor);
 		if (!token) return cursor;
 
 		tokens.push(token);
