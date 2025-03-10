@@ -52,6 +52,58 @@ export class TokenString {
 	}
 }
 
+export class TokenSymbol {
+	readonly type: number;
+	readonly ref: ReferenceRange;
+
+	constructor (type: number, ref: ReferenceRange) {
+		this.type = type;
+		this.ref  = ref;
+	}
+
+	static not         =   33; // !
+	static invert      =   45;  // -
+	static reference   =   64; // @
+	static loan        =   36; // $
+	static loanMut     = 3036; // $mut
+	static terminal    =   59; // ;
+	static spread      = 3046; // ...
+
+	static addition    =   43; // +
+	static subtraction =   45; // -
+	static multiply    =   42; // *
+	static divide      =   47; // /
+	static remainder   =   37; // %
+	static append      =   44; // ,
+	static type        =   58; // :
+
+	static equal    =    2061; // ==
+	static same     =    3061; // ===
+	static notEqual =    2033; // !=
+	static notSame  =    3033; // !==
+	static lt       =      60; // <
+	static le       =    2060; // <=
+	static gt       =      62; // >
+	static ge       =    2062; // >=
+	static and      =    2038; // &&
+	static or       =    2024; // ||
+
+	static member        =   46; // .
+	static static        =   35; // #
+	static accessStatic  =  235; // #[
+	static accessDynamic =   91; // [
+	static accessEnd     =   93; // ]
+	static blockOpen     =  123; // {
+	static blockClose    =  125; // }
+	static paramOpen     =   40; // (
+	static paramClose    =   41; // )
+
+	static as            = 9001; // as
+	static instance      = 9002; // instanceof
+	static typeof        = 9003; // typeof
+}
+
+
 
 
 function ParseHex(char: number): number {
@@ -68,7 +120,7 @@ function ParseHex(char: number): number {
 
 
 
-function ParseName (str: string, cursor: Reference): TokenName | TokenBoolean | null {
+function ParseName (str: string, cursor: Reference): TokenName | TokenBoolean | TokenSymbol | null {
 	let char = str.charCodeAt(cursor.index);
 
 	if (char < 65)  return null;
@@ -91,8 +143,11 @@ function ParseName (str: string, cursor: Reference): TokenName | TokenBoolean | 
 	}
 
 	const ref = new ReferenceRange(start, cursor.clone());
-	if (buffer === "true") return new TokenBoolean(true, ref);
-	if (buffer === "false") return new TokenBoolean(false, ref);
+	if (buffer === "true")       return new TokenBoolean(true,  ref);
+	if (buffer === "false")      return new TokenBoolean(false, ref);
+	if (buffer === "as")         return new TokenSymbol(TokenSymbol.as,        ref);
+	if (buffer === "instanceof") return new TokenSymbol(TokenSymbol.instance,  ref);
+	if (buffer === "typeof")     return new TokenSymbol(TokenSymbol.typeof,    ref);
 
 	return new TokenName(buffer, ref);
 }
@@ -269,7 +324,133 @@ function ParseString (str: string, cursor: Reference): TokenString | null {
 	return new TokenString(buffer, new ReferenceRange(start, cursor.clone()));
 }
 
-export type AnyToken = TokenName | TokenInteger | TokenFloat | TokenBoolean | TokenString;
+function ParseOperator (str: string, cursor: Reference): TokenSymbol | null {
+	let char = str.charCodeAt(cursor.index);
+
+	if (char < 33) return null;
+
+	const start = cursor.clone();
+	if (char === 33) { // "!"
+		cursor.advance(false);
+		char = str.charCodeAt(cursor.index);
+
+		// "!="
+		if (char !== 61) return new TokenSymbol(TokenSymbol.not, new ReferenceRange(start, cursor.clone()));
+		cursor.advance(false);
+		char = str.charCodeAt(cursor.index);
+
+		// "!=="
+		if (char !== 61) return new TokenSymbol(TokenSymbol.notEqual, new ReferenceRange(start, cursor.clone()));
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.notSame, new ReferenceRange(start, cursor.clone()));
+	}
+
+	if (char === 34) return null; // '"'
+
+	if (char === 35) { // #
+		cursor.advance(false);
+		char = str.charCodeAt(cursor.index);
+
+		if (char !== 91) return null; // "#["
+
+		return new TokenSymbol(TokenSymbol.accessStatic, new ReferenceRange(start, cursor.clone()));
+	}
+
+	if (char === 36) { // $
+		cursor.advance(false);
+		const checkpoint = cursor.clone();
+		char = str.charCodeAt(cursor.index);
+
+		if (str[cursor.index] == "m") {
+			cursor.advance(false);
+			if (str[cursor.index] === "u") {
+				cursor.advance(false);
+				if (str[cursor.index] === "t") {
+					cursor.advance(false);
+					const whiteSpace = SkipWhiteSpace(str, cursor);
+					if (whiteSpace) return new TokenSymbol(TokenSymbol.loanMut, new ReferenceRange(start, cursor.clone()));
+				}
+			}
+		}
+
+		cursor.infuse(checkpoint);
+		return new TokenSymbol(TokenSymbol.loan, new ReferenceRange(start, checkpoint));
+	}
+
+	if (char === 37) { // "%"
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.remainder, new ReferenceRange(start, cursor.clone()))
+	}
+
+	if (char === 38) { // "&"
+		cursor.advance(false);
+		char = str.charCodeAt(cursor.index);
+
+		// "&"
+		if (char !== 38) {
+			cursor.infuse(start);
+			return null;
+		}
+		cursor.advance(false);
+		char = str.charCodeAt(cursor.index);
+
+		return new TokenSymbol(TokenSymbol.and, new ReferenceRange(start, cursor.clone()));
+	}
+
+	if (char === 39) return null; // "'"
+
+	if (char === 40) { // "("
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.paramOpen, new ReferenceRange(start, cursor.clone()))
+	}
+	if (char === 41) { // "("
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.paramClose, new ReferenceRange(start, cursor.clone()))
+	}
+
+	if (char === 42) { // "*"
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.multiply, new ReferenceRange(start, cursor.clone()))
+	}
+	if (char === 43) { // "+"
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.addition, new ReferenceRange(start, cursor.clone()))
+	}
+	if (char === 44) { // ","
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.append, new ReferenceRange(start, cursor.clone()))
+	}
+	if (char === 45) { // ","
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.subtraction, new ReferenceRange(start, cursor.clone()))
+	}
+	if (char === 46) { // "."
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.member, new ReferenceRange(start, cursor.clone()))
+	}
+	if (char === 47) { // "/"
+		cursor.advance(false);
+		return new TokenSymbol(TokenSymbol.divide, new ReferenceRange(start, cursor.clone()))
+	}
+
+	return null;
+}
+
+function SkipWhiteSpace (str: string, cursor: Reference) {
+	let char = str.charCodeAt(cursor.index);
+	if (char > 32) return false;
+
+	do {
+		cursor.advance(char === newLine);
+		char = str.charCodeAt(cursor.index);
+
+		break;
+	} while (char <= 32);
+
+	return true;
+}
+
+export type AnyToken = TokenName | TokenInteger | TokenFloat | TokenBoolean | TokenString | TokenSymbol;
 
 
 const newLine  = "\n".charCodeAt(0);
@@ -280,8 +461,12 @@ export function ParseTokens (str: string): AnyToken[] | Reference {
 	while (cursor.index < str.length) {
 		const token = ParseName(str, cursor)
 			|| ParseNumber(str, cursor)
-			|| ParseString(str, cursor);
-		if (!token) return cursor;
+			|| ParseString(str, cursor)
+			|| ParseOperator(str, cursor);
+		if (!token) {
+			if (SkipWhiteSpace(str, cursor)) continue;
+			return cursor;
+		}
 
 		tokens.push(token);
 	}

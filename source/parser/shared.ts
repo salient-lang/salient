@@ -38,6 +38,12 @@ export class Reference {
 		return colors.yellow(this.line.toString())+":"+colors.yellow(this.col.toString())
 	}
 
+	infuse(other: Reference) {
+		this.line  = other.line;
+		this.col   = other.col;
+		this.index = other.index;
+	}
+
 	static blank() {
 		return new Reference(1,1,0);
 	}
