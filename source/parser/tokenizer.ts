@@ -53,7 +53,7 @@ export class TokenString {
 }
 
 export class TokenSymbol {
-	readonly type: number;
+	type: number;
 	readonly ref: ReferenceRange;
 
 	constructor (type: number, ref: ReferenceRange) {
@@ -62,7 +62,7 @@ export class TokenSymbol {
 	}
 
 	static not         =   33; // !
-	static invert      =   45;  // -
+	static invert      =   45; // -
 	static reference   =   64; // @
 	static loan        =   36; // $
 	static loanMut     = 3036; // $mut
@@ -77,6 +77,7 @@ export class TokenSymbol {
 	static append      =   44; // ,
 	static type        =   58; // :
 
+	static assign   =      61; // =
 	static equal    =    2061; // ==
 	static same     =    3061; // ===
 	static notEqual =    2033; // !=
@@ -85,6 +86,8 @@ export class TokenSymbol {
 	static le       =    2060; // <=
 	static gt       =      62; // >
 	static ge       =    2062; // >=
+	static bAnd     =      38; // &
+	static bOr      =     124; // |
 	static and      =    2038; // &&
 	static or       =    2024; // ||
 
@@ -101,6 +104,9 @@ export class TokenSymbol {
 	static as            = 9001; // as
 	static instance      = 9002; // instanceof
 	static typeof        = 9003; // typeof
+
+	private static values = new Set(Object.values(TokenSymbol).filter(v => typeof v === 'number') );
+	static isValid (type: number) { return this.values.has(type) }
 }
 
 
@@ -324,116 +330,115 @@ function ParseString (str: string, cursor: Reference): TokenString | null {
 	return new TokenString(buffer, new ReferenceRange(start, cursor.clone()));
 }
 
-function ParseOperator (str: string, cursor: Reference): TokenSymbol | null {
+function MatchLiteral (str: string, cursor: Reference, match: string): boolean {
+	const checkpoint = cursor.clone();
+	for (let i=0; i<match.length; i++) {
+		if (str[cursor.index] !== match[i]) {
+			cursor.infuse(checkpoint);
+			return false;
+		}
+
+		cursor.advance(str.charCodeAt(cursor.index) === newLine);
+	}
+
+	return true;
+}
+
+function ParseSymbol (str: string, cursor: Reference): TokenSymbol | null {
 	let char = str.charCodeAt(cursor.index);
 
 	if (char < 33) return null;
 
+	const valid = TokenSymbol.isValid(char);
+	if (!valid) return null;
+
 	const start = cursor.clone();
-	if (char === 33) { // "!"
-		cursor.advance(false);
-		char = str.charCodeAt(cursor.index);
+	cursor.advance(false);
+	const symbol = new TokenSymbol(char, new ReferenceRange(start, cursor.clone()))
 
-		// "!="
-		if (char !== 61) return new TokenSymbol(TokenSymbol.not, new ReferenceRange(start, cursor.clone()));
-		cursor.advance(false);
-		char = str.charCodeAt(cursor.index);
+	if (symbol.type === TokenSymbol.loan) {
+		const hit = MatchLiteral(str, cursor, "mut");
 
-		// "!=="
-		if (char !== 61) return new TokenSymbol(TokenSymbol.notEqual, new ReferenceRange(start, cursor.clone()));
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.notSame, new ReferenceRange(start, cursor.clone()));
+		if (hit) {
+			const whiteSpace = SkipWhiteSpace(str, cursor);
+			if (whiteSpace) return new TokenSymbol(TokenSymbol.loanMut, new ReferenceRange(start, cursor.clone()));
+		}
+
+		cursor.infuse(symbol.ref.end);
 	}
 
-	if (char === 34) return null; // '"'
-
-	if (char === 35) { // #
-		cursor.advance(false);
-		char = str.charCodeAt(cursor.index);
-
-		if (char !== 91) return null; // "#["
-
-		return new TokenSymbol(TokenSymbol.accessStatic, new ReferenceRange(start, cursor.clone()));
-	}
-
-	if (char === 36) { // $
-		cursor.advance(false);
-		const checkpoint = cursor.clone();
-		char = str.charCodeAt(cursor.index);
-
-		if (str[cursor.index] == "m") {
-			cursor.advance(false);
-			if (str[cursor.index] === "u") {
-				cursor.advance(false);
-				if (str[cursor.index] === "t") {
-					cursor.advance(false);
-					const whiteSpace = SkipWhiteSpace(str, cursor);
-					if (whiteSpace) return new TokenSymbol(TokenSymbol.loanMut, new ReferenceRange(start, cursor.clone()));
-				}
+	switch (symbol.type) {
+		case TokenSymbol.member: {
+			for (let i=0; i<2; i++) {
+				char = str.charCodeAt(cursor.index + i);
+				if (char !== TokenSymbol.member) return symbol;
 			}
+
+			cursor.advance(false);
+			cursor.advance(false);
+
+			return new TokenSymbol(TokenSymbol.spread, new ReferenceRange(start, cursor.clone()));
 		}
+		case TokenSymbol.assign: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.assign) return symbol;
 
-		cursor.infuse(checkpoint);
-		return new TokenSymbol(TokenSymbol.loan, new ReferenceRange(start, checkpoint));
-	}
+			cursor.advance(false);
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.assign) return new TokenSymbol(TokenSymbol.equal, new ReferenceRange(start, cursor.clone()));
 
-	if (char === 37) { // "%"
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.remainder, new ReferenceRange(start, cursor.clone()))
-	}
-
-	if (char === 38) { // "&"
-		cursor.advance(false);
-		char = str.charCodeAt(cursor.index);
-
-		// "&"
-		if (char !== 38) {
-			cursor.infuse(start);
-			return null;
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.same, new ReferenceRange(start, cursor.clone()));
 		}
-		cursor.advance(false);
-		char = str.charCodeAt(cursor.index);
+		case TokenSymbol.not: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.assign) return symbol;
 
-		return new TokenSymbol(TokenSymbol.and, new ReferenceRange(start, cursor.clone()));
+			cursor.advance(false);
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.assign) return new TokenSymbol(TokenSymbol.notEqual, new ReferenceRange(start, cursor.clone()));
+
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.notSame, new ReferenceRange(start, cursor.clone()));
+		}
+		case TokenSymbol.lt: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.assign) return symbol;
+
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.le, new ReferenceRange(start, cursor.clone()));
+		}
+		case TokenSymbol.gt: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.assign) return symbol;
+
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.ge, new ReferenceRange(start, cursor.clone()));
+		}
+		case TokenSymbol.bAnd: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.bAnd) return symbol;
+
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.and, new ReferenceRange(start, cursor.clone()));
+		}
+		case TokenSymbol.bOr: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.bOr) return symbol;
+
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.or, new ReferenceRange(start, cursor.clone()));
+		}
+		case TokenSymbol.static: {
+			char = str.charCodeAt(cursor.index);
+			if (char !== TokenSymbol.accessDynamic) return symbol;
+
+			cursor.advance(false);
+			return new TokenSymbol(TokenSymbol.accessStatic, new ReferenceRange(start, cursor.clone()));
+		}
 	}
 
-	if (char === 39) return null; // "'"
-
-	if (char === 40) { // "("
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.paramOpen, new ReferenceRange(start, cursor.clone()))
-	}
-	if (char === 41) { // "("
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.paramClose, new ReferenceRange(start, cursor.clone()))
-	}
-
-	if (char === 42) { // "*"
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.multiply, new ReferenceRange(start, cursor.clone()))
-	}
-	if (char === 43) { // "+"
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.addition, new ReferenceRange(start, cursor.clone()))
-	}
-	if (char === 44) { // ","
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.append, new ReferenceRange(start, cursor.clone()))
-	}
-	if (char === 45) { // ","
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.subtraction, new ReferenceRange(start, cursor.clone()))
-	}
-	if (char === 46) { // "."
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.member, new ReferenceRange(start, cursor.clone()))
-	}
-	if (char === 47) { // "/"
-		cursor.advance(false);
-		return new TokenSymbol(TokenSymbol.divide, new ReferenceRange(start, cursor.clone()))
-	}
-
-	return null;
+	return symbol;
 }
 
 function SkipWhiteSpace (str: string, cursor: Reference) {
@@ -462,7 +467,7 @@ export function ParseTokens (str: string): AnyToken[] | Reference {
 		const token = ParseName(str, cursor)
 			|| ParseNumber(str, cursor)
 			|| ParseString(str, cursor)
-			|| ParseOperator(str, cursor);
+			|| ParseSymbol(str, cursor);
 		if (!token) {
 			if (SkipWhiteSpace(str, cursor)) continue;
 			return cursor;

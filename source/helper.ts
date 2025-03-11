@@ -157,3 +157,47 @@ export function Sum(data: NdNumArray): number {
 
 	return tally;
 }
+
+export function Reschedule() {
+	return new Promise<void>((res) => queueMicrotask(res))
+}
+
+export class WaitGroup {
+	private blocking: boolean;
+	private queue: Array<() => void>;
+
+	constructor (blocking: boolean) {
+		this.blocking = blocking;
+		this.queue = [];
+	}
+
+	block () {
+		this.blocking = true;
+	}
+	unblock () {
+		this.blocking = false;
+		this.wakeAll();
+	}
+	isBlocking () { return this.blocking; }
+
+	wait() {
+		return new Promise<void>((res) => this.waitCb(res));
+	}
+	waitCb(cb: () => void) {
+		if (!this.blocking) return cb();
+		this.queue.push(cb);
+	}
+
+	wakeOne () {
+		const cb = this.queue.shift();
+		if (!cb) return;
+		cb();
+	}
+
+	wakeAll () {
+		const cache = this.queue;
+		this.queue = [];
+
+		for (const cb of cache) cb();
+	}
+}
