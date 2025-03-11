@@ -57,7 +57,7 @@ export class File {
 			this.path,
 			this.name
 		);
-		this.parseTime = Date.now() - start;
+		console.log(this.parseTime);
 		Ingest(this, tree);
 	}
 

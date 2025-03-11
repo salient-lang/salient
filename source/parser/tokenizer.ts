@@ -52,6 +52,16 @@ export class TokenString {
 	}
 }
 
+export class TokenComment {
+	readonly value: string;
+	readonly ref: ReferenceRange;
+
+	constructor (raw: string, ref: ReferenceRange) {
+		this.value = raw;
+		this.ref   = ref;
+	}
+}
+
 export class TokenSymbol {
 	type: number;
 	readonly ref: ReferenceRange;
@@ -73,6 +83,7 @@ export class TokenSymbol {
 	static subtraction =   45; // -
 	static multiply    =   42; // *
 	static divide      =   47; // /
+	static escape      =   92; // \
 	static remainder   =   37; // %
 	static append      =   44; // ,
 	static type        =   58; // :
@@ -317,7 +328,7 @@ function ParseString (str: string, cursor: Reference): TokenString | null {
 			break;
 		}
 
-		if (char === 92) { // "\"
+		if (char === TokenSymbol.escape) { // "\"
 			cursor.advance(false);
 			escaping = true;
 			continue;
@@ -441,6 +452,63 @@ function ParseSymbol (str: string, cursor: Reference): TokenSymbol | null {
 	return symbol;
 }
 
+function ParseComment (str: string, cursor: Reference): TokenComment | null {
+	let char = str.charCodeAt(cursor.index);
+	if (char !== TokenSymbol.divide) return null;
+
+	char = str.charCodeAt(cursor.index + 1);
+	if (char === TokenSymbol.divide) {
+		cursor.advance(false);
+		cursor.advance(false);
+
+		const start = cursor.clone();
+		let buffer  = "";
+		while (cursor.index < str.length) {
+			char = str.charCodeAt(cursor.index);
+
+			if (char === newLine) {
+				cursor.advance(true);
+				break;
+			}
+
+			cursor.advance(false);
+			buffer += String.fromCharCode(char);
+		}
+
+		return new TokenComment(buffer, new ReferenceRange(start, cursor.clone()));
+	}
+
+	if (char === TokenSymbol.multiply) {
+		cursor.advance(false);
+		cursor.advance(false);
+
+		let pos = 0;
+		const start = cursor.clone();
+		let buffer  = "";
+		while (cursor.index < str.length) {
+			char = str.charCodeAt(cursor.index);
+			cursor.advance(char === newLine);
+
+			if (char === TokenSymbol.escape) {
+				pos = -1;
+				continue;
+			}
+
+			if (pos === 0 && char === TokenSymbol.multiply) {
+				pos = 1;
+				continue;
+			} else if (pos === 1 && char === TokenSymbol.divide) break;
+
+			buffer += String.fromCharCode(char);
+			pos = 0;
+		}
+
+		return new TokenComment(buffer, new ReferenceRange(start, cursor.clone()));
+	}
+
+	return null;
+}
+
 function SkipWhiteSpace (str: string, cursor: Reference) {
 	let char = str.charCodeAt(cursor.index);
 	if (char > 32) return false;
@@ -455,7 +523,7 @@ function SkipWhiteSpace (str: string, cursor: Reference) {
 	return true;
 }
 
-export type AnyToken = TokenName | TokenInteger | TokenFloat | TokenBoolean | TokenString | TokenSymbol;
+export type AnyToken = TokenName | TokenInteger | TokenFloat | TokenBoolean | TokenString | TokenComment | TokenSymbol;
 
 
 const newLine  = "\n".charCodeAt(0);
@@ -465,9 +533,10 @@ export function ParseTokens (str: string): AnyToken[] | Reference {
 
 	while (cursor.index < str.length) {
 		const token = ParseName(str, cursor)
-			|| ParseNumber(str, cursor)
-			|| ParseString(str, cursor)
-			|| ParseSymbol(str, cursor);
+			|| ParseNumber  (str, cursor)
+			|| ParseString  (str, cursor)
+			|| ParseComment (str, cursor)
+			|| ParseSymbol  (str, cursor);
 		if (!token) {
 			if (SkipWhiteSpace(str, cursor)) continue;
 			return cursor;
