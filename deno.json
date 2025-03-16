@@ -6,6 +6,7 @@
 		"test": "deno task 'test:*'",
 		"test:deno": "deno test",
 		"test:salient": "deno run -A ./source/cli.ts test ./tests",
+		"test:prototype": "deno run -A ./source/prototype.ts",
 		"cli": "deno run -A ./source/cli.ts",
 		"sa-test": "deno run -A ./source/cli.ts test",
 		"compile": "deno run -A ./source/cli.ts compile"
