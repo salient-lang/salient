@@ -72,7 +72,6 @@ export class TokenSymbol {
 	}
 
 	static not         =   33; // !
-	static invert      =   45; // -
 	static reference   =   64; // @
 	static loan        =   36; // $
 	static loanMut     = 3036; // $mut
@@ -104,8 +103,7 @@ export class TokenSymbol {
 
 	static member        =   46; // .
 	static static        =   35; // #
-	static accessStatic  =  235; // #[
-	static accessDynamic =   91; // [
+	static accessOpen    =   91; // [
 	static accessEnd     =   93; // ]
 	static blockOpen     =  123; // {
 	static blockClose    =  125; // }
@@ -439,13 +437,6 @@ function ParseSymbol (str: string, cursor: Reference): TokenSymbol | null {
 
 			cursor.advance(false);
 			return new TokenSymbol(TokenSymbol.or, new ReferenceRange(start, cursor.clone()));
-		}
-		case TokenSymbol.static: {
-			char = str.charCodeAt(cursor.index);
-			if (char !== TokenSymbol.accessDynamic) return symbol;
-
-			cursor.advance(false);
-			return new TokenSymbol(TokenSymbol.accessStatic, new ReferenceRange(start, cursor.clone()));
 		}
 	}
 
