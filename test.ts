@@ -5,12 +5,15 @@ import { Reference } from "~/parser.ts";
 
 
 console.time("tokenize");
-const tokens = ParseTokens("3 + c * 'cat'");
+const tokens = ParseTokens("a#[23] * 2 + 234 - -134");
 console.timeEnd("tokenize");
 
 if (tokens instanceof Reference) throw new Error(`Unexpected character at ${tokens.toString()}`);
 
 const ctx = new ParseContext(tokens as AnyToken[]);
+console.time("parse");
 const tree = Expression(ctx);
+console.timeEnd("parse");
+console.log(ctx.completed())
 console.log(tree);
 if (tree) console.log(tree.reference())

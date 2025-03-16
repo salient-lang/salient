@@ -26,6 +26,7 @@ const infixSet = new Set([
 	TokenSymbol.bOr,
 	TokenSymbol.and,
 	TokenSymbol.or,
+	TokenSymbol.static,
 	TokenSymbol.member,
 	TokenSymbol.instance,
 	TokenSymbol.typeof,
@@ -39,6 +40,17 @@ const prefixSet = new Set([
 	TokenSymbol.loanMut,
 	TokenSymbol.spread,
 ]);
+
+const bracketSet = new Set([
+	TokenSymbol.accessOpen,
+	TokenSymbol.blockOpen,
+	TokenSymbol.paramOpen
+]);
+const bracketMap = {
+	[TokenSymbol.accessOpen]: TokenSymbol.accessClose,
+	[TokenSymbol.blockOpen]:  TokenSymbol.blockClose,
+	[TokenSymbol.paramOpen]:  TokenSymbol.paramClose,
+}
 
 
 
@@ -61,19 +73,6 @@ export class LiteralAST {
 	reference () { return this.token.ref; }
 }
 
-function Value (ctx: ParseContext) {
-	const checkpoint = ctx.checkpoint();
-	const token = ctx.next();
-	if (!token) return null;
-
-	const constant = LiteralAST.try(token);
-	if (constant) return new ValueAST(constant);
-	if (token instanceof TokenName) return new ValueAST(token);
-
-	checkpoint.restore();
-	return null;
-}
-
 
 
 
@@ -92,8 +91,8 @@ function Prefix (ctx: ParseContext) {
 function Operand (ctx: ParseContext) {
 	const checkpoint = ctx.checkpoint();
 	const prefix = Prefix(ctx);
-	const value = Value(ctx);
 
+	const value = ValueAST.try(ctx);
 	if (!value) {
 		checkpoint.restore();
 		return null;
@@ -104,14 +103,31 @@ function Operand (ctx: ParseContext) {
 }
 
 export class ValueAST {
-	value: LiteralAST | TokenName;
+	readonly value: LiteralAST | BracketAST | TokenName;
 
-	constructor (value: LiteralAST | TokenName) {
+	constructor (value: LiteralAST | BracketAST | TokenName) {
 		this.value = value;
 	}
 
 	reference () {
 		return this.value instanceof TokenName ? this.value.ref.clone() : this.value.reference();
+	}
+
+	static try (ctx: ParseContext) {
+		const checkpoint = ctx.checkpoint();
+		const token = ctx.next();
+		if (!token) return null;
+
+		const constant = LiteralAST.try(token);
+		if (constant) return new ValueAST(constant);
+		if (token instanceof TokenName) return new ValueAST(token);
+
+		checkpoint.restore();
+
+		const composite = BracketAST.try(ctx);
+		if (composite) return new ValueAST(composite);
+
+		return null;
 	}
 }
 
@@ -131,8 +147,50 @@ export class PrefixAST {
 	}
 }
 
+export class BracketAST {
+	readonly opener: TokenSymbol;
+	readonly value:  ExpressionAST;
+	readonly closer: TokenSymbol;
+
+	constructor (opener: TokenSymbol, value: ExpressionAST, closer: TokenSymbol) {
+		this.opener = opener;
+		this.value  = value;
+		this.closer = closer;
+	}
+
+	reference () {
+		const ref = this.opener.ref.clone();
+		ref.span(this.closer.ref);
+		return ref;
+	}
+
+	static try (ctx: ParseContext): BracketAST | null {
+		const checkpoint = ctx.checkpoint();
+		const opener = ctx.next();
+
+		if (!opener || !(opener instanceof TokenSymbol) || !bracketSet.has(opener.type)) {
+			checkpoint.restore();
+			return null;
+		}
+
+		const operand = Expression(ctx);
+		if (!operand) {
+			checkpoint.restore();
+			return null;
+		}
+
+		const closer = ctx.next();
+		if (!closer || !(closer instanceof TokenSymbol) || closer.type != bracketMap[opener.type]) {
+			checkpoint.restore();
+			return null;
+		}
+
+		return new BracketAST(opener, operand, closer)
+	}
+}
+
 export class OperandAST {
-	value: PrefixAST | ValueAST;
+	readonly value: PrefixAST | ValueAST | BracketAST;
 
 	constructor (value: PrefixAST | ValueAST) {
 		this.value = value;

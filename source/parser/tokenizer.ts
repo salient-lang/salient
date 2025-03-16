@@ -104,7 +104,7 @@ export class TokenSymbol {
 	static member        =   46; // .
 	static static        =   35; // #
 	static accessOpen    =   91; // [
-	static accessEnd     =   93; // ]
+	static accessClose   =   93; // ]
 	static blockOpen     =  123; // {
 	static blockClose    =  125; // }
 	static paramOpen     =   40; // (
