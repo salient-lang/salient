@@ -42,7 +42,7 @@ const prefixSet = new Set([
 
 
 
-export class ConstantAST {
+export class LiteralAST {
 	readonly token;
 
 	constructor (token: TokenString | TokenBoolean | TokenInteger | TokenFloat) {
@@ -50,10 +50,10 @@ export class ConstantAST {
 	}
 
 	static try (token: AnyToken) {
-		if (token instanceof TokenString)  return new ConstantAST(token);
-		if (token instanceof TokenBoolean) return new ConstantAST(token);
-		if (token instanceof TokenInteger) return new ConstantAST(token);
-		if (token instanceof TokenFloat)   return new ConstantAST(token);
+		if (token instanceof TokenString)  return new LiteralAST(token);
+		if (token instanceof TokenBoolean) return new LiteralAST(token);
+		if (token instanceof TokenInteger) return new LiteralAST(token);
+		if (token instanceof TokenFloat)   return new LiteralAST(token);
 
 		return null;
 	}
@@ -61,14 +61,14 @@ export class ConstantAST {
 	reference () { return this.token.ref; }
 }
 
-function ExprValue (ctx: ParseContext) {
+function Value (ctx: ParseContext) {
 	const checkpoint = ctx.checkpoint();
 	const token = ctx.next();
 	if (!token) return null;
 
-	const constant = ConstantAST.try(token);
-	if (constant) return constant;
-	if (token instanceof TokenName) return token;
+	const constant = LiteralAST.try(token);
+	if (constant) return new ValueAST(constant);
+	if (token instanceof TokenName) return new ValueAST(token);
 
 	checkpoint.restore();
 	return null;
@@ -77,7 +77,7 @@ function ExprValue (ctx: ParseContext) {
 
 
 
-function ExprPrefix (ctx: ParseContext) {
+function Prefix (ctx: ParseContext) {
 	const checkpoint = ctx.checkpoint();
 	const token = ctx.next();
 
@@ -89,24 +89,65 @@ function ExprPrefix (ctx: ParseContext) {
 	return token;
 }
 
-function ExprArgument (ctx: ParseContext) {
+function Operand (ctx: ParseContext) {
 	const checkpoint = ctx.checkpoint();
-	const prefix = ExprPrefix(ctx);
-	const value = ExprValue(ctx);
+	const prefix = Prefix(ctx);
+	const value = Value(ctx);
 
 	if (!value) {
 		checkpoint.restore();
 		return null;
 	}
 
-	return new ExpressionArgumentAST(prefix, value);
+	if (prefix) return new OperandAST(new PrefixAST(prefix, value));
+	return new OperandAST(value);
+}
+
+export class ValueAST {
+	value: LiteralAST | TokenName;
+
+	constructor (value: LiteralAST | TokenName) {
+		this.value = value;
+	}
+
+	reference () {
+		return this.value instanceof TokenName ? this.value.ref.clone() : this.value.reference();
+	}
+}
+
+export class PrefixAST {
+	prefix: TokenSymbol;
+	value: ValueAST;
+
+	constructor (prefix: TokenSymbol, value: ValueAST) {
+		this.prefix = prefix;
+		this.value = value;
+	}
+
+	reference () {
+		const ref = this.value.reference();
+		ref.span(this.prefix.ref);
+		return ref;
+	}
+}
+
+export class OperandAST {
+	value: PrefixAST | ValueAST;
+
+	constructor (value: PrefixAST | ValueAST) {
+		this.value = value;
+	}
+
+	reference () {
+		return this.value.reference();
+	}
 }
 
 export class ExpressionArgumentAST {
 	prefix: TokenSymbol | null;
-	value:  ConstantAST | TokenName;
+	value:  LiteralAST | TokenName;
 
-	constructor (prefix: TokenSymbol | null, value: ConstantAST | TokenName) {
+	constructor (prefix: TokenSymbol | null, value: LiteralAST | TokenName) {
 		this.prefix = prefix;
 		this.value = value;
 	}
@@ -119,46 +160,27 @@ export class ExpressionArgumentAST {
 	}
 }
 
-
-export class InfixAST {
-	readonly lhs: ExpressionArgumentAST;
-	readonly op:  TokenSymbol;
-	readonly rhs: ExpressionArgumentAST;
-
-	constructor (lhs: ExpressionArgumentAST, op: TokenSymbol, rhs: ExpressionArgumentAST) {
-		this.lhs = lhs;
-		this.op  = op;
-		this.rhs = rhs;
-	}
-
-	reference () {
-		const ref = this.lhs.reference();
-		ref.span(this.rhs.reference());
-		return ref;
-	}
-}
-
 class ExpressionChunk {
 	readonly operator: TokenSymbol;
-	readonly rhs: ExpressionArgumentAST;
+	readonly rhs: OperandAST;
 
-	constructor (op: TokenSymbol, rhs: ExpressionArgumentAST) {
+	constructor (op: TokenSymbol, rhs: OperandAST) {
 		this.operator = op;
 		this.rhs = rhs;
 	}
 }
 
 export class ExpressionAST {
-	readonly lhs: ExpressionArgumentAST;
+	readonly lhs: OperandAST;
 	readonly chunks: ExpressionChunk[];
 
-	constructor (lhs: ExpressionArgumentAST, chunks: ExpressionChunk[]) {
+	constructor (lhs: OperandAST, chunks: ExpressionChunk[]) {
 		this.lhs    = lhs;
 		this.chunks = chunks;
 	}
 
 	static try (ctx: ParseContext) {
-		const lhs = ExprArgument(ctx);
+		const lhs = Operand(ctx);
 		if (!lhs) return null;
 
 		const chunks = new Array<ExpressionChunk>();
@@ -170,7 +192,7 @@ export class ExpressionAST {
 				break;
 			}
 
-			const rhs = ExprArgument(ctx);
+			const rhs = Operand(ctx);
 			if (!rhs) {
 				checkpoint.restore();
 				break;
