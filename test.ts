@@ -5,7 +5,7 @@ import { Reference } from "~/parser.ts";
 
 
 console.time("tokenize");
-const tokens = ParseTokens("a#[23] * 2 + 234 - -134");
+const tokens = ParseTokens("a * 2 + 234 - -134");
 console.timeEnd("tokenize");
 
 if (tokens instanceof Reference) throw new Error(`Unexpected character at ${tokens.toString()}`);

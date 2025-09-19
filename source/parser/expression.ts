@@ -26,7 +26,6 @@ const infixSet = new Set([
 	TokenSymbol.bOr,
 	TokenSymbol.and,
 	TokenSymbol.or,
-	TokenSymbol.static,
 	TokenSymbol.member,
 	TokenSymbol.instance,
 	TokenSymbol.typeof,
